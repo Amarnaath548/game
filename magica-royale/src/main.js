@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { SceneManager } from './core/SceneManager.js';
 import { InputManager } from './core/InputManager.js';
 import { ObjectPool } from './core/ObjectPool.js';
+import { SoundManager } from './core/SoundManager.js';
 import { ParticleSystem } from './systems/ParticleSystem.js';
 import { ZoneSystem } from './systems/ZoneSystem.js';
 import { CollisionSystem } from './systems/CollisionSystem.js';
@@ -10,13 +11,16 @@ import { Bot } from './entities/Bot.js';
 import { Projectile } from './entities/Projectile.js';
 import { Chest, ArcaneCrystal, ShadowBush, XPGem, HealthOrb } from './entities/Prop.js';
 import { UIManager } from './ui/UIManager.js';
+import { FloatingBarSystem } from './ui/FloatingBarSystem.js';
 import { SPELLS, ARENA } from './config/constants.js';
 
 // Setup Core
 const sceneManager = new SceneManager();
 const input = new InputManager(sceneManager.camera);
+const sound = new SoundManager();
 const particleSys = new ParticleSystem(sceneManager.scene, 400);
 const zoneSys = new ZoneSystem(sceneManager.scene);
+const floatingBars = new FloatingBarSystem(sceneManager.camera);
 
 // Player Entity
 const player = new Player(sceneManager.scene, input);
@@ -24,7 +28,10 @@ const player = new Player(sceneManager.scene, input);
 // UI Manager
 const ui = new UIManager(
   (spellKey) => player.setSpell(spellKey),
-  (perk) => player.applyPerk(perk)
+  (perk) => {
+    player.applyPerk(perk);
+    sound.playLevelUp();
+  }
 );
 
 // Pools
@@ -105,16 +112,18 @@ const getAllAliveActors = () => [player, ...bots].filter((a) => !a.isDead);
 
 // Spell Firing Helper
 function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
-  // Sniper Velocity Perk
+  const isPlayer = owner === player;
   const config = { ...spellConfig };
-  if (owner === player && player.perks.includes('SNIPER_VELOCITY')) {
+  if (isPlayer && player.perks.includes('SNIPER_VELOCITY')) {
     config.speed *= 1.35;
     config.range *= 1.35;
   }
-  if (owner === player && player.perks.includes('GIANT_ARCANA')) {
+  if (isPlayer && player.perks.includes('GIANT_ARCANA')) {
     config.radius *= 1.4;
     if (config.aoeRadius) config.aoeRadius *= 1.4;
   }
+
+  if (isPlayer) sound.playCast(config.id);
 
   // Cryo 3-shard spread
   if (config.id === 'CRYO') {
@@ -126,14 +135,14 @@ function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
       if (p) {
         p.pool.acquire();
         const a = baseAngle + offset;
-        p.spawn(originX, originZ, Math.sin(a), Math.cos(a), config, owner === player ? 'player' : 'bot');
+        p.spawn(originX, originZ, Math.sin(a), Math.cos(a), config, isPlayer ? 'player' : 'bot');
       }
     });
     return;
   }
 
   // Single or Twin Cast
-  const count = (owner === player && player.perks.includes('TWIN_CAST')) ? 2 : 1;
+  const count = (isPlayer && player.perks.includes('TWIN_CAST')) ? 2 : 1;
   for (let i = 0; i < count; i++) {
     const p = projectiles.find((proj) => !proj.active);
     if (p) {
@@ -147,7 +156,7 @@ function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
         dz = Math.cos(a);
         config.damage = Math.round(config.damage * 0.85);
       }
-      p.spawn(originX, originZ, dx, dz, config, owner === player ? 'player' : 'bot');
+      p.spawn(originX, originZ, dx, dz, config, isPlayer ? 'player' : 'bot');
     }
   }
 }
@@ -187,12 +196,28 @@ function dropLoot(x, z, gemCount = 3, healthOrbChance = 0.35) {
 
 // Crystal Explosion
 function triggerCrystalExplosion(crystal) {
+  sound.playExplosion();
+  sceneManager.addTrauma(0.5);
   particleSys.spawnBurst(crystal.x, 1.2, crystal.z, 0xff0055, 30, 14, 1.6);
   const targets = [...getAllAliveActors(), ...chests.filter((c) => !c.isDead)];
   targets.forEach((t) => {
     const d = Math.hypot(t.x - crystal.x, t.z - crystal.z);
     if (d <= crystal.explosionRadius) {
       t.takeDamage(crystal.explosionDamage);
+    }
+  });
+}
+
+// Solid Obelisk Collisions helper
+function resolveObeliskCollisions(actor) {
+  sceneManager.obelisks.forEach((o) => {
+    const dx = actor.x - o.x;
+    const dz = actor.z - o.z;
+    const dist = Math.hypot(dx, dz);
+    const minDist = actor.radius + o.radius;
+    if (dist < minDist && dist > 0.001) {
+      actor.x = o.x + (dx / dist) * minDist;
+      actor.z = o.z + (dz / dist) * minDist;
     }
   });
 }
@@ -207,6 +232,11 @@ function animate() {
 
   input.update(player.group.position);
 
+  // Player Dash Sound
+  if (player.dashTimer > 0 && player.dashTimer - dt <= 0) {
+    sound.playDash();
+  }
+
   // Player Shoot
   if (input.fireReleased) {
     input.fireReleased = false;
@@ -215,11 +245,13 @@ function animate() {
 
   // Update Player
   player.update(dt, bushes);
+  resolveObeliskCollisions(player);
 
   // Update Bots AI
   const allActors = getAllAliveActors();
   bots.forEach((bot) => {
     bot.think(dt, zoneSys.currentRadius, allActors, chests, botShoot);
+    resolveObeliskCollisions(bot);
   });
 
   // Update Projectiles & Hits
@@ -229,14 +261,27 @@ function animate() {
 
     const isPlayerProj = proj.owner === 'player';
 
+    // Obelisk Collision (Venom lob jumps over!)
+    if (proj.lobHeight <= 0) {
+      for (const o of sceneManager.obelisks) {
+        if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, o.x, o.z, o.radius)) {
+          particleSys.spawnBurst(proj.x, proj.y, proj.z, 0x888899, 8, 6);
+          proj.despawn();
+          return;
+        }
+      }
+    }
+
     // 1. Hit Chests
     chests.forEach((chest) => {
-      if (chest.isDead) return;
+      if (chest.isDead || !proj.active) return;
       if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, chest.x, chest.z, chest.radius)) {
         const destroyed = chest.takeDamage(proj.damage);
+        sound.playHit();
         particleSys.spawnBurst(proj.x, proj.y, proj.z, chest.isMythic ? 0x9333ea : 0x8b5a2b, 10, 8);
         proj.despawn();
         if (destroyed) {
+          sound.playExplosion();
           dropLoot(chest.x, chest.z, chest.isMythic ? 8 : 3, chest.isMythic ? 1.0 : 0.35);
           particleSys.spawnBurst(chest.x, 1.0, chest.z, 0xffd700, 24, 12, 1.4);
         }
@@ -247,9 +292,10 @@ function animate() {
 
     // 2. Hit Crystals (Explosive Barrels)
     crystals.forEach((crystal) => {
-      if (crystal.isDead) return;
+      if (crystal.isDead || !proj.active) return;
       if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, crystal.x, crystal.z, crystal.radius)) {
         const exploded = crystal.takeDamage(proj.damage);
+        sound.playHit();
         proj.despawn();
         if (exploded) {
           triggerCrystalExplosion(crystal);
@@ -265,12 +311,14 @@ function animate() {
       if (target.isDead) continue;
       if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, target.x, target.z, target.radius)) {
         let dmg = proj.damage;
-        // Executioner perk
         if (isPlayerProj && player.perks.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) {
           dmg = Math.round(dmg * 1.35);
         }
 
         const dealt = target.takeDamage(dmg);
+        sound.playHit();
+        if (target === player) sceneManager.addTrauma(0.4);
+
         particleSys.spawnBurst(proj.x, proj.y, proj.z, proj.spellConfig.color, 14, 9);
 
         // Vampiric soul perk
@@ -304,6 +352,7 @@ function animate() {
 
         // Actor Death Drop
         if (target.isDead) {
+          sound.playExplosion();
           particleSys.spawnBurst(target.x, 1.0, target.z, 0xff0055, 20, 10);
           dropLoot(target.x, target.z, 5, 0.6);
         }
@@ -322,14 +371,19 @@ function animate() {
   gems.forEach((gem) => {
     const collected = gem.update(dt, player.x, player.z);
     if (collected) {
+      sound.playPickup();
       particleSys.spawnBurst(gem.x, 0.6, gem.z, 0x00f2ff, 6, 4);
-      player.addXP(gem.xpValue, (lvl) => ui.showPerkCards(lvl));
+      player.addXP(gem.xpValue, (lvl) => {
+        sound.playLevelUp();
+        ui.showPerkCards(lvl);
+      });
     }
   });
 
   healthOrbs.forEach((orb) => {
     const collected = orb.update(dt, player.x, player.z);
     if (collected) {
+      sound.playPickup();
       particleSys.spawnBurst(orb.x, 0.6, orb.z, 0x10b981, 10, 5);
       player.heal(player.maxHp * orb.healPercent);
     }
@@ -337,6 +391,9 @@ function animate() {
 
   // Update Storm Zone & Out-of-bounds damage
   zoneSys.update(dt, [player, ...bots]);
+
+  // Update Overhead Floating Health Bars for bots
+  floatingBars.update(bots);
 
   // Update Particles
   particleSys.update(dt);
@@ -357,7 +414,7 @@ function animate() {
   }
 
   // Camera & Render
-  sceneManager.updateCamera(player.group.position, input.aimDir);
+  sceneManager.updateCamera(player.group.position, input.aimDir, dt);
   sceneManager.render();
 }
 
