@@ -11,17 +11,17 @@ export const COLORS = {
 };
 
 export const ARENA = {
-  RADIUS: 80,
+  RADIUS: 120,
   RINGS: {
-    SANCTUM_MAX: 20,
-    RUINS_MAX: 50,
-    SPAWN_MAX: 80
+    SANCTUM_MAX: 30,
+    RUINS_MAX: 75,
+    SPAWN_MAX: 120
   }
 };
 
 export const CAMERA_CONFIG = {
-  OFFSET_Y: 32,
-  OFFSET_Z: 26, // ~50 degree pitch
+  OFFSET_Y: 34,
+  OFFSET_Z: 28, // ~50 degree pitch
   LERP_SPEED: 0.1,
   AIM_LOOKAHEAD: 3.5
 };
@@ -99,8 +99,8 @@ export const LEVEL_TABLE = [
 ];
 
 export const STORM_PHASES = [
-  { duration: 30, startRadius: 80, endRadius: 80, tickDamage: 0 },
-  { duration: 35, startRadius: 80, endRadius: 45, tickDamage: 12 },
-  { duration: 30, startRadius: 45, endRadius: 20, tickDamage: 25 },
-  { duration: 30, startRadius: 20, endRadius: 5, tickDamage: 50 }
+  { duration: 40, startRadius: 120, endRadius: 120, tickDamage: 0 },
+  { duration: 45, startRadius: 120, endRadius: 75, tickDamage: 10 },
+  { duration: 40, startRadius: 75, endRadius: 30, tickDamage: 20 },
+  { duration: 35, startRadius: 30, endRadius: 8, tickDamage: 40 }
 ];

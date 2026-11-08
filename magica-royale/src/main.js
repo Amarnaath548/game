@@ -126,35 +126,37 @@ function startMatch() {
   // Apply player loadout
   applyLobbyLoadout();
 
-  // Spawn Chests
+  // Spawn Chests across expanded 120u arena
   chests = [];
-  chests.push(new Chest(0, 0, sceneManager.scene, true)); // Mythic
+  chests.push(new Chest(0, 0, sceneManager.scene, true)); // Mythic Center
   const chestCoords = [
-    [-16, -16], [16, -16], [-16, 16], [16, 16],
-    [-32, -18], [32, -18], [-32, 18], [32, 18],
-    [0, 36], [0, -36], [-36, 0], [36, 0],
-    [-52, -26], [52, -26], [-52, 26], [52, 26],
-    [28, 48], [-28, -48], [48, 28], [-48, -28]
+    [-20, -20], [20, -20], [-20, 20], [20, 20],
+    [-45, -25], [45, -25], [-45, 25], [45, 25],
+    [0, 50], [0, -50], [-50, 0], [50, 0],
+    [-75, -40], [75, -40], [-75, 40], [75, 40],
+    [40, 70], [-40, -70], [70, 40], [-70, -40],
+    [-90, 0], [90, 0], [0, -90], [0, 90]
   ];
   chestCoords.forEach(([x, z]) => chests.push(new Chest(x, z, sceneManager.scene, false)));
 
   // Spawn Crystals
   crystals = [
-    new ArcaneCrystal(-24, 0, sceneManager.scene),
-    new ArcaneCrystal(24, 0, sceneManager.scene),
-    new ArcaneCrystal(0, -24, sceneManager.scene),
-    new ArcaneCrystal(0, 24, sceneManager.scene),
-    new ArcaneCrystal(-38, -38, sceneManager.scene),
-    new ArcaneCrystal(38, 38, sceneManager.scene)
+    new ArcaneCrystal(-35, 0, sceneManager.scene),
+    new ArcaneCrystal(35, 0, sceneManager.scene),
+    new ArcaneCrystal(0, -35, sceneManager.scene),
+    new ArcaneCrystal(0, 35, sceneManager.scene),
+    new ArcaneCrystal(-60, -60, sceneManager.scene),
+    new ArcaneCrystal(60, 60, sceneManager.scene),
+    new ArcaneCrystal(-60, 60, sceneManager.scene),
+    new ArcaneCrystal(60, -60, sceneManager.scene)
   ];
 
-  // Spawn 11 Bots distributed in outer-mid ring (safe from initial storm)
+  // Spawn 11 Bots distributed across the expanded arena (radius 55 to 80 units)
   bots = [];
   const TOTAL_BOTS = 11;
   for (let i = 0; i < TOTAL_BOTS; i++) {
     const angle = (i / TOTAL_BOTS) * Math.PI * 2;
-    // Vary spawn radius between 36 and 48 units so they aren't right on map edge
-    const r = 36 + (i % 3) * 6;
+    const r = 55 + (i % 4) * 8;
     const bx = Math.cos(angle) * r;
     const bz = Math.sin(angle) * r;
     bots.push(new Bot(sceneManager.scene, bx, bz, i + 1));
@@ -370,6 +372,11 @@ function animate() {
         if (target.isDead) continue;
         if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, target.x, target.z, target.radius)) {
           let dmg = proj.damage;
+          // Bot vs Bot damage dampening: reduces bot-on-bot crossfire so they don't instakill each other
+          if (!isPlayerProj && target !== player) {
+            dmg = Math.round(dmg * 0.45);
+          }
+
           if (isPlayerProj && player.perks.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) {
             dmg = Math.round(dmg * 1.35);
           }
@@ -409,11 +416,13 @@ function animate() {
             }
           }
 
-          // Actor Death Drop
+          // Actor Death Drop (Only drop loot/XP when killed by the player)
           if (target.isDead) {
             sound.playExplosion();
             particleSys.spawnBurst(target.x, 1.0, target.z, 0xff0055, 20, 10);
-            dropLoot(target.x, target.z, 5, 0.6);
+            if (isPlayerProj) {
+              dropLoot(target.x, target.z, 5, 0.6);
+            }
           }
 
           proj.despawn();
