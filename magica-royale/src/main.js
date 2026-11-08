@@ -312,8 +312,15 @@ function resolveObeliskCollisions(actor) {
     const dist = Math.hypot(dx, dz);
     const minDist = actor.radius + o.radius;
     if (dist < minDist && dist > 0.001) {
-      actor.x = o.x + (dx / dist) * minDist;
-      actor.z = o.z + (dz / dist) * minDist;
+      const nx = dx / dist;
+      const nz = dz / dist;
+      actor.x = o.x + nx * minDist;
+      actor.z = o.z + nz * minDist;
+      if (!actor.isPlayer) {
+        const strafe = actor.strafeDir || 1;
+        actor.x += -nz * strafe * 0.12;
+        actor.z += nx * strafe * 0.12;
+      }
     }
   });
 }
@@ -503,6 +510,24 @@ function animate() {
         particleSys.spawnBurst(orb.x, 0.6, orb.z, 0x10b981, 10, 5);
         player.heal(player.maxHp * orb.healPercent);
       }
+    });
+
+    // Bots consume gems & orbs on contact
+    bots.forEach((bot) => {
+      if (bot.isDead) return;
+      gems.forEach((gem) => {
+        if (gem.active && Math.hypot(gem.x - bot.x, gem.z - bot.z) < 1.3) {
+          gem.despawn();
+          particleSys.spawnBurst(gem.x, 0.6, gem.z, 0x00f2ff, 4, 3);
+        }
+      });
+      healthOrbs.forEach((orb) => {
+        if (orb.active && Math.hypot(orb.x - bot.x, orb.z - bot.z) < 1.3) {
+          orb.despawn();
+          bot.heal(bot.maxHp * orb.healPercent);
+          particleSys.spawnBurst(orb.x, 0.6, orb.z, 0x10b981, 6, 4);
+        }
+      });
     });
 
     // Update Storm Zone & Out-of-bounds damage
