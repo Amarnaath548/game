@@ -33,11 +33,20 @@ export class Bot extends Actor {
     this.lootCooldown = 0;
   }
 
-  pickRoamWaypoint(maxR = 60) {
-    const angle = Math.random() * Math.PI * 2;
-    const r = 15 + Math.random() * (maxR - 15);
-    this.roamTarget.x = Math.cos(angle) * r;
-    this.roamTarget.z = Math.sin(angle) * r;
+  pickRoamWaypoint(maxR = 60, playerX = 0, playerZ = 0) {
+    // 65% chance to roam towards player's general vicinity to create action
+    if (Math.random() < 0.65) {
+      const offsetAngle = (Math.random() - 0.5) * Math.PI * 0.8;
+      const baseAngle = Math.atan2(playerX - this.x, playerZ - this.z) + offsetAngle;
+      const dist = 10 + Math.random() * 20;
+      this.roamTarget.x = this.x + Math.sin(baseAngle) * dist;
+      this.roamTarget.z = this.z + Math.cos(baseAngle) * dist;
+    } else {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 10 + Math.random() * (maxR - 10);
+      this.roamTarget.x = Math.cos(angle) * r;
+      this.roamTarget.z = Math.sin(angle) * r;
+    }
   }
 
   think(dt, zoneRadius, allActors, chests, onShoot) {
@@ -52,31 +61,40 @@ export class Bot extends Actor {
     let aimX = 0;
     let aimZ = 0;
 
-    // 1. SAFE_CHECK: outside or close to edge of zone
-    if (distFromCenter > zoneRadius * 0.88) {
+    // Locate player among all actors
+    const playerActor = allActors.find((a) => a.isPlayer && !a.isDead);
+
+    // 1. SAFE_CHECK: outside or close to edge of zone -> run inside toward center
+    if (distFromCenter > zoneRadius * 0.82) {
       this.state = 'SAFE';
       moveX = -this.x / (distFromCenter || 1);
       moveZ = -this.z / (distFromCenter || 1);
       aimX = moveX;
       aimZ = moveZ;
     } else {
-      // 2. CHECK FOR ENEMY THREATS FIRST
-      // Bots aggressively target the player if within 30 units!
+      // 2. CHECK FOR ENEMY THREATS
+      // Priority #1: PLAYER up to 55 units away!
       let targetEnemy = null;
-      let targetEnemyDist = 30;
+      let targetEnemyDist = 55;
 
-      // Check all alive actors; prioritize player (isPlayer === true)
-      for (const other of allActors) {
-        if (other === this || other.isDead) continue;
-        const dist = Math.hypot(other.x - this.x, other.z - this.z);
-        if (other.isPlayer && dist < 32) {
-          targetEnemy = other;
-          targetEnemyDist = dist;
-          break; // Found player in range, immediately lock on
-        } else if (!targetEnemy && dist < 14) {
-          // If no player seen yet, can engage another bot if very close
-          targetEnemy = other;
-          targetEnemyDist = dist;
+      if (playerActor) {
+        const pDist = Math.hypot(playerActor.x - this.x, playerActor.z - this.z);
+        if (pDist <= 55) {
+          targetEnemy = playerActor;
+          targetEnemyDist = pDist;
+        }
+      }
+
+      // Priority #2: Only fight another bot if no player nearby and bot is very close (<10)
+      if (!targetEnemy) {
+        for (const other of allActors) {
+          if (other === this || other.isDead || other.isPlayer) continue;
+          const dist = Math.hypot(other.x - this.x, other.z - this.z);
+          if (dist < 10) {
+            targetEnemy = other;
+            targetEnemyDist = dist;
+            break;
+          }
         }
       }
 
@@ -87,7 +105,7 @@ export class Bot extends Actor {
         const edist = Math.hypot(edx, edz) || 1;
 
         // Aim directly at target with slight aim variance
-        const aimJitter = (Math.random() - 0.5) * 0.15;
+        const aimJitter = (Math.random() - 0.5) * 0.12;
         const baseAngle = Math.atan2(edx, edz) + aimJitter;
         aimX = Math.sin(baseAngle);
         aimZ = Math.cos(baseAngle);
@@ -97,20 +115,19 @@ export class Bot extends Actor {
         const perpX = -Math.cos(baseAngle) * strafeDir;
         const perpZ = Math.sin(baseAngle) * strafeDir;
 
-        // Close distance if far (>12), back up if too close (<6)
-        const distBias = edist > 12 ? 0.8 : (edist < 6 ? -0.5 : 0.2);
-        moveX = perpX * 0.7 + (edx / edist) * distBias;
-        moveZ = perpZ * 0.7 + (edz / edist) * distBias;
+        // When chasing player: stay at comfortable attack range (7-14 units)
+        const distBias = edist > 13 ? 0.85 : (edist < 6 ? -0.6 : 0.2);
+        moveX = perpX * 0.5 + (edx / edist) * distBias;
+        moveZ = perpZ * 0.5 + (edz / edist) * distBias;
 
         // Shoot at enemy when cooldown ready
         if (this.shootCooldown <= 0 && onShoot) {
-          // Faster attack rate against player (responsive combat)
-          const cdMult = targetEnemy.isPlayer ? 1.2 : 2.0;
-          this.shootCooldown = this.currentSpell.cooldown * (cdMult + Math.random() * 0.4);
+          const cdMult = targetEnemy.isPlayer ? 1.0 : 2.5;
+          this.shootCooldown = this.currentSpell.cooldown * (cdMult + Math.random() * 0.3);
           onShoot(this, aimX, aimZ);
         }
       } else {
-        // 3. CHECK CHESTS IF NO ENEMY IS NEARBY
+        // 3. CHECK CHESTS IF NO PLAYER IS NEARBY
         let closestChest = null;
         let closestChestDist = 20;
 
@@ -138,16 +155,18 @@ export class Bot extends Actor {
           } else {
             // In firing range of chest
             if (this.shootCooldown <= 0 && onShoot) {
-              this.shootCooldown = this.currentSpell.cooldown * 1.4;
+              this.shootCooldown = this.currentSpell.cooldown * 1.5;
               onShoot(this, aimX, aimZ);
             }
           }
         } else {
-          // 4. ROAM WAYPOINT
+          // 4. ROAM TOWARD PLAYER / WAYPOINT
           this.state = 'ROAM';
           if (this.changeStateTimer <= 0) {
-            this.changeStateTimer = 4 + Math.random() * 4;
-            this.pickRoamWaypoint(Math.min(zoneRadius * 0.75, 55));
+            this.changeStateTimer = 3 + Math.random() * 3;
+            const px = playerActor ? playerActor.x : 0;
+            const pz = playerActor ? playerActor.z : 0;
+            this.pickRoamWaypoint(Math.min(zoneRadius * 0.75, 60), px, pz);
           }
           const rdx = this.roamTarget.x - this.x;
           const rdz = this.roamTarget.z - this.z;

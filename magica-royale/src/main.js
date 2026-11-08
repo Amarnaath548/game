@@ -151,14 +151,29 @@ function startMatch() {
     new ArcaneCrystal(60, -60, sceneManager.scene)
   ];
 
-  // Spawn 11 Bots distributed across the expanded arena (radius 55 to 80 units)
+  // Spawn 11 Bots distributed across the arena:
+  // - 3 bots in Sanctum/Ruins inner ring (24-32 units) for immediate action
+  // - 4 bots in mid ring (45-55 units)
+  // - 4 bots in outer ring (65-80 units)
   bots = [];
   const TOTAL_BOTS = 11;
+  const botSpawns = [
+    { r: 26, angle: 0.5 },
+    { r: 28, angle: 2.6 },
+    { r: 30, angle: 4.7 },
+    { r: 48, angle: 1.2 },
+    { r: 50, angle: 2.8 },
+    { r: 52, angle: 4.4 },
+    { r: 46, angle: 5.9 },
+    { r: 68, angle: 0.8 },
+    { r: 72, angle: 2.3 },
+    { r: 75, angle: 3.9 },
+    { r: 78, angle: 5.4 }
+  ];
   for (let i = 0; i < TOTAL_BOTS; i++) {
-    const angle = (i / TOTAL_BOTS) * Math.PI * 2;
-    const r = 55 + (i % 4) * 8;
-    const bx = Math.cos(angle) * r;
-    const bz = Math.sin(angle) * r;
+    const s = botSpawns[i];
+    const bx = Math.cos(s.angle) * s.r;
+    const bz = Math.sin(s.angle) * s.r;
     bots.push(new Bot(sceneManager.scene, bx, bz, i + 1));
   }
 
@@ -269,7 +284,13 @@ function triggerCrystalExplosion(crystal) {
   targets.forEach((t) => {
     const d = Math.hypot(t.x - crystal.x, t.z - crystal.z);
     if (d <= crystal.explosionRadius) {
-      t.takeDamage(crystal.explosionDamage);
+      let dmg = crystal.explosionDamage;
+      if (!t.isPlayer && t.maxHp) {
+        // Prevent crystal explosion from wiping out bots on their own
+        const safeHp = Math.round(t.maxHp * 0.4);
+        dmg = Math.min(dmg, Math.max(0, t.hp - safeHp));
+      }
+      t.takeDamage(dmg);
     }
   });
 }
@@ -373,9 +394,16 @@ function animate() {
         if (target.isDead) continue;
         if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, target.x, target.z, target.radius)) {
           let dmg = proj.damage;
-          // Bot vs Bot damage dampening: reduces bot-on-bot crossfire so they don't instakill each other
+          
+          // Bot vs Bot non-lethal crossfire: bots CANNOT eliminate each other!
+          // They cannot lower another bot's HP below 55% of maxHp.
           if (!isPlayerProj && target !== player) {
-            dmg = Math.round(dmg * 0.45);
+            const safeFloor = Math.round(target.maxHp * 0.55);
+            if (target.hp <= safeFloor) {
+              dmg = 0; // Immune to bot attacks when under half HP
+            } else {
+              dmg = Math.min(Math.round(dmg * 0.15), target.hp - safeFloor);
+            }
           }
 
           if (isPlayerProj && player.perks.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) {
@@ -393,25 +421,33 @@ function animate() {
             player.heal(dealt * 0.2);
           }
 
-          // Apply Spell Passives
-          if (proj.spellConfig.id === 'CRYO') {
-            target.applyChill(proj.spellConfig.slowFactor, 1.5);
-          } else if (proj.spellConfig.id === 'VENOM') {
-            target.applyPoison(proj.spellConfig.dps, proj.spellConfig.duration);
-          } else if (proj.spellConfig.id === 'PYRO') {
-            target.applyBurn(10, 2.0);
+          // Apply Spell Passives (DoT only applied by player or against player)
+          if (isPlayerProj || target === player) {
+            if (proj.spellConfig.id === 'CRYO') {
+              target.applyChill(proj.spellConfig.slowFactor, 1.5);
+            } else if (proj.spellConfig.id === 'VENOM') {
+              target.applyPoison(proj.spellConfig.dps, proj.spellConfig.duration);
+            } else if (proj.spellConfig.id === 'PYRO') {
+              target.applyBurn(10, 2.0);
+            }
           }
 
-          // Electro Chaining
-          if (proj.spellConfig.id === 'ELECTRO') {
+          // Electro Chaining (Only from player or against player)
+          if (proj.spellConfig.id === 'ELECTRO' && (isPlayerProj || target === player)) {
             const otherActors = possibleTargets.filter((a) => a !== target && !a.isDead);
             let chains = 0;
             for (const other of otherActors) {
               if (chains >= (proj.spellConfig.chainCount || 2)) break;
               const dist = Math.hypot(other.x - target.x, other.z - target.z);
               if (dist <= (proj.spellConfig.chainRadius || 6.0)) {
-                other.takeDamage(dmg * 0.5);
-                particleSys.spawnBurst(other.x, 1.2, other.z, 0xffe600, 8, 6);
+                let chainDmg = dmg * 0.5;
+                if (!isPlayerProj && other !== player) {
+                  chainDmg = 0;
+                }
+                if (chainDmg > 0) {
+                  other.takeDamage(chainDmg);
+                  particleSys.spawnBurst(other.x, 1.2, other.z, 0xffe600, 8, 6);
+                }
                 chains++;
               }
             }

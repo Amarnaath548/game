@@ -65,7 +65,15 @@ export class ZoneSystem {
         const dist = Math.hypot(actor.x - this.centerX, actor.z - this.centerZ);
         // Generous buffer so actors inside the boundary never take storm damage
         if (dist > this.currentRadius + 1.0) {
-          actor.takeDamage(damageTick);
+          let dmg = damageTick;
+          // Protect bots from dying automatically to storm before final phase
+          if (!actor.isPlayer && this.currentPhaseIndex < 3) {
+            const safeFloor = Math.round(actor.maxHp * 0.4);
+            dmg = Math.min(dmg, Math.max(0, actor.hp - safeFloor));
+          }
+          if (dmg > 0) {
+            actor.takeDamage(dmg);
+          }
         }
       });
     }
