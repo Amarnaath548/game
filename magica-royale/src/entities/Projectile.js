@@ -70,6 +70,7 @@ export class Projectile {
   despawn(reachedMaxRange = false) {
     if (!this.active) return;
     this.active = false;
-    this.pool.release(this.mesh);
+    this.mesh.visible = false;
+    if (this.pool) this.pool.release(this.mesh);
   }
 }

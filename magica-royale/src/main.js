@@ -114,6 +114,9 @@ function startMatch() {
   chests.forEach((c) => c.destroy());
   crystals.forEach((c) => c.destroy());
   bots.forEach((b) => b.die());
+  projectiles.forEach((p) => p.despawn());
+  gems.forEach((g) => g.despawn());
+  healthOrbs.forEach((o) => o.despawn());
   projPool.releaseAll();
   gemPool.releaseAll();
   orbPool.releaseAll();
@@ -187,6 +190,9 @@ function resetToLobby() {
   chests.forEach((c) => c.destroy());
   crystals.forEach((c) => c.destroy());
   bots.forEach((b) => b.die());
+  projectiles.forEach((p) => p.despawn());
+  gems.forEach((g) => g.despawn());
+  healthOrbs.forEach((o) => o.despawn());
   projPool.releaseAll();
   gemPool.releaseAll();
   orbPool.releaseAll();
@@ -210,6 +216,11 @@ function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
 
   if (isPlayer) sound.playCast(config.id);
 
+  // Spawn slightly ahead so projectile emerges in front of the caster
+  const spawnOffset = (owner.radius || 1.0) + 0.35;
+  const sx = originX + dirX * spawnOffset;
+  const sz = originZ + dirZ * spawnOffset;
+
   // Cryo 3-shard spread
   if (config.id === 'CRYO') {
     const spread = config.spreadAngle || 0.35;
@@ -218,9 +229,8 @@ function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
     angles.forEach((offset) => {
       const p = projectiles.find((proj) => !proj.active);
       if (p) {
-        p.pool.acquire();
         const a = baseAngle + offset;
-        p.spawn(originX, originZ, Math.sin(a), Math.cos(a), config, isPlayer ? 'player' : 'bot');
+        p.spawn(sx, sz, Math.sin(a), Math.cos(a), config, owner);
       }
     });
     return;
@@ -231,7 +241,6 @@ function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
   for (let i = 0; i < count; i++) {
     const p = projectiles.find((proj) => !proj.active);
     if (p) {
-      p.pool.acquire();
       let dx = dirX;
       let dz = dirZ;
       if (count > 1) {
@@ -241,7 +250,7 @@ function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
         dz = Math.cos(a);
         config.damage = Math.round(config.damage * 0.85);
       }
-      p.spawn(originX, originZ, dx, dz, config, isPlayer ? 'player' : 'bot');
+      p.spawn(sx, sz, dx, dz, config, owner);
     }
   }
 }
@@ -342,7 +351,7 @@ function animate() {
       if (!proj.active) return;
       proj.update(dt);
 
-      const isPlayerProj = proj.owner === 'player';
+      const isPlayerProj = proj.owner === player || !!proj.owner?.isPlayer;
 
       // Obelisk Collision (Venom lob jumps over!)
       if (proj.lobHeight <= 0) {

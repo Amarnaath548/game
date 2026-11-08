@@ -120,8 +120,8 @@ export class Bot extends Actor {
         moveX = perpX * 0.5 + (edx / edist) * distBias;
         moveZ = perpZ * 0.5 + (edz / edist) * distBias;
 
-        // Shoot at enemy when cooldown ready
-        if (this.shootCooldown <= 0 && onShoot) {
+        // Shoot at enemy when cooldown ready and within spell range
+        if (this.shootCooldown <= 0 && onShoot && edist <= this.currentSpell.range) {
           const cdMult = targetEnemy.isPlayer ? 1.0 : 2.5;
           this.shootCooldown = this.currentSpell.cooldown * (cdMult + Math.random() * 0.3);
           onShoot(this, aimX, aimZ);
