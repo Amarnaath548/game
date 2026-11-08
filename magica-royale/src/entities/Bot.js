@@ -79,22 +79,25 @@ export class Bot extends Actor {
         const edz = closestEnemy.z - this.z;
         const edist = Math.hypot(edx, edz) || 1;
 
-        aimX = edx / edist;
-        aimZ = edz / edist;
+        // Aim at enemy with realistic human-like aim spread
+        const aimJitter = (Math.random() - 0.5) * 0.22;
+        const baseAngle = Math.atan2(edx, edz) + aimJitter;
+        aimX = Math.sin(baseAngle);
+        aimZ = Math.cos(baseAngle);
 
         // Strafe around enemy
         const strafeDir = (this.id % 2 === 0) ? 1 : -1;
-        const perpX = -aimZ * strafeDir;
-        const perpZ = aimX * strafeDir;
+        const perpX = -Math.cos(baseAngle) * strafeDir;
+        const perpZ = Math.sin(baseAngle) * strafeDir;
 
         // Keep optimal distance (~8-12 units)
         const distanceBias = edist < 8 ? -0.5 : (edist > 14 ? 0.6 : 0);
-        moveX = perpX + aimX * distanceBias;
-        moveZ = perpZ + aimZ * distanceBias;
+        moveX = perpX + (edx / edist) * distanceBias;
+        moveZ = perpZ + (edz / edist) * distanceBias;
 
-        // Shoot if cooldown ready
+        // Shoot if cooldown ready (slower firing rate so fights last longer)
         if (this.shootCooldown <= 0 && onShoot) {
-          this.shootCooldown = this.currentSpell.cooldown * (1.1 + Math.random() * 0.3);
+          this.shootCooldown = this.currentSpell.cooldown * (1.8 + Math.random() * 0.8);
           onShoot(this, aimX, aimZ);
         }
       } else {

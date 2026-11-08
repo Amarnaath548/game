@@ -99,8 +99,8 @@ export const LEVEL_TABLE = [
 ];
 
 export const STORM_PHASES = [
-  { duration: 25, startRadius: 80, endRadius: 80, tickDamage: 0 },
-  { duration: 25, startRadius: 80, endRadius: 45, tickDamage: 15 },
-  { duration: 25, startRadius: 45, endRadius: 20, tickDamage: 35 },
-  { duration: 30, startRadius: 20, endRadius: 5, tickDamage: 75 }
+  { duration: 30, startRadius: 80, endRadius: 80, tickDamage: 0 },
+  { duration: 35, startRadius: 80, endRadius: 45, tickDamage: 12 },
+  { duration: 30, startRadius: 45, endRadius: 20, tickDamage: 25 },
+  { duration: 30, startRadius: 20, endRadius: 5, tickDamage: 50 }
 ];

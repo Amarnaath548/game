@@ -148,13 +148,15 @@ function startMatch() {
     new ArcaneCrystal(38, 38, sceneManager.scene)
   ];
 
-  // Spawn 11 Bots along Outer Ring
+  // Spawn 11 Bots distributed in outer-mid ring (safe from initial storm)
   bots = [];
   const TOTAL_BOTS = 11;
   for (let i = 0; i < TOTAL_BOTS; i++) {
     const angle = (i / TOTAL_BOTS) * Math.PI * 2;
-    const bx = Math.cos(angle) * 62;
-    const bz = Math.sin(angle) * 62;
+    // Vary spawn radius between 36 and 48 units so they aren't right on map edge
+    const r = 36 + (i % 3) * 6;
+    const bx = Math.cos(angle) * r;
+    const bz = Math.sin(angle) * r;
     bots.push(new Bot(sceneManager.scene, bx, bz, i + 1));
   }
 
