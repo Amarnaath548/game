@@ -19,6 +19,7 @@ export class Player extends Actor {
     this.currentSpell = SPELLS.PYRO;
     this.level = 1;
     this.xp = 0;
+    this.kills = 0;
     this.perks = [];
 
     // Dash state

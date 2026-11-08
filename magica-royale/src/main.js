@@ -99,6 +99,7 @@ function applyLobbyLoadout() {
   player.speed = player.baseSpeed;
   player.level = 1;
   player.xp = 0;
+  player.kills = 0;
   player.perks = [];
   player.isDead = false;
   player.group.position.set(0, 0, 0);
@@ -342,7 +343,7 @@ function animate() {
     // Update Bots AI
     const allActors = getAllAliveActors();
     bots.forEach((bot) => {
-      bot.think(dt, zoneSys.currentRadius, allActors, chests, botShoot);
+      bot.think(dt, zoneSys.currentRadius, allActors, chests, gems, healthOrbs, player.kills, botShoot);
       resolveObeliskCollisions(bot);
     });
 
@@ -467,6 +468,7 @@ function animate() {
             sound.playExplosion();
             particleSys.spawnBurst(target.x, 1.0, target.z, 0xff0055, 20, 10);
             if (isPlayerProj) {
+              player.kills = (player.kills || 0) + 1;
               dropLoot(target.x, target.z, 5, 0.6);
             }
           }
