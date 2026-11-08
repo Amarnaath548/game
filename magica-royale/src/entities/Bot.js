@@ -55,49 +55,28 @@ export class Bot extends Actor {
     // 1. SAFE_CHECK: outside or close to edge of zone
     if (distFromCenter > zoneRadius * 0.88) {
       this.state = 'SAFE';
-      // Pull toward (0,0) with some lateral evasion
       moveX = -this.x / (distFromCenter || 1);
       moveZ = -this.z / (distFromCenter || 1);
       aimX = moveX;
       aimZ = moveZ;
     } else {
-      // 2. CHECK NEARBY CHESTS FIRST (Prioritize looting early game)
-      let closestChest = null;
-      let closestChestDist = 22;
-
-      for (const chest of chests) {
-        if (chest.isDead) continue;
-        const dist = Math.hypot(chest.x - this.x, chest.z - this.z);
-        if (dist < closestChestDist) {
-          closestChestDist = dist;
-          closestChest = chest;
-        }
-      }
-
-      // Check for alive actors (bots strongly prioritize the player if in range)
+      // 2. CHECK FOR ENEMY THREATS FIRST
+      // Bots aggressively target the player if within 30 units!
       let targetEnemy = null;
-      let targetEnemyDist = 18;
+      let targetEnemyDist = 30;
 
-      // Find player first if nearby
-      const playerActor = allActors.find((a) => !a.isDead && a.constructor.name === 'Player');
-      if (playerActor) {
-        const pDist = Math.hypot(playerActor.x - this.x, playerActor.z - this.z);
-        if (pDist < 25) {
-          targetEnemy = playerActor;
-          targetEnemyDist = pDist;
-        }
-      }
-
-      // If no player nearby and no chests, look for other bots (shorter engagement radius)
-      if (!targetEnemy && !closestChest) {
-        for (const other of allActors) {
-          if (other === this || other.isDead) continue;
-          const dist = Math.hypot(other.x - this.x, other.z - this.z);
-          if (dist < 14) { // only engage bots if very close
-            targetEnemyDist = dist;
-            targetEnemy = other;
-            break;
-          }
+      // Check all alive actors; prioritize player (isPlayer === true)
+      for (const other of allActors) {
+        if (other === this || other.isDead) continue;
+        const dist = Math.hypot(other.x - this.x, other.z - this.z);
+        if (other.isPlayer && dist < 32) {
+          targetEnemy = other;
+          targetEnemyDist = dist;
+          break; // Found player in range, immediately lock on
+        } else if (!targetEnemy && dist < 14) {
+          // If no player seen yet, can engage another bot if very close
+          targetEnemy = other;
+          targetEnemyDist = dist;
         }
       }
 
@@ -107,60 +86,77 @@ export class Bot extends Actor {
         const edz = targetEnemy.z - this.z;
         const edist = Math.hypot(edx, edz) || 1;
 
-        // Aim at enemy with realistic human-like aim spread
-        const aimJitter = (Math.random() - 0.5) * 0.25;
+        // Aim directly at target with slight aim variance
+        const aimJitter = (Math.random() - 0.5) * 0.15;
         const baseAngle = Math.atan2(edx, edz) + aimJitter;
         aimX = Math.sin(baseAngle);
         aimZ = Math.cos(baseAngle);
 
-        // Strafe around enemy
+        // Movement: Strafe + close the gap or back away
         const strafeDir = (this.id % 2 === 0) ? 1 : -1;
         const perpX = -Math.cos(baseAngle) * strafeDir;
         const perpZ = Math.sin(baseAngle) * strafeDir;
 
-        // Keep optimal distance (~10-15 units)
-        const distanceBias = edist < 9 ? -0.6 : (edist > 15 ? 0.5 : 0);
-        moveX = perpX + (edx / edist) * distanceBias;
-        moveZ = perpZ + (edz / edist) * distanceBias;
+        // Close distance if far (>12), back up if too close (<6)
+        const distBias = edist > 12 ? 0.8 : (edist < 6 ? -0.5 : 0.2);
+        moveX = perpX * 0.7 + (edx / edist) * distBias;
+        moveZ = perpZ * 0.7 + (edz / edist) * distBias;
 
-        // Slower fire rate so bots do NOT wipe each other out immediately
+        // Shoot at enemy when cooldown ready
         if (this.shootCooldown <= 0 && onShoot) {
-          this.shootCooldown = this.currentSpell.cooldown * (2.2 + Math.random() * 1.0);
+          // Faster attack rate against player (responsive combat)
+          const cdMult = targetEnemy.isPlayer ? 1.2 : 2.0;
+          this.shootCooldown = this.currentSpell.cooldown * (cdMult + Math.random() * 0.4);
           onShoot(this, aimX, aimZ);
         }
-      } else if (closestChest) {
-        this.state = 'LOOT';
-        const cdx = closestChest.x - this.x;
-        const cdz = closestChest.z - this.z;
-        const cdist = Math.hypot(cdx, cdz) || 1;
+      } else {
+        // 3. CHECK CHESTS IF NO ENEMY IS NEARBY
+        let closestChest = null;
+        let closestChestDist = 20;
 
-        aimX = cdx / cdist;
-        aimZ = cdz / cdist;
-
-        if (cdist > 7) {
-          moveX = aimX;
-          moveZ = aimZ;
-        } else {
-          // In firing range of chest
-          if (this.shootCooldown <= 0 && onShoot) {
-            this.shootCooldown = this.currentSpell.cooldown * 1.5;
-            onShoot(this, aimX, aimZ);
+        for (const chest of chests) {
+          if (chest.isDead) continue;
+          const dist = Math.hypot(chest.x - this.x, chest.z - this.z);
+          if (dist < closestChestDist) {
+            closestChestDist = dist;
+            closestChest = chest;
           }
         }
-      } else {
-        // 4. ROAM
-        this.state = 'ROAM';
-        if (this.changeStateTimer <= 0) {
-          this.changeStateTimer = 4 + Math.random() * 4;
-          this.pickRoamWaypoint(Math.min(zoneRadius * 0.75, 55));
+
+        if (closestChest) {
+          this.state = 'LOOT';
+          const cdx = closestChest.x - this.x;
+          const cdz = closestChest.z - this.z;
+          const cdist = Math.hypot(cdx, cdz) || 1;
+
+          aimX = cdx / cdist;
+          aimZ = cdz / cdist;
+
+          if (cdist > 7) {
+            moveX = aimX;
+            moveZ = aimZ;
+          } else {
+            // In firing range of chest
+            if (this.shootCooldown <= 0 && onShoot) {
+              this.shootCooldown = this.currentSpell.cooldown * 1.4;
+              onShoot(this, aimX, aimZ);
+            }
+          }
+        } else {
+          // 4. ROAM WAYPOINT
+          this.state = 'ROAM';
+          if (this.changeStateTimer <= 0) {
+            this.changeStateTimer = 4 + Math.random() * 4;
+            this.pickRoamWaypoint(Math.min(zoneRadius * 0.75, 55));
+          }
+          const rdx = this.roamTarget.x - this.x;
+          const rdz = this.roamTarget.z - this.z;
+          const rdist = Math.hypot(rdx, rdz) || 1;
+          moveX = rdx / rdist;
+          moveZ = rdz / rdist;
+          aimX = moveX;
+          aimZ = moveZ;
         }
-        const rdx = this.roamTarget.x - this.x;
-        const rdz = this.roamTarget.z - this.z;
-        const rdist = Math.hypot(rdx, rdz) || 1;
-        moveX = rdx / rdist;
-        moveZ = rdz / rdist;
-        aimX = moveX;
-        aimZ = moveZ;
       }
     }
 

@@ -15,6 +15,7 @@ export class Player extends Actor {
     });
 
     this.input = inputManager;
+    this.isPlayer = true;
     this.currentSpell = SPELLS.PYRO;
     this.level = 1;
     this.xp = 0;
