@@ -2,237 +2,362 @@ import * as THREE from 'three';
 import { SceneManager } from './core/SceneManager.js';
 import { InputManager } from './core/InputManager.js';
 import { ObjectPool } from './core/ObjectPool.js';
-import { Projectile } from './entities/Projectile.js';
-import { Chest, XPGem } from './entities/Prop.js';
+import { ParticleSystem } from './systems/ParticleSystem.js';
+import { ZoneSystem } from './systems/ZoneSystem.js';
 import { CollisionSystem } from './systems/CollisionSystem.js';
-import { COLORS, ARENA, PLAYER_BASE, SPELLS } from './config/constants.js';
+import { Player } from './entities/Player.js';
+import { Bot } from './entities/Bot.js';
+import { Projectile } from './entities/Projectile.js';
+import { Chest, ArcaneCrystal, ShadowBush, XPGem, HealthOrb } from './entities/Prop.js';
+import { UIManager } from './ui/UIManager.js';
+import { SPELLS, ARENA } from './config/constants.js';
 
+// Setup Core
 const sceneManager = new SceneManager();
 const input = new InputManager(sceneManager.camera);
+const particleSys = new ParticleSystem(sceneManager.scene, 400);
+const zoneSys = new ZoneSystem(sceneManager.scene);
 
-// Player Visual Group
-const playerGroup = new THREE.Group();
-sceneManager.scene.add(playerGroup);
+// Player Entity
+const player = new Player(sceneManager.scene, input);
 
-const visualMesh = new THREE.Group();
-playerGroup.add(visualMesh);
+// UI Manager
+const ui = new UIManager(
+  (spellKey) => player.setSpell(spellKey),
+  (perk) => player.applyPerk(perk)
+);
 
-// Robe
-const robeGeo = new THREE.ConeGeometry(0.95, 2.2, 12);
-const robeMat = new THREE.MeshLambertMaterial({ color: COLORS.PLAYER_ROBE });
-const robe = new THREE.Mesh(robeGeo, robeMat);
-robe.position.y = 1.1;
-robe.castShadow = true;
-visualMesh.add(robe);
-
-// Hat
-const hatBrimGeo = new THREE.CylinderGeometry(1.1, 1.1, 0.12, 12);
-const hatMat = new THREE.MeshLambertMaterial({ color: COLORS.PLAYER_HAT });
-const hatBrim = new THREE.Mesh(hatBrimGeo, hatMat);
-hatBrim.position.y = 2.15;
-visualMesh.add(hatBrim);
-
-const hatTopGeo = new THREE.ConeGeometry(0.65, 1.3, 10);
-const hatTop = new THREE.Mesh(hatTopGeo, hatMat);
-hatTop.position.y = 2.8;
-visualMesh.add(hatTop);
-
-// Staff Orb
-const staffOrbGeo = new THREE.SphereGeometry(0.28, 8, 8);
-const staffOrbMat = new THREE.MeshBasicMaterial({ color: COLORS.AIM_LASER });
-const staffOrb = new THREE.Mesh(staffOrbGeo, staffOrbMat);
-staffOrb.position.set(0.65, 1.4, 0.75);
-visualMesh.add(staffOrb);
-
-// Ground Aim Indicator
-const aimLineGeo = new THREE.PlaneGeometry(0.35, 9);
-aimLineGeo.translate(0, 4.5, 0);
-aimLineGeo.rotateX(-Math.PI / 2);
-const aimLineMat = new THREE.MeshBasicMaterial({
-  color: COLORS.AIM_LASER,
-  transparent: true,
-  opacity: 0.45,
-  side: THREE.DoubleSide
-});
-const aimLine = new THREE.Mesh(aimLineGeo, aimLineMat);
-aimLine.position.y = 0.06;
-playerGroup.add(aimLine);
-
-// ---------------- POOLS ----------------
-// Projectile Mesh Pool
+// Pools
 const projPool = new ObjectPool(() => {
   const geo = new THREE.SphereGeometry(0.5, 8, 8);
   const mat = new THREE.MeshBasicMaterial({ color: SPELLS.PYRO.color });
   const mesh = new THREE.Mesh(geo, mat);
   sceneManager.scene.add(mesh);
   return mesh;
-}, 25);
-
-// Wrap pool meshes into Projectile entity wrappers
+}, 50);
 const projectiles = projPool.pool.map((mesh) => new Projectile(mesh, projPool));
 
-// XP Gem Mesh Pool
 const gemPool = new ObjectPool(() => {
   const geo = new THREE.OctahedronGeometry(0.35);
   const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff });
   const mesh = new THREE.Mesh(geo, mat);
   sceneManager.scene.add(mesh);
   return mesh;
-}, 40);
-
+}, 60);
 const gems = gemPool.pool.map((mesh) => new XPGem(mesh, gemPool));
 
-// ---------------- SPAWN CHESTS ----------------
+const orbPool = new ObjectPool(() => {
+  const geo = new THREE.DodecahedronGeometry(0.35);
+  const mat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+  const mesh = new THREE.Mesh(geo, mat);
+  sceneManager.scene.add(mesh);
+  return mesh;
+}, 15);
+const healthOrbs = orbPool.pool.map((mesh) => new HealthOrb(mesh, orbPool));
+
+// Spawn Interactive Props (Chests, Mythic, Crystals, Bushes)
 const chests = [];
-const chestPositions = [
-  [-12, -8], [12, -8], [-12, 8], [12, 8],
-  [-25, -20], [25, -20], [-25, 20], [25, 20],
-  [0, 22], [0, -22], [-22, 0], [22, 0]
+// 1 Mythic Chest in center (0,0)
+chests.push(new Chest(0, 0, sceneManager.scene, true));
+
+// Wooden Chests in Outer and Mid rings
+const chestCoords = [
+  [-16, -16], [16, -16], [-16, 16], [16, 16],
+  [-32, -18], [32, -18], [-32, 18], [32, 18],
+  [0, 36], [0, -36], [-36, 0], [36, 0],
+  [-52, -26], [52, -26], [-52, 26], [52, 26],
+  [28, 48], [-28, -48], [48, 28], [-48, -28]
+];
+chestCoords.forEach(([x, z]) => chests.push(new Chest(x, z, sceneManager.scene, false)));
+
+// Arcane Crystals (Explosive Barrels)
+const crystals = [
+  new ArcaneCrystal(-24, 0, sceneManager.scene),
+  new ArcaneCrystal(24, 0, sceneManager.scene),
+  new ArcaneCrystal(0, -24, sceneManager.scene),
+  new ArcaneCrystal(0, 24, sceneManager.scene),
+  new ArcaneCrystal(-38, -38, sceneManager.scene),
+  new ArcaneCrystal(38, 38, sceneManager.scene)
 ];
 
-chestPositions.forEach(([x, z]) => {
-  chests.push(new Chest(x, z, sceneManager.scene));
-});
+// Shadow Bushes for stealth
+const bushes = [
+  new ShadowBush(-20, -12, sceneManager.scene),
+  new ShadowBush(20, 12, sceneManager.scene),
+  new ShadowBush(-15, 28, sceneManager.scene),
+  new ShadowBush(15, -28, sceneManager.scene),
+  new ShadowBush(-42, 15, sceneManager.scene),
+  new ShadowBush(42, -15, sceneManager.scene)
+];
 
-// Player State
-const state = {
-  x: 0,
-  z: 0,
-  dashTimer: 0,
-  dashCooldownTimer: 0,
-  dashVec: { x: 0, z: 0 },
-  walkTime: 0,
-  shootCooldown: 0,
-  xp: 0,
-  level: 1
-};
+// Spawn 11 Bots along the Outer Ring (Radius ~62)
+const bots = [];
+const TOTAL_BOTS = 11;
+for (let i = 0; i < TOTAL_BOTS; i++) {
+  const angle = (i / TOTAL_BOTS) * Math.PI * 2;
+  const bx = Math.cos(angle) * 62;
+  const bz = Math.sin(angle) * 62;
+  bots.push(new Bot(sceneManager.scene, bx, bz, i + 1));
+}
 
-const topBar = document.getElementById('top-bar');
+// All actors list
+const getAllAliveActors = () => [player, ...bots].filter((a) => !a.isDead);
 
-function shootSpell() {
-  if (state.shootCooldown > 0) return;
-  state.shootCooldown = SPELLS.PYRO.cooldown;
+// Spell Firing Helper
+function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
+  // Sniper Velocity Perk
+  const config = { ...spellConfig };
+  if (owner === player && player.perks.includes('SNIPER_VELOCITY')) {
+    config.speed *= 1.35;
+    config.range *= 1.35;
+  }
+  if (owner === player && player.perks.includes('GIANT_ARCANA')) {
+    config.radius *= 1.4;
+    if (config.aoeRadius) config.aoeRadius *= 1.4;
+  }
 
-  // Find inactive projectile
-  const proj = projectiles.find((p) => !p.active);
-  if (proj) {
-    proj.pool.acquire();
-    proj.spawn(state.x, state.z, input.aimDir.x, input.aimDir.z, SPELLS.PYRO);
+  // Cryo 3-shard spread
+  if (config.id === 'CRYO') {
+    const spread = config.spreadAngle || 0.35;
+    const angles = [-spread, 0, spread];
+    const baseAngle = Math.atan2(dirX, dirZ);
+    angles.forEach((offset) => {
+      const p = projectiles.find((proj) => !proj.active);
+      if (p) {
+        p.pool.acquire();
+        const a = baseAngle + offset;
+        p.spawn(originX, originZ, Math.sin(a), Math.cos(a), config, owner === player ? 'player' : 'bot');
+      }
+    });
+    return;
+  }
+
+  // Single or Twin Cast
+  const count = (owner === player && player.perks.includes('TWIN_CAST')) ? 2 : 1;
+  for (let i = 0; i < count; i++) {
+    const p = projectiles.find((proj) => !proj.active);
+    if (p) {
+      p.pool.acquire();
+      let dx = dirX;
+      let dz = dirZ;
+      if (count > 1) {
+        const offset = (i === 0 ? -0.15 : 0.15);
+        const a = Math.atan2(dirX, dirZ) + offset;
+        dx = Math.sin(a);
+        dz = Math.cos(a);
+        config.damage = Math.round(config.damage * 0.85);
+      }
+      p.spawn(originX, originZ, dx, dz, config, owner === player ? 'player' : 'bot');
+    }
   }
 }
 
+// Player Cast Trigger
+function playerShoot() {
+  if (player.shootCooldown > 0 || player.isDead) return;
+  player.shootCooldown = player.currentSpell.cooldown;
+  spawnSpell(player.x, player.z, input.aimDir.x, input.aimDir.z, player.currentSpell, player);
+}
+
+// Bot Cast Trigger
+function botShoot(bot, aimX, aimZ) {
+  if (bot.isDead) return;
+  spawnSpell(bot.x, bot.z, aimX, aimZ, bot.currentSpell, bot);
+}
+
+// Drop Loot helper
+function dropLoot(x, z, gemCount = 3, healthOrbChance = 0.35) {
+  for (let i = 0; i < gemCount; i++) {
+    const gem = gems.find((g) => !g.active);
+    if (gem) {
+      gem.pool.acquire();
+      const ox = (Math.random() - 0.5) * 2;
+      const oz = (Math.random() - 0.5) * 2;
+      gem.spawn(x + ox, z + oz, 30);
+    }
+  }
+  if (Math.random() < healthOrbChance) {
+    const orb = healthOrbs.find((o) => !o.active);
+    if (orb) {
+      orb.pool.acquire();
+      orb.spawn(x, z, 0.25);
+    }
+  }
+}
+
+// Crystal Explosion
+function triggerCrystalExplosion(crystal) {
+  particleSys.spawnBurst(crystal.x, 1.2, crystal.z, 0xff0055, 30, 14, 1.6);
+  const targets = [...getAllAliveActors(), ...chests.filter((c) => !c.isDead)];
+  targets.forEach((t) => {
+    const d = Math.hypot(t.x - crystal.x, t.z - crystal.z);
+    if (d <= crystal.explosionRadius) {
+      t.takeDamage(crystal.explosionDamage);
+    }
+  });
+}
+
+// Game Loop
 const clock = new THREE.Clock();
+let isGameOver = false;
 
 function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
 
-  input.update(playerGroup.position);
+  input.update(player.group.position);
 
-  // Timers
-  if (state.dashCooldownTimer > 0) state.dashCooldownTimer -= dt;
-  if (state.shootCooldown > 0) state.shootCooldown -= dt;
-
-  // Fire on aim release
+  // Player Shoot
   if (input.fireReleased) {
     input.fireReleased = false;
-    shootSpell();
+    playerShoot();
   }
 
-  // Dash
-  if (input.dashRequested) {
-    input.dashRequested = false;
-    if (state.dashCooldownTimer <= 0 && state.dashTimer <= 0) {
-      state.dashTimer = PLAYER_BASE.DASH_DURATION;
-      state.dashCooldownTimer = PLAYER_BASE.DASH_COOLDOWN;
-      const hasMove = Math.hypot(input.moveDir.x, input.moveDir.z) > 0.1;
-      state.dashVec.x = hasMove ? input.moveDir.x : input.aimDir.x;
-      state.dashVec.z = hasMove ? input.moveDir.z : input.aimDir.z;
-    }
-  }
+  // Update Player
+  player.update(dt, bushes);
 
-  // Player Movement
-  if (state.dashTimer > 0) {
-    state.dashTimer -= dt;
-    state.x += state.dashVec.x * PLAYER_BASE.DASH_SPEED * dt;
-    state.z += state.dashVec.z * PLAYER_BASE.DASH_SPEED * dt;
-  } else {
-    state.x += input.moveDir.x * PLAYER_BASE.MOVE_SPEED * dt;
-    state.z += input.moveDir.z * PLAYER_BASE.MOVE_SPEED * dt;
-  }
+  // Update Bots AI
+  const allActors = getAllAliveActors();
+  bots.forEach((bot) => {
+    bot.think(dt, zoneSys.currentRadius, allActors, chests, botShoot);
+  });
 
-  // Map Boundary Clamp
-  const distFromCenter = Math.hypot(state.x, state.z);
-  const maxAllowed = ARENA.RADIUS - PLAYER_BASE.RADIUS;
-  if (distFromCenter > maxAllowed) {
-    state.x = (state.x / distFromCenter) * maxAllowed;
-    state.z = (state.z / distFromCenter) * maxAllowed;
-  }
-
-  playerGroup.position.set(state.x, 0, state.z);
-
-  // Orient player and aim laser
-  const aimAngle = Math.atan2(input.aimDir.x, input.aimDir.z);
-  visualMesh.rotation.y = aimAngle;
-  aimLine.rotation.y = aimAngle;
-  aimLine.visible = input.isAiming || !input.usingTouch;
-
-  // Walk Wobble
-  const speedMag = Math.hypot(input.moveDir.x, input.moveDir.z);
-  if (speedMag > 0.05 && state.dashTimer <= 0) {
-    state.walkTime += dt * 14;
-    visualMesh.position.y = Math.abs(Math.sin(state.walkTime)) * 0.28;
-    visualMesh.rotation.z = Math.sin(state.walkTime) * 0.08;
-  } else {
-    visualMesh.position.y = THREE.MathUtils.lerp(visualMesh.position.y, 0, 0.2);
-    visualMesh.rotation.z = THREE.MathUtils.lerp(visualMesh.rotation.z, 0, 0.2);
-  }
-
-  // Update Projectiles & Collisions with Chests
+  // Update Projectiles & Hits
   projectiles.forEach((proj) => {
     if (!proj.active) return;
     proj.update(dt);
 
-    // Collision check against active chests
+    const isPlayerProj = proj.owner === 'player';
+
+    // 1. Hit Chests
     chests.forEach((chest) => {
       if (chest.isDead) return;
       if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, chest.x, chest.z, chest.radius)) {
         const destroyed = chest.takeDamage(proj.damage);
+        particleSys.spawnBurst(proj.x, proj.y, proj.z, chest.isMythic ? 0x9333ea : 0x8b5a2b, 10, 8);
         proj.despawn();
-
-        // Drop 3 XP Gems on break
         if (destroyed) {
-          for (let i = 0; i < 3; i++) {
-            const gem = gems.find((g) => !g.active);
-            if (gem) {
-              gem.pool.acquire();
-              const offsetX = (Math.random() - 0.5) * 1.5;
-              const offsetZ = (Math.random() - 0.5) * 1.5;
-              gem.spawn(chest.x + offsetX, chest.z + offsetZ, 25);
-            }
-          }
+          dropLoot(chest.x, chest.z, chest.isMythic ? 8 : 3, chest.isMythic ? 1.0 : 0.35);
+          particleSys.spawnBurst(chest.x, 1.0, chest.z, 0xffd700, 24, 12, 1.4);
         }
       }
     });
-  });
 
-  // Update Chests
-  chests.forEach((chest) => chest.update(dt));
+    if (!proj.active) return;
 
-  // Update Gems & Magnet Pickups
-  gems.forEach((gem) => {
-    const collected = gem.update(dt, state.x, state.z);
-    if (collected) {
-      state.xp += gem.xpValue;
-      if (state.xp >= 100) {
-        state.level += 1;
-        state.xp -= 100;
+    // 2. Hit Crystals (Explosive Barrels)
+    crystals.forEach((crystal) => {
+      if (crystal.isDead) return;
+      if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, crystal.x, crystal.z, crystal.radius)) {
+        const exploded = crystal.takeDamage(proj.damage);
+        proj.despawn();
+        if (exploded) {
+          triggerCrystalExplosion(crystal);
+        }
       }
-      topBar.textContent = `Level: ${state.level} | XP: ${state.xp}/100 | Aim & Release to Fire`;
+    });
+
+    if (!proj.active) return;
+
+    // 3. Hit Actors (Bots or Player)
+    const possibleTargets = isPlayerProj ? bots : [player, ...bots.filter((b) => b !== proj.owner)];
+    for (const target of possibleTargets) {
+      if (target.isDead) continue;
+      if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, target.x, target.z, target.radius)) {
+        let dmg = proj.damage;
+        // Executioner perk
+        if (isPlayerProj && player.perks.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) {
+          dmg = Math.round(dmg * 1.35);
+        }
+
+        const dealt = target.takeDamage(dmg);
+        particleSys.spawnBurst(proj.x, proj.y, proj.z, proj.spellConfig.color, 14, 9);
+
+        // Vampiric soul perk
+        if (isPlayerProj && player.perks.includes('VAMPIRIC_SOUL') && dealt > 0) {
+          player.heal(dealt * 0.2);
+        }
+
+        // Apply Spell Passives
+        if (proj.spellConfig.id === 'CRYO') {
+          target.applyChill(proj.spellConfig.slowFactor, 1.5);
+        } else if (proj.spellConfig.id === 'VENOM') {
+          target.applyPoison(proj.spellConfig.dps, proj.spellConfig.duration);
+        } else if (proj.spellConfig.id === 'PYRO') {
+          target.applyBurn(10, 2.0);
+        }
+
+        // Electro Chaining
+        if (proj.spellConfig.id === 'ELECTRO') {
+          const otherActors = possibleTargets.filter((a) => a !== target && !a.isDead);
+          let chains = 0;
+          for (const other of otherActors) {
+            if (chains >= (proj.spellConfig.chainCount || 2)) break;
+            const dist = Math.hypot(other.x - target.x, other.z - target.z);
+            if (dist <= (proj.spellConfig.chainRadius || 6.0)) {
+              other.takeDamage(dmg * 0.5);
+              particleSys.spawnBurst(other.x, 1.2, other.z, 0xffe600, 8, 6);
+              chains++;
+            }
+          }
+        }
+
+        // Actor Death Drop
+        if (target.isDead) {
+          particleSys.spawnBurst(target.x, 1.0, target.z, 0xff0055, 20, 10);
+          dropLoot(target.x, target.z, 5, 0.6);
+        }
+
+        proj.despawn();
+        break;
+      }
     }
   });
 
-  sceneManager.updateCamera(playerGroup.position, input.aimDir);
+  // Update Props
+  chests.forEach((c) => c.update(dt));
+  crystals.forEach((c) => c.update(dt));
+
+  // Collect Gems & Orbs
+  gems.forEach((gem) => {
+    const collected = gem.update(dt, player.x, player.z);
+    if (collected) {
+      particleSys.spawnBurst(gem.x, 0.6, gem.z, 0x00f2ff, 6, 4);
+      player.addXP(gem.xpValue, (lvl) => ui.showPerkCards(lvl));
+    }
+  });
+
+  healthOrbs.forEach((orb) => {
+    const collected = orb.update(dt, player.x, player.z);
+    if (collected) {
+      particleSys.spawnBurst(orb.x, 0.6, orb.z, 0x10b981, 10, 5);
+      player.heal(player.maxHp * orb.healPercent);
+    }
+  });
+
+  // Update Storm Zone & Out-of-bounds damage
+  zoneSys.update(dt, [player, ...bots]);
+
+  // Update Particles
+  particleSys.update(dt);
+
+  // Check Alive Count & End Game
+  const aliveActors = getAllAliveActors();
+  const isSafe = zoneSys.getSafeDistance(player.x, player.z) > 0;
+  ui.updateHUD(player, aliveActors.length, isSafe);
+
+  if (!isGameOver) {
+    if (player.isDead) {
+      isGameOver = true;
+      ui.showEndGame(false, aliveActors.length + 1);
+    } else if (aliveActors.length === 1 && aliveActors[0] === player) {
+      isGameOver = true;
+      ui.showEndGame(true, 1);
+    }
+  }
+
+  // Camera & Render
+  sceneManager.updateCamera(player.group.position, input.aimDir);
   sceneManager.render();
 }
 
