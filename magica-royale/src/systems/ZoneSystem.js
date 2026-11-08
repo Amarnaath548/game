@@ -57,13 +57,14 @@ export class ZoneSystem {
     this.forcefield.scale.set(scale, 1, scale);
     this.groundRing.scale.set(scale, scale, 1);
 
-    // Tick out-of-bounds damage
+    // Tick out-of-bounds damage (ONLY if phase has tickDamage > 0)
     if (currentPhase.tickDamage > 0) {
       const damageTick = currentPhase.tickDamage * dt;
       actors.forEach((actor) => {
         if (actor.isDead) return;
         const dist = Math.hypot(actor.x - this.centerX, actor.z - this.centerZ);
-        if (dist > this.currentRadius) {
+        // Generous buffer so actors inside the boundary never take storm damage
+        if (dist > this.currentRadius + 1.0) {
           actor.takeDamage(damageTick);
         }
       });

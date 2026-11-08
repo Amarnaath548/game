@@ -164,6 +164,7 @@ function startMatch() {
 
   isGameOver = false;
   matchActive = true;
+  clock.getDelta(); // Clear accumulated delta time from lobby so dt doesn't jump
 }
 
 function resetToLobby() {
