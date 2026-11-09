@@ -1,5 +1,15 @@
 import { HEROES } from '../config/constants.js';
 
+function getHatClass(hatType) {
+  const h = (hatType || '').toLowerCase();
+  if (h.includes('hat') || h.includes('wizard')) return 'hat-pointed_hat';
+  if (h.includes('horn')) return 'hat-horns';
+  if (h.includes('crown')) return 'hat-crown';
+  if (h.includes('hood')) return 'hat-hood';
+  if (h.includes('crest') || h.includes('helmet')) return 'hat-helmet';
+  return 'hat-default';
+}
+
 export class HeroSelectView {
   constructor(container, meta, onHeroChange) {
     this.container = container;
@@ -23,9 +33,17 @@ export class HeroSelectView {
 
       const bodyHex = '#' + hero.bodyColor.toString(16).padStart(6, '0');
       const accentHex = '#' + hero.accentColor.toString(16).padStart(6, '0');
+      const hatClass = getHatClass(hero.hatType);
 
       card.innerHTML = `
-        <div class="hero-color-strip" style="background: linear-gradient(135deg, ${bodyHex}, ${accentHex});"></div>
+        <div class="hero-preview-box">
+          <div class="hero-hat ${hatClass}" style="--accent: ${accentHex};"></div>
+          <div class="hero-head">
+            <div class="hero-eye"></div>
+            <div class="hero-eye"></div>
+          </div>
+          <div class="hero-body" style="background: ${bodyHex}; border-color: ${accentHex};"></div>
+        </div>
         <div class="hero-card-content">
           <div class="hero-name">${hero.name}</div>
           <div class="hero-traits">${hero.hatType.replace('_', ' ')} • ${hero.extra}</div>
@@ -60,4 +78,3 @@ export class HeroSelectView {
     });
   }
 }
-

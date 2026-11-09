@@ -4,8 +4,8 @@ import { HeroSelectView } from './HeroSelectView.js';
 
 const PERK_POOL = [
   { id: 'TWIN_CAST', title: 'Twin Cast', desc: '+1 Projectile per shot (-15% damage)' },
-  { id: 'GIANT_ARCANA', title: 'Giant Arcana', desc: '+40% Projectile AoE and blast size' },
-  { id: 'SNIPER_VELOCITY', title: 'Sniper Velocity', desc: '+35% Projectile speed and range' },
+  { id: 'GIANT_ARCANA', title: 'Giant Arcana', desc: '+40% Projectile AoE & blast size' },
+  { id: 'SNIPER_VELOCITY', title: 'Sniper Velocity', desc: '+35% Projectile speed & range' },
   { id: 'VAMPIRIC_SOUL', title: 'Vampiric Soul', desc: 'Heal for 20% of damage dealt' },
   { id: 'WINDWALKER', title: 'Windwalker', desc: '+20% Move Speed, -1s Dash CD' },
   { id: 'ARCANE_SHIELD', title: 'Arcane Shield', desc: 'Absorbs next incoming hit' },
@@ -21,7 +21,6 @@ export class UIManager {
     this.onStartMatch = callbacks.onStartMatch;
     this.onReturnToLobby = callbacks.onReturnToLobby;
 
-    // Elements
     this.lobbyScreen = document.getElementById('lobby-screen');
     this.lobbyTrophies = document.getElementById('lobby-trophies');
     this.lobbyGold = document.getElementById('lobby-gold');
@@ -76,6 +75,19 @@ export class UIManager {
     this.modalPlayAgainBtn.addEventListener('click', () => {
       this.endModal.style.display = 'none';
       if (this.onStartMatch) this.onStartMatch();
+    });
+
+    // Lobby Tabs switching
+    const tabBtns = document.querySelectorAll('.lobby-tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    tabBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach((b) => b.classList.remove('active'));
+        tabPanels.forEach((p) => p.classList.remove('active'));
+        btn.classList.add('active');
+        const panel = document.getElementById(`tab-${btn.dataset.tab}`);
+        if (panel) panel.classList.add('active');
+      });
     });
   }
 
@@ -166,23 +178,20 @@ export class UIManager {
   }
 
   initKeyboardShortcuts() {
+    const spellMap = {
+      Digit1: 'PYRO', Digit2: 'CRYO', Digit3: 'ELECTRO', Digit4: 'VENOM',
+      Digit5: 'PIERCE', Digit6: 'BLAST', Digit7: 'HOMING', Digit8: 'SHIELD'
+    };
     window.addEventListener('keydown', (e) => {
-      if (['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8'].includes(e.code)) {
+      if (spellMap[e.code]) {
         if (this.perkOverlay.style.display === 'flex' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
           const index = parseInt(e.code.replace('Digit', ''), 10) - 1;
           const cards = this.perkOverlay.querySelectorAll('.perk-card');
           if (cards[index]) cards[index].click();
           return;
         }
-        const spellMap = {
-          Digit1: 'PYRO', Digit2: 'CRYO', Digit3: 'ELECTRO', Digit4: 'VENOM',
-          Digit5: 'PIERCE', Digit6: 'BLAST', Digit7: 'HOMING', Digit8: 'SHIELD'
-        };
-        const spellKey = spellMap[e.code];
-        if (spellKey) {
-          this.setSpellActive(spellKey);
-          if (this.onSpellChange) this.onSpellChange(spellKey);
-        }
+        this.setSpellActive(spellMap[e.code]);
+        if (this.onSpellChange) this.onSpellChange(spellMap[e.code]);
       }
     });
   }
@@ -227,13 +236,12 @@ export class UIManager {
     const heroName = player?.hero?.name || 'Archmage';
     const kills = player?.kills || 0;
 
-    if (isVictory) {
-      this.endTitle.innerHTML = `<span class="title-win">#1 VICTORY ROYALE!</span>`;
-      this.endSubtitle.textContent = `Glory to ${heroName}! Sanctum Champion.`;
-    } else {
-      this.endTitle.innerHTML = `<span class="title-loss">DEFEAT - #${place} of 12</span>`;
-      this.endSubtitle.textContent = `${heroName} eliminated at rank #${place}.`;
-    }
+    this.endTitle.innerHTML = isVictory
+      ? `<span class="title-win">#1 VICTORY ROYALE!</span>`
+      : `<span class="title-loss">DEFEAT - #${place} of 12</span>`;
+    this.endSubtitle.textContent = isVictory
+      ? `Glory to ${heroName}! Sanctum Champion.`
+      : `${heroName} eliminated at rank #${place}.`;
 
     let statsEl = document.getElementById('match-hero-stats');
     if (!statsEl) {
