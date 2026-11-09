@@ -32,15 +32,20 @@ export class FloatingBarSystem {
       lvlTag.style.fontSize = '10px';
       lvlTag.style.fontWeight = '800';
       lvlTag.style.color = '#f8fafc';
-      lvlTag.style.textShadow = '0 1px 3px rgba(0,0,0,0.9)';
+      lvlTag.style.background = 'rgba(15, 23, 42, 0.85)';
+      lvlTag.style.padding = '1px 5px';
+      lvlTag.style.borderRadius = '4px';
+      lvlTag.style.border = '1px solid rgba(0, 0, 0, 0.85)';
+      lvlTag.style.textShadow = '0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px #000';
       lvlTag.textContent = `Lv ${actor.level || 1}`;
       el.appendChild(lvlTag);
 
       const barBg = document.createElement('div');
       barBg.style.width = '42px';
       barBg.style.height = '6px';
-      barBg.style.background = 'rgba(0,0,0,0.6)';
-      barBg.style.border = '1px solid #1f2937';
+      barBg.style.background = 'rgba(15, 23, 42, 0.85)';
+      barBg.style.border = '1px solid #000000';
+      barBg.style.boxShadow = '0 1px 4px rgba(0, 0, 0, 0.7)';
       barBg.style.borderRadius = '3px';
       barBg.style.overflow = 'hidden';
 
