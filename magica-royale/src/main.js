@@ -13,6 +13,8 @@ import { Projectile } from './entities/Projectile.js';
 import { Chest, ArcaneCrystal, ShadowBush, XPGem, HealthOrb } from './entities/Prop.js';
 import { UIManager } from './ui/UIManager.js';
 import { FloatingBarSystem } from './ui/FloatingBarSystem.js';
+import { DamageNumbers } from './ui/DamageNumbers.js';
+import { KillFeed } from './ui/KillFeed.js';
 import { SPELLS, ARENA, PLAYER_BASE } from './config/constants.js';
 
 // Setup Core
@@ -23,6 +25,8 @@ const meta = new MetaProgression();
 const particleSys = new ParticleSystem(sceneManager.scene, 400);
 let zoneSys = new ZoneSystem(sceneManager.scene);
 const floatingBars = new FloatingBarSystem(sceneManager.camera);
+const damageNumbers = new DamageNumbers(sceneManager.camera);
+const killFeed = new KillFeed();
 
 // Player Entity
 const player = new Player(sceneManager.scene, input);
@@ -198,6 +202,8 @@ function resetToLobby() {
   gemPool.releaseAll();
   orbPool.releaseAll();
   floatingBars.update([]);
+  damageNumbers.reset();
+  killFeed.reset();
 }
 
 const getAllAliveActors = () => [player, ...bots].filter((a) => !a.isDead);
@@ -206,6 +212,9 @@ const getAllAliveActors = () => [player, ...bots].filter((a) => !a.isDead);
 function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
   const isPlayer = owner === player;
   const config = { ...spellConfig };
+  if (owner && owner.dmgBonus) {
+    config.damage += owner.dmgBonus;
+  }
   if (isPlayer && player.perks.includes('SNIPER_VELOCITY')) {
     config.speed *= 1.35;
     config.range *= 1.35;
@@ -294,13 +303,7 @@ function triggerCrystalExplosion(crystal) {
   targets.forEach((t) => {
     const d = Math.hypot(t.x - crystal.x, t.z - crystal.z);
     if (d <= crystal.explosionRadius) {
-      let dmg = crystal.explosionDamage;
-      if (!t.isPlayer && t.maxHp) {
-        // Prevent crystal explosion from wiping out bots on their own
-        const safeHp = Math.round(t.maxHp * 0.4);
-        dmg = Math.min(dmg, Math.max(0, t.hp - safeHp));
-      }
-      t.takeDamage(dmg);
+      t.takeDamage(crystal.explosionDamage);
     }
   });
 }
@@ -350,7 +353,7 @@ function animate() {
     // Update Bots AI
     const allActors = getAllAliveActors();
     bots.forEach((bot) => {
-      bot.think(dt, zoneSys.currentRadius, allActors, chests, gems, healthOrbs, player.kills, botShoot);
+      bot.think(dt, zoneSys.currentRadius, allActors, chests, gems, healthOrbs, player.kills, projectiles, botShoot);
       resolveObeliskCollisions(bot);
     });
 
@@ -411,17 +414,6 @@ function animate() {
         if (target.isDead) continue;
         if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, target.x, target.z, target.radius)) {
           let dmg = proj.damage;
-          
-          // Bot vs Bot non-lethal crossfire: bots CANNOT eliminate each other!
-          // They cannot lower another bot's HP below 55% of maxHp.
-          if (!isPlayerProj && target !== player) {
-            const safeFloor = Math.round(target.maxHp * 0.55);
-            if (target.hp <= safeFloor) {
-              dmg = 0; // Immune to bot attacks when under half HP
-            } else {
-              dmg = Math.min(Math.round(dmg * 0.15), target.hp - safeFloor);
-            }
-          }
 
           if (isPlayerProj && player.perks.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) {
             dmg = Math.round(dmg * 1.35);
@@ -429,6 +421,8 @@ function animate() {
 
           const dealt = target.takeDamage(dmg);
           sound.playHit();
+          target.applyKnockback(proj.vx, proj.vz, 2.5);
+          damageNumbers.spawn(target.x, target.z, dealt, proj.spellConfig.color);
           if (target === player) sceneManager.addTrauma(0.4);
 
           particleSys.spawnBurst(proj.x, proj.y, proj.z, proj.spellConfig.color, 14, 9);
@@ -438,45 +432,44 @@ function animate() {
             player.heal(dealt * 0.2);
           }
 
-          // Apply Spell Passives (DoT only applied by player or against player)
-          if (isPlayerProj || target === player) {
-            if (proj.spellConfig.id === 'CRYO') {
-              target.applyChill(proj.spellConfig.slowFactor, 1.5);
-            } else if (proj.spellConfig.id === 'VENOM') {
-              target.applyPoison(proj.spellConfig.dps, proj.spellConfig.duration);
-            } else if (proj.spellConfig.id === 'PYRO') {
-              target.applyBurn(10, 2.0);
-            }
+          // Apply Spell Passives (works for any projectile)
+          if (proj.spellConfig.id === 'CRYO') {
+            target.applyChill(proj.spellConfig.slowFactor, 1.5);
+          } else if (proj.spellConfig.id === 'VENOM') {
+            target.applyPoison(proj.spellConfig.dps, proj.spellConfig.duration);
+          } else if (proj.spellConfig.id === 'PYRO') {
+            target.applyBurn(10, 2.0);
           }
 
-          // Electro Chaining (Only from player or against player)
-          if (proj.spellConfig.id === 'ELECTRO' && (isPlayerProj || target === player)) {
+          // Electro Chaining (works for any projectile)
+          if (proj.spellConfig.id === 'ELECTRO') {
             const otherActors = possibleTargets.filter((a) => a !== target && !a.isDead);
             let chains = 0;
             for (const other of otherActors) {
               if (chains >= (proj.spellConfig.chainCount || 2)) break;
               const dist = Math.hypot(other.x - target.x, other.z - target.z);
               if (dist <= (proj.spellConfig.chainRadius || 6.0)) {
-                let chainDmg = dmg * 0.5;
-                if (!isPlayerProj && other !== player) {
-                  chainDmg = 0;
-                }
-                if (chainDmg > 0) {
-                  other.takeDamage(chainDmg);
-                  particleSys.spawnBurst(other.x, 1.2, other.z, 0xffe600, 8, 6);
-                }
+                const chainDmg = dmg * 0.5;
+                const cDealt = other.takeDamage(chainDmg);
+                other.applyKnockback(other.x - target.x, other.z - target.z, 1.5);
+                damageNumbers.spawn(other.x, other.z, cDealt, 0xffe600);
+                particleSys.spawnBurst(other.x, 1.2, other.z, 0xffe600, 8, 6);
                 chains++;
               }
             }
           }
 
-          // Actor Death Drop (Only drop loot/XP when killed by the player)
+          // Actor Death Drop & Kill Feed (drop loot for ANY kill!)
           if (target.isDead) {
             sound.playExplosion();
             particleSys.spawnBurst(target.x, 1.0, target.z, 0xff0055, 20, 10);
-            if (isPlayerProj) {
-              player.kills = (player.kills || 0) + 1;
-              dropLoot(target.x, target.z, 5, 0.6);
+            dropLoot(target.x, target.z, 5, 0.6);
+            if (proj.owner) {
+              proj.owner.kills = (proj.owner.kills || 0) + 1;
+              if (proj.owner.addXP) proj.owner.addXP(60);
+              const killerName = proj.owner.isPlayer ? 'Player' : (proj.owner.name || 'Bot');
+              const victimName = target.isPlayer ? 'Player' : (target.name || 'Bot');
+              killFeed.addKill(killerName, victimName, proj.owner.isPlayer, target.isPlayer);
             }
           }
 
@@ -518,6 +511,7 @@ function animate() {
       gems.forEach((gem) => {
         if (gem.active && Math.hypot(gem.x - bot.x, gem.z - bot.z) < 1.3) {
           gem.despawn();
+          if (bot.addXP) bot.addXP(gem.xpValue || 25);
           particleSys.spawnBurst(gem.x, 0.6, gem.z, 0x00f2ff, 4, 3);
         }
       });
@@ -533,8 +527,9 @@ function animate() {
     // Update Storm Zone & Out-of-bounds damage
     zoneSys.update(dt, [player, ...bots]);
 
-    // Update Overhead Floating Health Bars for bots
+    // Update Overhead Floating Health Bars for bots & damage numbers
     floatingBars.update(bots);
+    damageNumbers.update(dt);
 
     // Update Particles
     particleSys.update(dt);

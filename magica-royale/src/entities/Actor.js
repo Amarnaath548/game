@@ -14,6 +14,13 @@ export class Actor {
     this.isDead = false;
     this.isInvulnerable = false;
     this.shieldActive = false;
+    this.kbTimer = 0;
+    this.kbVx = 0;
+    this.kbVz = 0;
+    this.lastX = this.x;
+    this.lastZ = this.z;
+    this.vx = 0;
+    this.vz = 0;
 
     // Status effects
     this.status = {
@@ -110,6 +117,14 @@ export class Actor {
     this.status.poisonDps = dps;
   }
 
+  applyKnockback(dirX, dirZ, distance = 2.5) {
+    if (this.dashTimer > 0 || this.isInvulnerable || this.isDead) return;
+    const len = Math.hypot(dirX, dirZ) || 1;
+    this.kbVx = (dirX / len) * (distance / 0.15) * 2;
+    this.kbVz = (dirZ / len) * (distance / 0.15) * 2;
+    this.kbTimer = 0.15;
+  }
+
   heal(amount) {
     if (this.isDead) return;
     this.hp = Math.min(this.maxHp, this.hp + amount);
@@ -125,6 +140,14 @@ export class Actor {
         this.robeMat.emissive.setHex(0x000000);
         this.hatMat.emissive.setHex(0x000000);
       }
+    }
+
+    // Knockback Decay
+    if (this.kbTimer > 0) {
+      const decay = this.kbTimer / 0.15;
+      this.x += this.kbVx * decay * dt;
+      this.z += this.kbVz * decay * dt;
+      this.kbTimer -= dt;
     }
 
     // Status Effects
@@ -144,6 +167,13 @@ export class Actor {
       this.status.poisonTimer -= dt;
       this.takeDamage(this.status.poisonDps * dt);
     }
+
+    if (dt > 0.001) {
+      this.vx = (this.x - this.lastX) / dt;
+      this.vz = (this.z - this.lastZ) / dt;
+    }
+    this.lastX = this.x;
+    this.lastZ = this.z;
 
     this.group.position.set(this.x, 0, this.z);
   }
