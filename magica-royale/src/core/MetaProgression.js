@@ -227,6 +227,12 @@ export class MetaProgression {
   }
 
   // Helper stats computed from purchased upgrades
+  addGold(amount) {
+    this.data.gold += amount;
+    this.save();
+    return this.data.gold;
+  }
+
   getMetaBonuses() {
     const hpLevel = this.data.upgradeLevels.VITALITY || 0;
     const speedLevel = this.data.upgradeLevels.SWIFTNESS || 0;

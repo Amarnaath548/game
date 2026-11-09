@@ -1,11 +1,13 @@
 import { LEVEL_TABLE } from '../config/constants.js';
 import { STAVES, UPGRADES } from '../core/MetaProgression.js';
 import { HeroSelectView } from './HeroSelectView.js';
+import { QuestView } from './QuestView.js';
 import { triggerLockShake, renderPerkSelection } from '../core/SpellAccess.js';
 
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
     this.meta = metaProgression;
+    this.questManager = callbacks.questManager;
     this.onSpellChange = callbacks.onSpellChange;
     this.onHeroChange = callbacks.onHeroChange;
     this.onPerkSelected = callbacks.onPerkSelected;
@@ -20,6 +22,8 @@ export class UIManager {
     this.stavesContainer = get('staves-container');
     this.upgradesContainer = get('upgrades-container');
     this.heroesContainer = get('heroes-container');
+    this.questsContainer = get('quests-container');
+    this.questsBadgeEl = get('quests-badge');
     this.playMatchBtn = get('play-match-btn');
     this.hud = get('hud');
     this.aliveCountEl = get('alive-count');
@@ -40,6 +44,11 @@ export class UIManager {
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (hero) => {
       if (this.onHeroChange) this.onHeroChange(hero);
     });
+    if (this.questManager) {
+      this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => {
+        this.lobbyGold.textContent = this.meta.data.gold;
+      });
+    }
 
     this.initLobbyEvents();
     this.initSpellButtons();
@@ -90,6 +99,7 @@ export class UIManager {
 
     const currentHeroId = localStorage.getItem('magica_selected_hero') || 'ignis';
     this.heroSelectView.render(currentHeroId);
+    if (this.questView) this.questView.render();
 
     // Staves Armory
     this.stavesContainer.innerHTML = '';
@@ -213,18 +223,13 @@ export class UIManager {
     renderPerkSelection(this.perkOverlay, this.onPerkSelected);
   }
 
-  showEndGame(isVictory, place, player = null) {
+  showEndGame(isVictory, place, player = null, finishedQuests = []) {
     const results = this.meta.applyMatchResults(place);
     this.endModal.style.display = 'flex';
-    const heroName = player?.hero?.name || 'Archmage';
-    const kills = player?.kills || 0;
+    const heroName = player?.hero?.name || 'Archmage', kills = player?.kills || 0;
 
-    this.endTitle.innerHTML = isVictory
-      ? `<span class="title-win">#1 VICTORY ROYALE!</span>`
-      : `<span class="title-loss">DEFEAT - #${place} of 12</span>`;
-    this.endSubtitle.textContent = isVictory
-      ? `Glory to ${heroName}! Sanctum Champion.`
-      : `${heroName} eliminated at rank #${place}.`;
+    this.endTitle.innerHTML = isVictory ? `<span class="title-win">#1 VICTORY ROYALE!</span>` : `<span class="title-loss">DEFEAT - #${place} of 12</span>`;
+    this.endSubtitle.textContent = isVictory ? `Glory to ${heroName}! Sanctum Champion.` : `${heroName} eliminated at rank #${place}.`;
 
     let statsEl = document.getElementById('match-hero-stats');
     if (!statsEl) {
@@ -232,11 +237,8 @@ export class UIManager {
       statsEl.id = 'match-hero-stats';
       this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box'));
     }
-    statsEl.innerHTML = `
-      <div class="stat-pill">Hero: <b>${heroName}</b></div>
-      <div class="stat-pill">Placement: <b>#${place} of 12</b></div>
-      <div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>
-    `;
+    const questHtml = finishedQuests && finishedQuests.length > 0 ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
+    statsEl.innerHTML = `<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}`;
 
     const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
     this.rewardTrophy.textContent = `${tSign} 🏆 (${results.newTrophies})`;

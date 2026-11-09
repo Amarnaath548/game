@@ -10,6 +10,8 @@
 - `magica-royale/src/core/InputManager.js`: Dual-stick / WASD + mouse aim assist snap (+/-20 deg), auto-repeat fire.
 - `magica-royale/src/core/SoundManager.js`: Procedural Web Audio API sound effects (no external audio).
 - `magica-royale/src/core/MetaProgression.js`: LocalStorage trophies, ranks, 8 staff loadouts, meta upgrades.
+- `magica-royale/src/core/QuestManager.js`: Daily quest state in localStorage, seeded deterministic quest generator (3 distinct daily quests), event progression recorder, and claim handler.
+- `magica-royale/src/ui/QuestView.js`: Lobby quests tab list renderer, quest progress bars, claim buttons, and uncollected quest badge indicator.
 - `magica-royale/src/core/SpellAccess.js`: Spell ownership validation, lock shake animation helper, perk selection modal renderer.
 - `magica-royale/src/core/ObjectPool.js`: Generic reusable object pool (projectiles, gems, orbs).
 - `magica-royale/src/entities/Actor.js`: Base wizard entity, scaled visual mesh, distinct hero silhouettes, knockback, shields, DoT/chill statuses.
@@ -47,3 +49,4 @@
 - **Batch 2 Complete**: Enhanced arena readability: added HERO_VISUAL_SCALE (1.4x mesh scale preserving physics hitboxes), player marker (pulsing white/cyan ground ring + floating downward arrow with stealth fade), bot overhead "Lv N" tags, tuned CAMERA_CONFIG (OFFSET_Y: 56, OFFSET_Z: 28 for ~35 units visibility), and bright light stone obelisks with darker top faces in both biomes.
 - **Batch 3 Complete**: Refactored `main.js` from 649 lines down to 137 lines with zero behavior change by extracting `core/SpawnManager.js` (96 lines), `core/CombatResolver.js` (209 lines), and `core/MatchManager.js` (176 lines), keeping all files well under the 250-line modular limit with explicit dependency passing.
 - **Phase A Complete**: Gated spells by owned staves using `STAFF_SPELL_MAP` in `constants.js` and `ownsSpell` checks in `MetaProgression.js` / `SpellAccess.js`; unowned spell hotkeys and HUD buttons shake instead of activating; HUD spell bar shows locked spells dimmed with lock icons while preserving layout; staff descriptions indicate the unlocked spell; bots remain unrestricted.
+- **Phase B Complete**: Added daily quest system (`QuestManager.js` and `QuestView.js`) with isolated localStorage storage, local midnight date seeding for 3 distinct quests per day from an 8-type pool, minimal event hooks (`kill`, `damage`, `gem`, `cast`, `matchEnd`), lobby QUESTS tab with claimable red dot badge, and "Quest completed!" celebration pill on the end screen.

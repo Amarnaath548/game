@@ -19,10 +19,12 @@ export class MatchManager {
     this.projPool = deps.projPool;
     this.gemPool = deps.gemPool;
     this.orbPool = deps.orbPool;
+    this.questManager = deps.questManager;
 
     this.zoneSys = new ZoneSystem(this.sceneManager.scene);
     this.matchActive = false;
     this.isGameOver = false;
+    this.matchTime = 0;
   }
 
   applyLobbyLoadout() {
@@ -75,6 +77,8 @@ export class MatchManager {
     this.applyLobbyLoadout();
     this.spawnManager.startMatch();
 
+    this.matchTime = 0;
+    if (this.questManager) this.questManager.onMatchStart();
     this.isGameOver = false;
     this.matchActive = true;
   }
@@ -101,12 +105,14 @@ export class MatchManager {
 
   update(dt) {
     if (!this.matchActive) return;
+    this.matchTime = (this.matchTime || 0) + dt;
 
     // Gems & Orbs Player Collection
     this.spawnManager.gems.forEach((gem) => {
       const collected = gem.update(dt, this.player.x, this.player.z);
       if (collected) {
         this.sound.playPickup();
+        if (this.questManager) this.questManager.record('gem', 1);
         this.particleSys.spawnBurst(gem.x, 0.6, gem.z, 0x00f2ff, 6, 4);
         this.player.addXP(gem.xpValue, (lvl) => {
           this.sound.playLevelUp();
@@ -161,11 +167,16 @@ export class MatchManager {
       if (this.player.isDead) {
         this.isGameOver = true;
         this.matchActive = false;
-        this.ui.showEndGame(false, aliveActors.length + 1, this.player);
+        const place = aliveActors.length + 1;
+        if (this.questManager) this.questManager.record('matchEnd', { placement: place, survivalTime: this.matchTime, level: this.player.level });
+        const finished = this.questManager ? this.questManager.getQuestsCompletedThisMatch() : [];
+        this.ui.showEndGame(false, place, this.player, finished);
       } else if (aliveActors.length === 1 && aliveActors[0] === this.player) {
         this.isGameOver = true;
         this.matchActive = false;
-        this.ui.showEndGame(true, 1, this.player);
+        if (this.questManager) this.questManager.record('matchEnd', { placement: 1, survivalTime: this.matchTime, level: this.player.level });
+        const finished = this.questManager ? this.questManager.getQuestsCompletedThisMatch() : [];
+        this.ui.showEndGame(true, 1, this.player, finished);
       }
     }
   }

@@ -12,17 +12,11 @@ export class CombatResolver {
     this.spawnManager = deps.spawnManager;
     this.player = deps.player;
     this.projectiles = deps.projectiles;
+    this.questManager = deps.questManager;
 
-    // Blast Ground Telegraph Ring
     const telegraphGeo = new THREE.RingGeometry(5.0, 5.5, 32);
     telegraphGeo.rotateX(-Math.PI / 2);
-    const telegraphMat = new THREE.MeshBasicMaterial({
-      color: 0xf97316,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.8
-    });
-    this.telegraphMesh = new THREE.Mesh(telegraphGeo, telegraphMat);
+    this.telegraphMesh = new THREE.Mesh(telegraphGeo, new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide, transparent: true, opacity: 0.8 }));
     this.telegraphMesh.position.y = 0.05;
     this.telegraphMesh.visible = false;
     this.sceneManager.scene.add(this.telegraphMesh);
@@ -40,6 +34,7 @@ export class CombatResolver {
     const isPlayer = owner === this.player;
     const config = { ...spellConfig };
     if (owner && owner.dmgBonus) config.damage += owner.dmgBonus;
+    if (isPlayer && this.questManager) this.questManager.record('cast', 1);
 
     if (config.id === 'SHIELD' || config.isSelfCast) {
       owner.applyShield(config.shieldAmount || 80, config.shieldDuration || 3.0);
@@ -48,20 +43,9 @@ export class CombatResolver {
       return;
     }
 
-    if (isPlayer && this.player.perks.includes('SNIPER_VELOCITY')) {
-      config.speed *= 1.35;
-      config.range *= 1.35;
-    }
-    if (isPlayer && this.player.perks.includes('GIANT_ARCANA')) {
-      config.radius *= 1.4;
-      if (config.aoeRadius) config.aoeRadius *= 1.4;
-    }
-
-    if (config.id === 'BLAST') {
-      const tx = originX + dirX * config.range;
-      const tz = originZ + dirZ * config.range;
-      this.showTelegraph(tx, tz, config.aoeRadius || 5.5, config.telegraph || 0.4);
-    }
+    if (isPlayer && this.player.perks.includes('SNIPER_VELOCITY')) { config.speed *= 1.35; config.range *= 1.35; }
+    if (isPlayer && this.player.perks.includes('GIANT_ARCANA')) { config.radius *= 1.4; if (config.aoeRadius) config.aoeRadius *= 1.4; }
+    if (config.id === 'BLAST') this.showTelegraph(originX + dirX * config.range, originZ + dirZ * config.range, config.aoeRadius || 5.5, config.telegraph || 0.4);
 
     if (isPlayer) this.sound.playCast(config.id);
 
@@ -70,15 +54,10 @@ export class CombatResolver {
     const sz = originZ + dirZ * spawnOffset;
 
     if (config.id === 'CRYO') {
-      const spread = config.spreadAngle || 0.35;
-      const angles = [-spread, 0, spread];
-      const baseAngle = Math.atan2(dirX, dirZ);
-      angles.forEach((offset) => {
+      const spread = config.spreadAngle || 0.35, baseAngle = Math.atan2(dirX, dirZ);
+      [-spread, 0, spread].forEach((offset) => {
         const p = this.projectiles.find((proj) => !proj.active);
-        if (p) {
-          const a = baseAngle + offset;
-          p.spawn(sx, sz, Math.sin(a), Math.cos(a), config, owner);
-        }
+        if (p) p.spawn(sx, sz, Math.sin(baseAngle + offset), Math.cos(baseAngle + offset), config, owner);
       });
       return;
     }
@@ -87,16 +66,9 @@ export class CombatResolver {
     for (let i = 0; i < count; i++) {
       const p = this.projectiles.find((proj) => !proj.active);
       if (p) {
-        let dx = dirX;
-        let dz = dirZ;
-        if (count > 1) {
-          const offset = i === 0 ? -0.15 : 0.15;
-          const a = Math.atan2(dirX, dirZ) + offset;
-          dx = Math.sin(a);
-          dz = Math.cos(a);
-          config.damage = Math.round(config.damage * 0.85);
-        }
-        p.spawn(sx, sz, dx, dz, config, owner);
+        const a = Math.atan2(dirX, dirZ) + (count > 1 ? (i === 0 ? -0.15 : 0.15) : 0);
+        const dmg = count > 1 ? Math.round(config.damage * 0.85) : config.damage;
+        p.spawn(sx, sz, Math.sin(a), Math.cos(a), { ...config, damage: dmg }, owner);
       }
     }
   }
@@ -116,22 +88,16 @@ export class CombatResolver {
     this.sound.playExplosion();
     this.sceneManager.addTrauma(0.5);
     this.particleSys.spawnImpact(crystal.x, crystal.z, 0xff0055, 3.0, crystal.explosionRadius);
-    const targets = [...allActors, ...chests.filter((c) => !c.isDead)];
-    targets.forEach((t) => {
-      const d = Math.hypot(t.x - crystal.x, t.z - crystal.z);
-      if (d <= crystal.explosionRadius) t.takeDamage(crystal.explosionDamage);
+    [...allActors, ...chests.filter((c) => !c.isDead)].forEach((t) => {
+      if (Math.hypot(t.x - crystal.x, t.z - crystal.z) <= crystal.explosionRadius) t.takeDamage(crystal.explosionDamage);
     });
   }
 
   resolveObeliskCollisions(actor) {
     this.sceneManager.obelisks.forEach((o) => {
-      const dx = actor.x - o.x;
-      const dz = actor.z - o.z;
-      const dist = Math.hypot(dx, dz);
-      const minDist = actor.radius + o.radius;
+      const dx = actor.x - o.x, dz = actor.z - o.z, dist = Math.hypot(dx, dz), minDist = actor.radius + o.radius;
       if (dist < minDist && dist > 0.001) {
-        const nx = dx / dist;
-        const nz = dz / dist;
+        const nx = dx / dist, nz = dz / dist;
         actor.x = o.x + nx * minDist;
         actor.z = o.z + nz * minDist;
         if (!actor.isPlayer) {
@@ -144,10 +110,7 @@ export class CombatResolver {
   }
 
   update(dt, allActors, chests, crystals, bots) {
-    if (this.telegraphTimer > 0) {
-      this.telegraphTimer -= dt;
-      if (this.telegraphTimer <= 0) this.telegraphMesh.visible = false;
-    }
+    if (this.telegraphTimer > 0 && (this.telegraphTimer -= dt) <= 0) this.telegraphMesh.visible = false;
 
     this.projectiles.forEach((proj) => {
       if (!proj.active) return;
@@ -204,6 +167,7 @@ export class CombatResolver {
           }
 
           const dealt = target.takeDamage(dmg);
+          if (isPlayerProj && dealt > 0 && this.questManager) this.questManager.record('damage', dealt);
           this.sound.playHit();
           target.applyKnockback(proj.vx, proj.vz, 2.5);
           this.damageNumbers.spawn(target.x, target.z, dealt, proj.spellConfig.color);
@@ -218,16 +182,14 @@ export class CombatResolver {
             targets.forEach((other) => {
               if (other !== target && !other.isDead && Math.hypot(other.x - proj.x, other.z - proj.z) <= proj.spellConfig.aoeRadius) {
                 const oDealt = other.takeDamage(Math.round(dmg * 0.7));
+                if (isPlayerProj && oDealt > 0 && this.questManager) this.questManager.record('damage', oDealt);
                 other.applyKnockback(other.x - proj.x, other.z - proj.z, 2.0);
                 this.damageNumbers.spawn(other.x, other.z, oDealt, proj.spellConfig.color);
               }
             });
           }
 
-          if (isPlayerProj && this.player.perks.includes('VAMPIRIC_SOUL') && dealt > 0) {
-            this.player.heal(dealt * 0.2);
-          }
-
+          if (isPlayerProj && this.player.perks.includes('VAMPIRIC_SOUL') && dealt > 0) this.player.heal(dealt * 0.2);
           if (proj.spellConfig.id === 'CRYO') target.applyChill(proj.spellConfig.slowFactor, 1.5);
           else if (proj.spellConfig.id === 'VENOM') target.applyPoison(proj.spellConfig.dps, proj.spellConfig.duration);
           else if (proj.spellConfig.id === 'PYRO') target.applyBurn(10, 2.0);
@@ -239,6 +201,7 @@ export class CombatResolver {
               if (chains >= (proj.spellConfig.chainCount || 2)) break;
               if (Math.hypot(other.x - target.x, other.z - target.z) <= (proj.spellConfig.chainRadius || 6.0)) {
                 const cDealt = other.takeDamage(dmg * 0.5);
+                if (isPlayerProj && cDealt > 0 && this.questManager) this.questManager.record('damage', cDealt);
                 other.applyKnockback(other.x - target.x, other.z - target.z, 1.5);
                 this.damageNumbers.spawn(other.x, other.z, cDealt, 0xffe600);
                 this.particleSys.spawnBurst(other.x, 1.2, other.z, 0xffe600, 8, 6);
@@ -253,6 +216,7 @@ export class CombatResolver {
             this.spawnManager.dropLoot(target.x, target.z, 5, 0.6);
             if (proj.owner) {
               proj.owner.kills = (proj.owner.kills || 0) + 1;
+              if (proj.owner.isPlayer && this.questManager) this.questManager.record('kill', 1);
               if (proj.owner.addXP) proj.owner.addXP(60);
               const killer = proj.owner.isPlayer ? 'Player' : (proj.owner.name || 'Bot');
               const victim = target.isPlayer ? 'Player' : (target.name || 'Bot');
