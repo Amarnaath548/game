@@ -18,6 +18,7 @@ export class Projectile {
     this.spellConfig = null;
     this.lobHeight = 0;
     this.owner = null; // 'player' or 'bot'
+    this.hitTargets = new Set();
   }
 
   spawn(originX, originZ, dirX, dirZ, spellConfig, owner = 'player') {
@@ -26,6 +27,7 @@ export class Projectile {
     this.z = originZ;
     this.spellConfig = spellConfig;
     this.owner = owner;
+    this.hitTargets.clear();
 
     this.vx = dirX * spellConfig.speed;
     this.vz = dirZ * spellConfig.speed;
@@ -43,8 +45,35 @@ export class Projectile {
     this.mesh.visible = true;
   }
 
-  update(dt) {
+  update(dt, targets = []) {
     if (!this.active) return;
+
+    // Homing steer towards nearest valid enemy at 2.0 rad/s
+    if (this.spellConfig?.homing && targets.length > 0) {
+      let nearest = null;
+      let nearestDist = 20;
+      for (const t of targets) {
+        if (t === this.owner || t.isDead) continue;
+        const d = Math.hypot(t.x - this.x, t.z - this.z);
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearest = t;
+        }
+      }
+      if (nearest) {
+        const targetAngle = Math.atan2(nearest.x - this.x, nearest.z - this.z);
+        const curAngle = Math.atan2(this.vx, this.vz);
+        let diff = targetAngle - curAngle;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        const maxTurn = (this.spellConfig.turnRate || 2.0) * dt;
+        const turn = Math.sign(diff) * Math.min(Math.abs(diff), maxTurn);
+        const newAngle = curAngle + turn;
+        const spd = this.spellConfig.speed;
+        this.vx = Math.sin(newAngle) * spd;
+        this.vz = Math.cos(newAngle) * spd;
+      }
+    }
 
     const dx = this.vx * dt;
     const dz = this.vz * dt;

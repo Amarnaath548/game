@@ -14,6 +14,8 @@ export class Actor {
     this.isDead = false;
     this.isInvulnerable = false;
     this.shieldActive = false;
+    this.shieldHp = 0;
+    this.shieldTimer = 0;
     this.kbTimer = 0;
     this.kbVx = 0;
     this.kbVz = 0;
@@ -80,14 +82,46 @@ export class Actor {
     this.staffOrb = new THREE.Mesh(staffOrbGeo, this.staffOrbMat);
     this.staffOrb.position.set(0.65, 1.4, 0.75);
     this.visualMesh.add(this.staffOrb);
+
+    // Shield Bubble Mesh
+    const shieldGeo = new THREE.SphereGeometry(1.6, 12, 12);
+    const shieldMat = new THREE.MeshBasicMaterial({
+      color: 0x3b82f6,
+      transparent: true,
+      opacity: 0.35,
+      wireframe: true
+    });
+    this.shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+    this.shieldMesh.position.y = 1.4;
+    this.shieldMesh.visible = false;
+    this.visualMesh.add(this.shieldMesh);
+  }
+
+  applyShield(amount = 80, duration = 3.0) {
+    this.shieldHp = amount;
+    this.shieldTimer = duration;
+    this.shieldActive = true;
+    if (this.shieldMesh) this.shieldMesh.visible = true;
   }
 
   takeDamage(amount, sourceSpell = null) {
     if (this.isDead || this.isInvulnerable) return 0;
 
-    if (this.shieldActive) {
+    if (this.shieldActive && this.shieldHp > 0) {
+      if (this.shieldHp >= amount) {
+        this.shieldHp -= amount;
+        return 0;
+      } else {
+        const remaining = amount - this.shieldHp;
+        this.shieldHp = 0;
+        this.shieldActive = false;
+        if (this.shieldMesh) this.shieldMesh.visible = false;
+        amount = remaining;
+      }
+    } else if (this.shieldActive) {
       this.shieldActive = false;
-      return 0; // absorbed by shield
+      if (this.shieldMesh) this.shieldMesh.visible = false;
+      return 0; // absorbed by perk shield
     }
 
     this.hp -= amount;
@@ -151,6 +185,15 @@ export class Actor {
     }
 
     // Status Effects
+    if (this.shieldTimer > 0) {
+      this.shieldTimer -= dt;
+      if (this.shieldTimer <= 0) {
+        this.shieldActive = false;
+        this.shieldHp = 0;
+        if (this.shieldMesh) this.shieldMesh.visible = false;
+      }
+    }
+
     if (this.status.chillTimer > 0) {
       this.status.chillTimer -= dt;
       this.speed = this.baseSpeed * this.status.chillFactor;

@@ -20,6 +20,7 @@ export class Player extends Actor {
     this.level = 1;
     this.xp = 0;
     this.kills = 0;
+    this.dmgBonus = 0;
     this.perks = [];
 
     // Dash state
@@ -58,6 +59,7 @@ export class Player extends Actor {
       this.level += 1;
       this.maxHp += nextConfig.hpBonus;
       this.hp = Math.min(this.maxHp, this.hp + nextConfig.hpBonus);
+      this.dmgBonus += nextConfig.dmgBonus;
       if (onLevelUp) onLevelUp(this.level, nextConfig.rewardType);
     }
   }

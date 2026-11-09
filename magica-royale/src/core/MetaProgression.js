@@ -44,6 +44,42 @@ export const STAVES = [
     perkDesc: '+20% Poison DoT & Blast Radius',
     colorHex: 0x39ff14,
     robeColor: 0x10b981
+  },
+  {
+    id: 'PIERCE_STAFF',
+    name: 'Prismatic Lance',
+    element: 'PIERCE',
+    cost: 400,
+    perkDesc: 'Piercing beam penetrating all targets',
+    colorHex: 0xd946ef,
+    robeColor: 0xa21caf
+  },
+  {
+    id: 'BLAST_STAFF',
+    name: 'Solar Cannon',
+    element: 'BLAST',
+    cost: 550,
+    perkDesc: 'Devastating solar ground blast',
+    colorHex: 0xf97316,
+    robeColor: 0xc2410c
+  },
+  {
+    id: 'HOMING_STAFF',
+    name: 'Aether Seeker',
+    element: 'HOMING',
+    cost: 700,
+    perkDesc: 'Seeking orb that curves into enemies',
+    colorHex: 0x06b6d4,
+    robeColor: 0x0e7490
+  },
+  {
+    id: 'SHIELD_STAFF',
+    name: 'Aegis Staff',
+    element: 'SHIELD',
+    cost: 850,
+    perkDesc: 'Grants an 80 HP protective barrier',
+    colorHex: 0x3b82f6,
+    robeColor: 0x1d4ed8
   }
 ];
 

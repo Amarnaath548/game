@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { AIM_ASSIST } from '../config/constants.js';
 
 export class InputManager {
   constructor(camera) {
@@ -166,7 +167,7 @@ export class InputManager {
     });
   }
 
-  update(playerPos) {
+  update(playerPos, potentialTargets = [], spellRange = 24) {
     if (!this.usingTouch) {
       let kx = 0;
       let kz = 0;
@@ -190,6 +191,38 @@ export class InputManager {
           this.aimDir.x = dx / dist;
           this.aimDir.z = dz / dist;
         }
+      }
+    }
+
+    // Aim Assist (+/- 20 degrees snap within spell range)
+    if (AIM_ASSIST && potentialTargets.length > 0) {
+      const minDot = Math.cos(20 * Math.PI / 180); // ~0.9396
+      let bestTarget = null;
+      let bestDot = minDot;
+      let snapDirX = this.aimDir.x;
+      let snapDirZ = this.aimDir.z;
+
+      for (const t of potentialTargets) {
+        if (t.isDead || t.isPlayer) continue;
+        const dx = t.x - playerPos.x;
+        const dz = t.z - playerPos.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist <= spellRange && dist > 0.5) {
+          const tdx = dx / dist;
+          const tdz = dz / dist;
+          const dot = this.aimDir.x * tdx + this.aimDir.z * tdz;
+          if (dot > bestDot) {
+            bestDot = dot;
+            bestTarget = t;
+            snapDirX = tdx;
+            snapDirZ = tdz;
+          }
+        }
+      }
+
+      if (bestTarget) {
+        this.aimDir.x = snapDirX;
+        this.aimDir.z = snapDirZ;
       }
     }
   }

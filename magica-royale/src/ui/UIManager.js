@@ -178,15 +178,24 @@ export class UIManager {
 
   initKeyboardShortcuts() {
     window.addEventListener('keydown', (e) => {
-      if (['Digit1', 'Digit2', 'Digit3', 'Digit4'].includes(e.code)) {
-        if (this.perkOverlay.style.display === 'flex' && e.code !== 'Digit4') {
+      if (['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8'].includes(e.code)) {
+        if (this.perkOverlay.style.display === 'flex' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
           const index = parseInt(e.code.replace('Digit', ''), 10) - 1;
           const cards = this.perkOverlay.querySelectorAll('.perk-card');
           if (cards[index]) cards[index].click();
           return;
         }
 
-        const spellMap = { Digit1: 'PYRO', Digit2: 'CRYO', Digit3: 'ELECTRO', Digit4: 'VENOM' };
+        const spellMap = {
+          Digit1: 'PYRO',
+          Digit2: 'CRYO',
+          Digit3: 'ELECTRO',
+          Digit4: 'VENOM',
+          Digit5: 'PIERCE',
+          Digit6: 'BLAST',
+          Digit7: 'HOMING',
+          Digit8: 'SHIELD'
+        };
         const spellKey = spellMap[e.code];
         if (spellKey) {
           this.setSpellActive(spellKey);

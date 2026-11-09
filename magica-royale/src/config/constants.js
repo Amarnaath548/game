@@ -84,8 +84,59 @@ export const SPELLS = {
     dps: 8,
     duration: 4.0,
     cooldown: 0.75
+  },
+  PIERCE: {
+    id: 'PIERCE',
+    name: 'Arcane Lance',
+    color: 0xd946ef,
+    damage: 42,
+    speed: 46,
+    range: 28,
+    radius: 0.45,
+    cooldown: 0.7,
+    pierce: true
+  },
+  BLAST: {
+    id: 'BLAST',
+    name: 'Solar Blast',
+    color: 0xf97316,
+    damage: 65,
+    speed: 24,
+    range: 20,
+    radius: 0.8,
+    aoeRadius: 5.5,
+    cooldown: 0.95,
+    lobArcHeight: 3.5,
+    telegraph: 0.4
+  },
+  HOMING: {
+    id: 'HOMING',
+    name: 'Seeking Orb',
+    color: 0x06b6d4,
+    damage: 36,
+    speed: 26,
+    range: 26,
+    radius: 0.5,
+    cooldown: 0.65,
+    homing: true,
+    turnRate: 2.0
+  },
+  SHIELD: {
+    id: 'SHIELD',
+    name: 'Arcane Ward',
+    color: 0x3b82f6,
+    damage: 0,
+    speed: 0,
+    range: 0,
+    radius: 0,
+    cooldown: 5.0,
+    isSelfCast: true,
+    shieldAmount: 80,
+    shieldDuration: 3.0
   }
 };
+
+export const AIM_ASSIST = true;
 
 export const LEVEL_TABLE = [
   { level: 1, xpReq: 0, hpBonus: 0, dmgBonus: 0, rewardType: 'START' },
@@ -99,8 +150,8 @@ export const LEVEL_TABLE = [
 ];
 
 export const STORM_PHASES = [
-  { duration: 40, startRadius: 120, endRadius: 120, tickDamage: 0 },
-  { duration: 45, startRadius: 120, endRadius: 75, tickDamage: 10 },
-  { duration: 40, startRadius: 75, endRadius: 30, tickDamage: 20 },
-  { duration: 35, startRadius: 30, endRadius: 8, tickDamage: 40 }
+  { duration: 25, startRadius: 120, endRadius: 120, tickDamage: 0 },
+  { duration: 30, startRadius: 120, endRadius: 75, tickDamage: 10 },
+  { duration: 30, startRadius: 75, endRadius: 30, tickDamage: 20 },
+  { duration: 25, startRadius: 30, endRadius: 8, tickDamage: 40 }
 ];

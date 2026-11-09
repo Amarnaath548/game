@@ -136,7 +136,7 @@ function startMatch() {
 
   // Spawn Chests across expanded 120u arena
   chests = [];
-  chests.push(new Chest(0, 0, sceneManager.scene, true)); // Mythic Center
+  chests.push(new Chest(0, -12, sceneManager.scene, true)); // Mythic Center (offset from player spawn)
   const chestCoords = [
     [-20, -20], [20, -20], [-20, 20], [20, 20],
     [-45, -25], [45, -25], [-45, 25], [45, 25],
@@ -204,9 +204,28 @@ function resetToLobby() {
   floatingBars.update([]);
   damageNumbers.reset();
   killFeed.reset();
+  telegraphMesh.visible = false;
+  telegraphTimer = 0;
 }
 
 const getAllAliveActors = () => [player, ...bots].filter((a) => !a.isDead);
+
+// Blast Ground Telegraph Ring
+const telegraphGeo = new THREE.RingGeometry(5.0, 5.5, 32);
+telegraphGeo.rotateX(-Math.PI / 2);
+const telegraphMat = new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+const telegraphMesh = new THREE.Mesh(telegraphGeo, telegraphMat);
+telegraphMesh.position.y = 0.05;
+telegraphMesh.visible = false;
+sceneManager.scene.add(telegraphMesh);
+let telegraphTimer = 0;
+
+function showTelegraph(x, z, radius = 5.5, duration = 0.4) {
+  telegraphMesh.position.set(x, 0.05, z);
+  telegraphMesh.scale.setScalar(radius / 5.5);
+  telegraphMesh.visible = true;
+  telegraphTimer = duration;
+}
 
 // Spell Firing Helper
 function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
@@ -215,6 +234,15 @@ function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
   if (owner && owner.dmgBonus) {
     config.damage += owner.dmgBonus;
   }
+
+  // Shield self-cast
+  if (config.id === 'SHIELD' || config.isSelfCast) {
+    owner.applyShield(config.shieldAmount || 80, config.shieldDuration || 3.0);
+    if (isPlayer) sound.playCast('SHIELD');
+    particleSys.spawnBurst(owner.x, 1.2, owner.z, config.color, 16, 6);
+    return;
+  }
+
   if (isPlayer && player.perks.includes('SNIPER_VELOCITY')) {
     config.speed *= 1.35;
     config.range *= 1.35;
@@ -222,6 +250,13 @@ function spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
   if (isPlayer && player.perks.includes('GIANT_ARCANA')) {
     config.radius *= 1.4;
     if (config.aoeRadius) config.aoeRadius *= 1.4;
+  }
+
+  // Solar Blast ground telegraph
+  if (config.id === 'BLAST') {
+    const tx = originX + dirX * config.range;
+    const tz = originZ + dirZ * config.range;
+    showTelegraph(tx, tz, config.aoeRadius || 5.5, config.telegraph || 0.4);
   }
 
   if (isPlayer) sound.playCast(config.id);
@@ -335,13 +370,19 @@ function animate() {
   const dt = Math.min(clock.getDelta(), 0.1);
 
   if (matchActive) {
-    input.update(player.group.position);
+    if (telegraphTimer > 0) {
+      telegraphTimer -= dt;
+      if (telegraphTimer <= 0) telegraphMesh.visible = false;
+    }
+
+    input.update(player.group.position, bots, player.currentSpell.range);
 
     if (player.dashTimer > 0 && player.dashTimer - dt <= 0) {
       sound.playDash();
     }
 
-    if (input.fireReleased) {
+    // Auto-repeat fire when aiming or on fire release
+    if (input.fireReleased || (input.isAiming && player.shootCooldown <= 0)) {
       input.fireReleased = false;
       playerShoot();
     }
@@ -360,7 +401,7 @@ function animate() {
     // Update Projectiles & Hits
     projectiles.forEach((proj) => {
       if (!proj.active) return;
-      proj.update(dt);
+      proj.update(dt, allActors);
 
       const isPlayerProj = proj.owner === player || !!proj.owner?.isPlayer;
 
@@ -413,6 +454,9 @@ function animate() {
       for (const target of possibleTargets) {
         if (target.isDead) continue;
         if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, target.x, target.z, target.radius)) {
+          if (proj.hitTargets && proj.hitTargets.has(target)) continue;
+          if (proj.hitTargets) proj.hitTargets.add(target);
+
           let dmg = proj.damage;
 
           if (isPlayerProj && player.perks.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) {
@@ -426,6 +470,22 @@ function animate() {
           if (target === player) sceneManager.addTrauma(0.4);
 
           particleSys.spawnBurst(proj.x, proj.y, proj.z, proj.spellConfig.color, 14, 9);
+
+          // Solar Blast / AoE Detonation
+          if (proj.spellConfig.aoeRadius) {
+            sound.playExplosion();
+            particleSys.spawnBurst(proj.x, 1.0, proj.z, proj.spellConfig.color, 24, 12, 1.5);
+            possibleTargets.forEach((other) => {
+              if (other !== target && !other.isDead) {
+                const od = Math.hypot(other.x - proj.x, other.z - proj.z);
+                if (od <= proj.spellConfig.aoeRadius) {
+                  const oDealt = other.takeDamage(Math.round(dmg * 0.7));
+                  other.applyKnockback(other.x - proj.x, other.z - proj.z, 2.0);
+                  damageNumbers.spawn(other.x, other.z, oDealt, proj.spellConfig.color);
+                }
+              }
+            });
+          }
 
           // Vampiric soul perk
           if (isPlayerProj && player.perks.includes('VAMPIRIC_SOUL') && dealt > 0) {
@@ -473,8 +533,10 @@ function animate() {
             }
           }
 
-          proj.despawn();
-          break;
+          if (!proj.spellConfig.pierce) {
+            proj.despawn();
+            break;
+          }
         }
       }
     });
