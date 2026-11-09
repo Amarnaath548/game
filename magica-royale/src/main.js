@@ -199,7 +199,7 @@ function startMatch() {
 
   isGameOver = false;
   matchActive = true;
-  clock.getDelta(); // Clear accumulated delta time from lobby so dt doesn't jump
+  lastTime = performance.now(); // Clear accumulated delta time from lobby so dt doesn't jump
 }
 
 function resetToLobby() {
@@ -376,11 +376,15 @@ function resolveObeliskCollisions(actor) {
   });
 }
 
-const clock = new THREE.Clock();
+let lastTime = performance.now();
+let totalTime = 0;
 
 function animate() {
   requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.1);
+  const now = performance.now();
+  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+  totalTime += dt;
 
   if (matchActive) {
     if (telegraphTimer > 0) {
@@ -632,7 +636,7 @@ function animate() {
     sceneManager.updateCamera(player.group.position, input.aimDir, dt);
   } else {
     // In Lobby: gently rotate camera around center
-    const time = clock.getElapsedTime() * 0.2;
+    const time = totalTime * 0.2;
     sceneManager.camera.position.x = Math.sin(time) * 45;
     sceneManager.camera.position.z = Math.cos(time) * 45;
     sceneManager.camera.position.y = 35;

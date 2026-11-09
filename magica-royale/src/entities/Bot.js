@@ -49,7 +49,7 @@ export class Bot extends Actor {
 
     // Roam target
     this.roamTarget = { x: 0, z: 0 };
-    this.pickRoamWaypoint(40);
+    this.pickRoamWaypoint(30);
     this.waypointTimer = 0;
 
     this.brain = new BotBrain(this);
@@ -81,9 +81,9 @@ export class Bot extends Actor {
     }
   }
 
-  pickRoamWaypoint(maxR = 60) {
+  pickRoamWaypoint(maxR = 35) {
     const angle = Math.random() * Math.PI * 2;
-    const r = 8 + Math.random() * (maxR - 8);
+    const r = 4 + Math.random() * Math.max(4, maxR - 4);
     this.roamTarget.x = Math.cos(angle) * r;
     this.roamTarget.z = Math.sin(angle) * r;
   }
