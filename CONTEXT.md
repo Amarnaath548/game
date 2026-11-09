@@ -1,16 +1,19 @@
 # Project Context: Magica Royale
 
 ## Code Files
-- `magica-royale/src/main.js`: Main match loop, spawning, collisions, loot drops, win/loss checks.
-- `magica-royale/src/config/constants.js`: Spells (8 elements), levels, storm phases (110s fast pacing), arena radius (120u), colors.
-- `magica-royale/src/core/SceneManager.js`: Three.js scene, camera with trauma shake decay, lights, obelisks.
+- `magica-royale/src/main.js`: Entry point, system/manager wiring, lightweight animate loop (under 150 lines).
+- `magica-royale/src/core/SpawnManager.js`: Chest, crystal, bush, and bot spawning/cleanup, bot ring coordinates, loot drops.
+- `magica-royale/src/core/CombatResolver.js`: Spell casting, projectile updates, hit resolution, status effects, Electro chain, obelisk/crystal explosions, kill feed & banners.
+- `magica-royale/src/core/MatchManager.js`: Match lifecycle (start/reset), loadout application, gem/orb collection, storm zone updates, win/loss triggers, HUD sync.
+- `magica-royale/src/config/constants.js`: Spells (8 elements), levels, storm phases (110s fast pacing), arena radius (120u), colors, HERO_VISUAL_SCALE.
+- `magica-royale/src/core/SceneManager.js`: Three.js scene, camera with trauma shake decay, lights, obelisks, biome support.
 - `magica-royale/src/core/InputManager.js`: Dual-stick / WASD + mouse aim assist snap (+/-20 deg), auto-repeat fire.
 - `magica-royale/src/core/SoundManager.js`: Procedural Web Audio API sound effects (no external audio).
 - `magica-royale/src/core/MetaProgression.js`: LocalStorage trophies, ranks, 8 staff loadouts, meta upgrades.
 - `magica-royale/src/core/ObjectPool.js`: Generic reusable object pool (projectiles, gems, orbs).
-- `magica-royale/src/entities/Actor.js`: Base wizard entity, squat boxy torso, cube head, distinct hero silhouettes, knockback, shields, DoT/chill statuses.
+- `magica-royale/src/entities/Actor.js`: Base wizard entity, scaled visual mesh, distinct hero silhouettes, knockback, shields, DoT/chill statuses.
 - `magica-royale/src/entities/HeroVisual.js`: Shared low-poly BoxGeometry hero builder (headgear, silhouetted extras, staff, eyes).
-- `magica-royale/src/entities/Player.js`: Player controller, movement, dash i-frames, XP, dmgBonus & level ups.
+- `magica-royale/src/entities/Player.js`: Player controller, movement, dash i-frames, XP, dmgBonus, player ground ring & arrow markers.
 - `magica-royale/src/entities/Bot.js`: Bot entity controller, level progression, dash execution, personality traits.
 - `magica-royale/src/entities/BotBrain.js`: State decision engine (FORAGE/SKIRMISH/EVADE), target leading, dash trigger.
 - `magica-royale/src/entities/BotSenses.js`: Spatial perception, projectile ray collision avoidance, target scoring.
@@ -20,10 +23,10 @@
 - `magica-royale/src/systems/CollisionSystem.js`: 2D circle-circle collision helper math.
 - `magica-royale/src/systems/ParticleSystem.js`: GPU instanced particle pool and burst effects.
 - `magica-royale/src/systems/ZoneSystem.js`: Shrinking storm cylinder, perimeter ring, tick damage.
-- `magica-royale/src/ui/UIManager.js`: Lobby UI, 8 staff selection, meta upgrades, HUD, 8-spell key shortcuts.
+- `magica-royale/src/ui/UIManager.js`: 3-tab lobby UI (Heroes/Staves/Upgrades), HUD, 8-spell key shortcuts.
 - `magica-royale/src/ui/Banners.js`: Animated multi-kill banners (Double, Triple, Rampage) and zone transition toasts.
-- `magica-royale/src/ui/HeroSelectView.js`: Lobby hero roster grid view with unlock/select states.
-- `magica-royale/src/ui/FloatingBarSystem.js`: 2D overhead projected health bars for bots.
+- `magica-royale/src/ui/HeroSelectView.js`: Lobby hero roster grid view with CSS-rendered blocky previews and unlock/select states.
+- `magica-royale/src/ui/FloatingBarSystem.js`: 2D overhead projected health bars and Lv N tags for bots.
 - `magica-royale/src/ui/DamageNumbers.js`: Pooled 2D floating combat damage numbers over targets.
 - `magica-royale/src/ui/KillFeed.js`: Top-right animated match elimination feed.
 - `magica-royale/src/style.css` & `index.html`: UI styling, lobby layout, responsive touch overlay, 8-spell bar.
@@ -41,3 +44,4 @@
 - **Phase D Complete**: Multi-kill pop-in banners (Double Kill, Triple Kill, Rampage) within 4s window, safe zone toasts, victory/defeat modal with player hero name, placement rank (#N of 12), and kill stats, lobby hero selection roster grid with preview styling and unlocking, and enlarged chunky touch HUD (dash button 86px, thicker 18px HP bar, larger spell buttons).
 - **Batch 1 Complete**: Reorganized lobby into 3 tabs (HEROES, STAVES, UPGRADES) with pinned footer and dedicated inner scroll, CSS-drawn blocky hero previews with headgear silhouettes, bottom-center spell bar with mobile 2-row wrapping and 44px+ touch targets, clean non-overlapping top-bar / HP bar layout, and fixed 404 favicon/icons.
 - **Batch 2 Complete**: Enhanced arena readability: added HERO_VISUAL_SCALE (1.4x mesh scale preserving physics hitboxes), player marker (pulsing white/cyan ground ring + floating downward arrow with stealth fade), bot overhead "Lv N" tags, tuned CAMERA_CONFIG (OFFSET_Y: 56, OFFSET_Z: 28 for ~35 units visibility), and bright light stone obelisks with darker top faces in both biomes.
+- **Batch 3 Complete**: Refactored `main.js` from 649 lines down to 137 lines with zero behavior change by extracting `core/SpawnManager.js` (96 lines), `core/CombatResolver.js` (209 lines), and `core/MatchManager.js` (176 lines), keeping all files well under the 250-line modular limit with explicit dependency passing.
