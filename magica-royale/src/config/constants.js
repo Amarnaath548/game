@@ -43,6 +43,17 @@ export const BIOMES = {
   }
 };
 
+export const HEROES = [
+  { id: 'ignis', name: 'Ignis', bodyColor: 0xd92638, accentColor: 0xff9900, hatType: 'WIZARD_HAT', extra: 'CAPE' },
+  { id: 'glacia', name: 'Glacia', bodyColor: 0x0284c7, accentColor: 0xe0f2fe, hatType: 'HOOD', extra: 'BACKPACK' },
+  { id: 'volt', name: 'Volt', bodyColor: 0xeab308, accentColor: 0x3b82f6, hatType: 'HORNS', extra: 'TAIL' },
+  { id: 'tox', name: 'Tox', bodyColor: 0x16a34a, accentColor: 0xa3e635, hatType: 'MASK', extra: 'BACKPACK' },
+  { id: 'nyx', name: 'Nyx', bodyColor: 0x7c3aed, accentColor: 0xc084fc, hatType: 'HOOD', extra: 'CAPE' },
+  { id: 'aegis', name: 'Aegis', bodyColor: 0xe2e8f0, accentColor: 0xf59e0b, hatType: 'HELMET', extra: 'PAULDRONS' },
+  { id: 'krag', name: 'Krag', bodyColor: 0x854d0e, accentColor: 0xf97316, hatType: 'HORNS', extra: 'TAIL' },
+  { id: 'aurelia', name: 'Aurelia', bodyColor: 0xdb2777, accentColor: 0xfacc15, hatType: 'CROWN', extra: 'CAPE' }
+];
+
 export const ARENA = {
   RADIUS: 120,
   RINGS: {

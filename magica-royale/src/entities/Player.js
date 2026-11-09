@@ -1,17 +1,19 @@
 import * as THREE from 'three';
 import { Actor } from './Actor.js';
-import { PLAYER_BASE, SPELLS, LEVEL_TABLE, COLORS, ARENA } from '../config/constants.js';
+import { PLAYER_BASE, SPELLS, LEVEL_TABLE, COLORS, ARENA, HEROES } from '../config/constants.js';
 
 export class Player extends Actor {
-  constructor(scene, inputManager) {
+  constructor(scene, inputManager, hero = null) {
+    const selectedHeroId = (typeof localStorage !== 'undefined') ? localStorage.getItem('magica_selected_hero') : null;
+    const playerHero = hero || HEROES.find((h) => h.id === selectedHeroId) || HEROES[0];
+
     super(scene, {
       x: 0,
       z: 0,
       radius: PLAYER_BASE.RADIUS,
       maxHp: PLAYER_BASE.MAX_HP,
       moveSpeed: PLAYER_BASE.MOVE_SPEED,
-      robeColor: COLORS.PLAYER_ROBE,
-      hatColor: COLORS.PLAYER_HAT
+      hero: playerHero
     });
 
     this.input = inputManager;

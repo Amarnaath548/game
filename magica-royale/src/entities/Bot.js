@@ -1,25 +1,22 @@
 import * as THREE from 'three';
 import { Actor } from './Actor.js';
-import { SPELLS, PLAYER_BASE, ARENA, LEVEL_TABLE } from '../config/constants.js';
+import { SPELLS, PLAYER_BASE, ARENA, LEVEL_TABLE, HEROES } from '../config/constants.js';
 import { BotBrain } from './BotBrain.js';
 
-const BOT_ROBE_COLORS = [0x2563eb, 0x10b981, 0xf59e0b, 0x8b5cf6, 0xec4899];
-
 export class Bot extends Actor {
-  constructor(scene, x, z, id = 1) {
-    const robeColor = BOT_ROBE_COLORS[id % BOT_ROBE_COLORS.length];
+  constructor(scene, x, z, id = 1, hero = null) {
+    const botHero = hero || HEROES[(id - 1) % HEROES.length];
     super(scene, {
       x,
       z,
       radius: PLAYER_BASE.RADIUS,
       maxHp: PLAYER_BASE.MAX_HP,
       moveSpeed: PLAYER_BASE.MOVE_SPEED * (0.85 + Math.random() * 0.15),
-      robeColor,
-      hatColor: 0x1f2937
+      hero: botHero
     });
 
     this.id = id;
-    this.name = `Bot_${id}`;
+    this.name = `${botHero.name}_${id}`;
     this.kills = 0;
 
     // Progression

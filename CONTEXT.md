@@ -8,7 +8,8 @@
 - `magica-royale/src/core/SoundManager.js`: Procedural Web Audio API sound effects (no external audio).
 - `magica-royale/src/core/MetaProgression.js`: LocalStorage trophies, ranks, 8 staff loadouts, meta upgrades.
 - `magica-royale/src/core/ObjectPool.js`: Generic reusable object pool (projectiles, gems, orbs).
-- `magica-royale/src/entities/Actor.js`: Base wizard entity, velocity tracking, knockback, shields, DoT/chill statuses.
+- `magica-royale/src/entities/Actor.js`: Base wizard entity, squat boxy torso, cube head, distinct hero silhouettes, knockback, shields, DoT/chill statuses.
+- `magica-royale/src/entities/HeroVisual.js`: Shared low-poly BoxGeometry hero builder (headgear, silhouetted extras, staff, eyes).
 - `magica-royale/src/entities/Player.js`: Player controller, movement, dash i-frames, XP, dmgBonus & level ups.
 - `magica-royale/src/entities/Bot.js`: Bot entity controller, level progression, dash execution, personality traits.
 - `magica-royale/src/entities/BotBrain.js`: State decision engine (FORAGE/SKIRMISH/EVADE), target leading, dash trigger.
@@ -33,3 +34,4 @@
 - Dynamic storm zones (4 phases), bushes stealth, destructible chests and explosive barrels.
 - Lobby with staff loadout, persistent trophy ranks, meta-bonuses, and level-up perks.
 - **Phase A Complete**: Bright biomes system (`GRASS` & `SNOW`) with procedural checkerboard arena floor, high-contrast chunky low-poly obelisks and faceted bushes with contact shadows and edge highlights, steeper camera pitch (`OFFSET_Y: 52`, `OFFSET_Z: 24`, tunable constants), and vibrant navy-to-purple lobby background.
+- **Phase B Complete**: 8 distinct blocky heroes in `HEROES` list with custom boxy body, cube head, block arms, visible staff, and unique top-down silhouettes (pointed hat, hood, horns, helmet crest, crown, mask, cape, backpack, tail, pauldrons) built with shared geometries. Bots dynamically assign different heroes, player loads selected hero.

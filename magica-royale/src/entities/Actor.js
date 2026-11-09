@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { PLAYER_BASE } from '../config/constants.js';
+import { PLAYER_BASE, HEROES } from '../config/constants.js';
+import { buildHeroVisual } from './HeroVisual.js';
 
 export class Actor {
   constructor(scene, options = {}) {
@@ -34,67 +35,25 @@ export class Actor {
       poisonDps: 0
     };
 
+    // Hero configuration
+    this.hero = options.hero || (options.heroId ? HEROES.find(h => h.id === options.heroId) : null) || HEROES[0];
+    if (options.robeColor && !options.hero) {
+      this.hero = { ...this.hero, bodyColor: options.robeColor, accentColor: options.hatColor || this.hero.accentColor };
+    }
+
     // Visuals
     this.group = new THREE.Group();
     this.visualMesh = new THREE.Group();
     this.group.add(this.visualMesh);
     this.scene.add(this.group);
 
-    this.robeColor = options.robeColor || 0xd92638;
-    this.hatColor = options.hatColor || 0x1e2238;
-    this.buildMesh();
+    buildHeroVisual(this, this.hero);
+    // Backwards-compatible aliases for robe/hat materials
+    this.robeMat = this.bodyMat;
+    this.hatMat = this.accentMat;
 
     this.hitTimer = 0;
     this.walkTime = 0;
-  }
-
-  buildMesh() {
-    // Robe Cone
-    const robeGeo = new THREE.ConeGeometry(0.95, 2.2, 12);
-    this.robeMat = new THREE.MeshLambertMaterial({
-      color: this.robeColor,
-      emissive: 0x000000
-    });
-    this.robe = new THREE.Mesh(robeGeo, this.robeMat);
-    this.robe.position.y = 1.1;
-    this.robe.castShadow = true;
-    this.visualMesh.add(this.robe);
-
-    // Hat Brim
-    const hatBrimGeo = new THREE.CylinderGeometry(1.1, 1.1, 0.12, 12);
-    this.hatMat = new THREE.MeshLambertMaterial({
-      color: this.hatColor,
-      emissive: 0x000000
-    });
-    const hatBrim = new THREE.Mesh(hatBrimGeo, this.hatMat);
-    hatBrim.position.y = 2.15;
-    this.visualMesh.add(hatBrim);
-
-    // Hat Top
-    const hatTopGeo = new THREE.ConeGeometry(0.65, 1.3, 10);
-    const hatTop = new THREE.Mesh(hatTopGeo, this.hatMat);
-    hatTop.position.y = 2.8;
-    this.visualMesh.add(hatTop);
-
-    // Staff Orb
-    const staffOrbGeo = new THREE.SphereGeometry(0.26, 8, 8);
-    this.staffOrbMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff });
-    this.staffOrb = new THREE.Mesh(staffOrbGeo, this.staffOrbMat);
-    this.staffOrb.position.set(0.65, 1.4, 0.75);
-    this.visualMesh.add(this.staffOrb);
-
-    // Shield Bubble Mesh
-    const shieldGeo = new THREE.SphereGeometry(1.6, 12, 12);
-    const shieldMat = new THREE.MeshBasicMaterial({
-      color: 0x3b82f6,
-      transparent: true,
-      opacity: 0.35,
-      wireframe: true
-    });
-    this.shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
-    this.shieldMesh.position.y = 1.4;
-    this.shieldMesh.visible = false;
-    this.visualMesh.add(this.shieldMesh);
   }
 
   applyShield(amount = 80, duration = 3.0) {
@@ -111,23 +70,22 @@ export class Actor {
       if (this.shieldHp >= amount) {
         this.shieldHp -= amount;
         return 0;
-      } else {
-        const remaining = amount - this.shieldHp;
-        this.shieldHp = 0;
-        this.shieldActive = false;
-        if (this.shieldMesh) this.shieldMesh.visible = false;
-        amount = remaining;
       }
+      const remaining = amount - this.shieldHp;
+      this.shieldHp = 0;
+      this.shieldActive = false;
+      if (this.shieldMesh) this.shieldMesh.visible = false;
+      amount = remaining;
     } else if (this.shieldActive) {
       this.shieldActive = false;
       if (this.shieldMesh) this.shieldMesh.visible = false;
-      return 0; // absorbed by perk shield
+      return 0;
     }
 
     this.hp -= amount;
     this.hitTimer = 0.08;
-    this.robeMat.emissive.setHex(0xffffff);
-    this.hatMat.emissive.setHex(0xffffff);
+    this.bodyMat.emissive.setHex(0xffffff);
+    this.accentMat.emissive.setHex(0xffffff);
 
     if (this.hp <= 0) {
       this.hp = 0;
@@ -167,16 +125,14 @@ export class Actor {
   update(dt) {
     if (this.isDead) return;
 
-    // Hit Flash Reset
     if (this.hitTimer > 0) {
       this.hitTimer -= dt;
       if (this.hitTimer <= 0) {
-        this.robeMat.emissive.setHex(0x000000);
-        this.hatMat.emissive.setHex(0x000000);
+        this.bodyMat.emissive.setHex(0x000000);
+        this.accentMat.emissive.setHex(0x000000);
       }
     }
 
-    // Knockback Decay
     if (this.kbTimer > 0) {
       const decay = this.kbTimer / 0.15;
       this.x += this.kbVx * decay * dt;
@@ -184,7 +140,6 @@ export class Actor {
       this.kbTimer -= dt;
     }
 
-    // Status Effects
     if (this.shieldTimer > 0) {
       this.shieldTimer -= dt;
       if (this.shieldTimer <= 0) {
@@ -237,4 +192,3 @@ export class Actor {
     this.scene.remove(this.group);
   }
 }
-
