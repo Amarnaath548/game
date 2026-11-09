@@ -1,16 +1,16 @@
 import * as THREE from 'three';
-import { COLORS, ARENA, CAMERA_CONFIG } from '../config/constants.js';
+import { COLORS, ARENA, CAMERA_CONFIG, BIOMES } from '../config/constants.js';
 
 export class SceneManager {
   constructor() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(COLORS.BG_VOID);
+    this.scene.background = new THREE.Color(BIOMES.GRASS.skyColor);
 
     this.camera = new THREE.PerspectiveCamera(
-      45,
+      CAMERA_CONFIG.FOV || 45,
       window.innerWidth / window.innerHeight,
       0.5,
-      250
+      350
     );
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -24,9 +24,11 @@ export class SceneManager {
     this.cameraTarget = new THREE.Vector3();
     this.trauma = 0; // Screen shake trauma (0 - 1)
     this.obelisks = [];
+    this.obeliskMeshes = [];
 
     this.initLights();
     this.initArena();
+    this.applyBiome('GRASS');
 
     window.addEventListener('resize', () => this.onResize());
   }
@@ -36,43 +38,62 @@ export class SceneManager {
   }
 
   initLights() {
-    const ambient = new THREE.AmbientLight(0xdbe4ff, 0.85);
-    this.scene.add(ambient);
+    this.ambientLight = new THREE.AmbientLight(0xfff3db, 1.0);
+    this.scene.add(this.ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfff4e0, 1.3);
-    dirLight.position.set(35, 65, 30);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.set(1024, 1024);
-    dirLight.shadow.camera.near = 10;
-    dirLight.shadow.camera.far = 160;
+    this.dirLight = new THREE.DirectionalLight(0xfffae0, 1.4);
+    this.dirLight.position.set(35, 65, 30);
+    this.dirLight.castShadow = true;
+    this.dirLight.shadow.mapSize.set(1024, 1024);
+    this.dirLight.shadow.camera.near = 10;
+    this.dirLight.shadow.camera.far = 160;
     const d = 60;
-    dirLight.shadow.camera.left = -d;
-    dirLight.shadow.camera.right = d;
-    dirLight.shadow.camera.top = d;
-    dirLight.shadow.camera.bottom = -d;
-    this.scene.add(dirLight);
+    this.dirLight.shadow.camera.left = -d;
+    this.dirLight.shadow.camera.right = d;
+    this.dirLight.shadow.camera.top = d;
+    this.dirLight.shadow.camera.bottom = -d;
+    this.scene.add(this.dirLight);
+  }
+
+  createCheckerTexture(c1, c2) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    const colorA = new THREE.Color(c1).getStyle();
+    const colorB = new THREE.Color(c2).getStyle();
+
+    ctx.fillStyle = colorA;
+    ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = colorB;
+    ctx.fillRect(0, 0, 64, 64);
+    ctx.fillRect(64, 64, 64, 64);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(36, 36);
+    texture.magFilter = THREE.NearestFilter;
+    return texture;
   }
 
   initArena() {
-    // Obsidian circular floor
+    // Checkerboard circular floor
     const floorGeo = new THREE.CylinderGeometry(ARENA.RADIUS, ARENA.RADIUS, 1, 64);
-    const floorMat = new THREE.MeshLambertMaterial({ color: COLORS.FLOOR_SLATE });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.position.y = -0.5;
-    floor.receiveShadow = true;
-    this.scene.add(floor);
+    this.floorMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    this.floorMesh = new THREE.Mesh(floorGeo, this.floorMat);
+    this.floorMesh.position.y = -0.5;
+    this.floorMesh.receiveShadow = true;
+    this.scene.add(this.floorMesh);
 
-    // Subtle runes grid
-    const grid = new THREE.GridHelper(ARENA.RADIUS * 2, 40, COLORS.GRID_RUNE, COLORS.GRID_RUNE);
-    grid.position.y = 0.02;
-    this.scene.add(grid);
-
-    // Tactical zone rings
+    // Tactical zone rings: storm ring kept bright purple (0xb700ff)
     [ARENA.RINGS.SANCTUM_MAX, ARENA.RINGS.RUINS_MAX, ARENA.RINGS.SPAWN_MAX].forEach((radius, idx) => {
-      const ringGeo = new THREE.RingGeometry(radius - 0.25, radius, 64);
+      const ringGeo = new THREE.RingGeometry(radius - 0.35, radius, 64);
       ringGeo.rotateX(-Math.PI / 2);
       const ringMat = new THREE.MeshBasicMaterial({
-        color: idx === 2 ? COLORS.STORM_RING : COLORS.RING_DIVIDER,
+        color: idx === 2 ? COLORS.STORM_RING : 0xffffff,
+        transparent: true,
+        opacity: idx === 2 ? 0.95 : 0.45,
         side: THREE.DoubleSide
       });
       const ringMesh = new THREE.Mesh(ringGeo, ringMat);
@@ -80,20 +101,111 @@ export class SceneManager {
       this.scene.add(ringMesh);
     });
 
-    // 4 Indestructible Sanctum Obelisks
-    const obeliskGeo = new THREE.BoxGeometry(2.4, 6.0, 2.4);
-    const obeliskMat = new THREE.MeshLambertMaterial({ color: COLORS.OBELISK });
+    // 4 Chunky Low-Poly Sanctum Obelisks with lighter edges & contact shadows
     const positions = [
       [10, 10], [-10, 10], [10, -10], [-10, -10]
     ];
     positions.forEach(([x, z]) => {
-      const pillar = new THREE.Mesh(obeliskGeo, obeliskMat);
-      pillar.position.set(x, 3.0, z);
+      const obeliskGroup = new THREE.Group();
+      obeliskGroup.position.set(x, 0, z);
+
+      // Contact shadow decal
+      const shadowGeo = new THREE.CircleGeometry(2.4, 16);
+      shadowGeo.rotateX(-Math.PI / 2);
+      const shadowMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.32,
+        depthWrite: false
+      });
+      const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+      shadow.position.y = 0.02;
+      obeliskGroup.add(shadow);
+
+      // Chunky low-poly stepped pillar shaft
+      const pillarGeo = new THREE.BoxGeometry(2.4, 5.6, 2.4);
+      const pillarMat = new THREE.MeshLambertMaterial({
+        color: BIOMES.GRASS.obeliskColor,
+        flatShading: true
+      });
+      const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+      pillar.position.y = 2.8;
       pillar.castShadow = true;
       pillar.receiveShadow = true;
-      this.scene.add(pillar);
+      obeliskGroup.add(pillar);
+      this.obeliskMeshes.push(pillar);
+
+      // Pyramid top cap
+      const capGeo = new THREE.ConeGeometry(1.9, 1.4, 4);
+      const cap = new THREE.Mesh(capGeo, pillarMat);
+      cap.position.y = 6.3;
+      cap.rotation.y = Math.PI / 4;
+      cap.castShadow = true;
+      obeliskGroup.add(cap);
+      this.obeliskMeshes.push(cap);
+
+      // Lighter edge highlights
+      const edgesGeo = new THREE.EdgesGeometry(pillarGeo);
+      const edgesMat = new THREE.LineBasicMaterial({
+        color: 0xcfd8dc,
+        transparent: true,
+        opacity: 0.65
+      });
+      const edges = new THREE.LineSegments(edgesGeo, edgesMat);
+      edges.position.y = 2.8;
+      obeliskGroup.add(edges);
+
+      this.scene.add(obeliskGroup);
       this.obelisks.push({ x, z, radius: 1.5 });
     });
+  }
+
+  applyBiome(biomeKey = null) {
+    let biome = biomeKey;
+    if (typeof biome === 'string') {
+      biome = BIOMES[biome.toUpperCase()];
+    }
+    if (!biome) {
+      const keys = Object.keys(BIOMES);
+      biome = BIOMES[keys[Math.floor(Math.random() * keys.length)]];
+    }
+    this.currentBiome = biome;
+
+    // Sky & fog
+    this.scene.background = new THREE.Color(biome.skyColor);
+    if (!this.scene.fog) {
+      this.scene.fog = new THREE.FogExp2(biome.fogColor, biome.fogDensity);
+    } else {
+      this.scene.fog.color.setHex(biome.fogColor);
+      this.scene.fog.density = biome.fogDensity;
+    }
+
+    // Lights
+    if (this.ambientLight) {
+      this.ambientLight.color.setHex(biome.ambientColor);
+      this.ambientLight.intensity = biome.ambientIntensity;
+    }
+    if (this.dirLight) {
+      this.dirLight.color.setHex(biome.dirLightColor);
+      this.dirLight.intensity = biome.dirLightIntensity;
+    }
+
+    // Floor checkerboard
+    if (this.floorMesh) {
+      if (this.floorTexture) this.floorTexture.dispose();
+      this.floorTexture = this.createCheckerTexture(biome.floorColor, biome.floorAccentColor);
+      this.floorMesh.material.map = this.floorTexture;
+      this.floorMesh.material.needsUpdate = true;
+    }
+
+    // Obelisks
+    if (this.obeliskMeshes) {
+      this.obeliskMeshes.forEach((mesh) => {
+        mesh.material.color.setHex(biome.obeliskColor);
+      });
+    }
+
+    return biome;
   }
 
   updateCamera(playerPos, aimDir, dt = 0.016) {
@@ -110,9 +222,10 @@ export class SceneManager {
       this.trauma = Math.max(0, this.trauma - dt * 2.5);
     }
 
+    const pitchBias = CAMERA_CONFIG.PITCH_BIAS || 1.0;
     const desiredX = playerPos.x + lookAheadX + shakeX;
-    const desiredY = CAMERA_CONFIG.OFFSET_Y;
-    const desiredZ = playerPos.z + CAMERA_CONFIG.OFFSET_Z + lookAheadZ + shakeZ;
+    const desiredY = CAMERA_CONFIG.OFFSET_Y * pitchBias;
+    const desiredZ = playerPos.z + (CAMERA_CONFIG.OFFSET_Z * pitchBias) + lookAheadZ + shakeZ;
 
     this.camera.position.lerp(new THREE.Vector3(desiredX, desiredY, desiredZ), CAMERA_CONFIG.LERP_SPEED);
 

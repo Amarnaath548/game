@@ -10,6 +10,39 @@ export const COLORS = {
   STORM_RING: 0xb700ff
 };
 
+export const BIOMES = {
+  GRASS: {
+    id: 'GRASS',
+    name: 'Grasslands',
+    floorColor: 0x6fcf4a,
+    floorAccentColor: 0x62bf3d,
+    skyColor: 0x7acbf5,
+    fogColor: 0x7acbf5,
+    fogDensity: 0.0035,
+    ambientColor: 0xfff3db,
+    ambientIntensity: 1.0,
+    dirLightColor: 0xfffae0,
+    dirLightIntensity: 1.4,
+    obeliskColor: 0x475569,
+    bushColor: 0x22c55e
+  },
+  SNOW: {
+    id: 'SNOW',
+    name: 'Snowfield',
+    floorColor: 0xe8f4ff,
+    floorAccentColor: 0xd6e8fa,
+    skyColor: 0xbae6fd,
+    fogColor: 0xbae6fd,
+    fogDensity: 0.0035,
+    ambientColor: 0xe0f2fe,
+    ambientIntensity: 1.05,
+    dirLightColor: 0xffffff,
+    dirLightIntensity: 1.35,
+    obeliskColor: 0x334155,
+    bushColor: 0x059669
+  }
+};
+
 export const ARENA = {
   RADIUS: 120,
   RINGS: {
@@ -20,8 +53,10 @@ export const ARENA = {
 };
 
 export const CAMERA_CONFIG = {
-  OFFSET_Y: 34,
-  OFFSET_Z: 28, // ~50 degree pitch
+  OFFSET_Y: 52,
+  OFFSET_Z: 24, // Steeper top-down pitch (~65 degrees)
+  FOV: 45,
+  PITCH_BIAS: 1.0, // Tunable camera pitch/distance multiplier
   LERP_SPEED: 0.1,
   AIM_LOOKAHEAD: 3.5
 };

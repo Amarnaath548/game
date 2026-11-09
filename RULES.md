@@ -5,3 +5,4 @@
 - MODULAR FILES: Keep game code split into small, focused files (under 250 lines each) so edits only require reading and writing small files.
 - BRIEF REPLIES: Keep chat explanations under 4 sentences. Do not echo full unchanged code blocks in chat.
 
+- NO TERMINAL: Do not run shell commands (grep, git, find, etc.) to explore. Only read the files named in the task. If you need something else, ask me.

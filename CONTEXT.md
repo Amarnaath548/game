@@ -14,7 +14,8 @@
 - `magica-royale/src/entities/BotBrain.js`: State decision engine (FORAGE/SKIRMISH/EVADE), target leading, dash trigger.
 - `magica-royale/src/entities/BotSenses.js`: Spatial perception, projectile ray collision avoidance, target scoring.
 - `magica-royale/src/entities/Projectile.js`: Spell projectile physics, homing trajectories, piercing hits, visual particles.
-- `magica-royale/src/entities/Prop.js`: Chests (Wooden/Mythic), Arcane Crystals, Bushes, XP Gems, Health Orbs.
+- `magica-royale/src/entities/Prop.js`: Chests (Wooden/Mythic), Arcane Crystals, Bushes.
+- `magica-royale/src/entities/Collectibles.js`: XP Gems and Health Orbs.
 - `magica-royale/src/systems/CollisionSystem.js`: 2D circle-circle collision helper math.
 - `magica-royale/src/systems/ParticleSystem.js`: GPU instanced particle pool and burst effects.
 - `magica-royale/src/systems/ZoneSystem.js`: Shrinking storm cylinder, perimeter ring, tick damage.
@@ -31,3 +32,4 @@
 - **Phase 3 Complete**: Aim assist snapping ($\pm 20^\circ$) inside spell range, auto-repeat fire on hold, 4 new data-driven spells (`PIERCE`, `BLAST`, `HOMING`, `SHIELD`), 8 selectable HUD spells/staves, 110s storm pacing (25/30/30/25s), and mythic chest repositioned to `(0, -12)`.
 - Dynamic storm zones (4 phases), bushes stealth, destructible chests and explosive barrels.
 - Lobby with staff loadout, persistent trophy ranks, meta-bonuses, and level-up perks.
+- **Phase A Complete**: Bright biomes system (`GRASS` & `SNOW`) with procedural checkerboard arena floor, high-contrast chunky low-poly obelisks and faceted bushes with contact shadows and edge highlights, steeper camera pitch (`OFFSET_Y: 52`, `OFFSET_Z: 24`, tunable constants), and vibrant navy-to-purple lobby background.
