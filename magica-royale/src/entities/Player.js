@@ -44,6 +44,44 @@ export class Player extends Actor {
     this.aimLine = new THREE.Mesh(aimLineGeo, this.aimLineMat);
     this.aimLine.position.y = 0.06;
     this.group.add(this.aimLine);
+
+    // Player Marker: White ground ring with cyan glow & downward floating arrow
+    this.markerTime = 0;
+    const ringGeo = new THREE.RingGeometry(1.25, 1.48, 32);
+    ringGeo.rotateX(-Math.PI / 2);
+    this.markerRingMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide
+    });
+    this.markerRing = new THREE.Mesh(ringGeo, this.markerRingMat);
+    this.markerRing.position.y = 0.04;
+    this.group.add(this.markerRing);
+
+    const glowGeo = new THREE.RingGeometry(1.05, 1.75, 32);
+    glowGeo.rotateX(-Math.PI / 2);
+    this.markerGlowMat = new THREE.MeshBasicMaterial({
+      color: 0x00f2ff,
+      transparent: true,
+      opacity: 0.5,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    this.markerGlow = new THREE.Mesh(glowGeo, this.markerGlowMat);
+    this.markerGlow.position.y = 0.035;
+    this.group.add(this.markerGlow);
+
+    const arrowGeo = new THREE.ConeGeometry(0.32, 0.58, 4);
+    arrowGeo.rotateX(Math.PI);
+    this.markerArrowMat = new THREE.MeshBasicMaterial({
+      color: 0x00f2ff,
+      transparent: true,
+      opacity: 0.95
+    });
+    this.markerArrow = new THREE.Mesh(arrowGeo, this.markerArrowMat);
+    this.markerArrow.position.y = 3.6;
+    this.group.add(this.markerArrow);
   }
 
   setSpell(spellKey) {
@@ -132,13 +170,23 @@ export class Player extends Actor {
     const isMoving = Math.hypot(this.input.moveDir.x, this.input.moveDir.z) > 0.05;
     this.setWobble(isMoving && this.dashTimer <= 0, dt);
 
-    // Bush Stealth
+    // Bush Stealth & Player Marker Fading
     const inBush = bushes.some((bush) => bush.checkInside(this.x, this.z));
     const targetOpacity = inBush ? 0.35 : 1.0;
     this.robeMat.transparent = inBush;
     this.robeMat.opacity = targetOpacity;
 
+    // Marker animation & pulsing
+    this.markerTime += dt;
+    const pulse = 1.0 + Math.sin(this.markerTime * 4.5) * 0.08;
+    this.markerRing.scale.set(pulse, 1, pulse);
+    this.markerGlow.scale.set(pulse, 1, pulse);
+    this.markerRingMat.opacity = (0.75 + Math.sin(this.markerTime * 4.5) * 0.15) * targetOpacity;
+    this.markerGlowMat.opacity = 0.5 * targetOpacity;
+    this.markerArrowMat.opacity = targetOpacity;
+    this.markerArrow.position.y = 3.6 + Math.sin(this.markerTime * 4.0) * 0.12;
+    this.markerArrow.rotation.y += dt * 1.5;
+
     super.update(dt);
   }
 }
-

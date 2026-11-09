@@ -3,12 +3,15 @@ export const COLORS = {
   FLOOR_SLATE: 0x1a1c29,
   GRID_RUNE: 0x2a2e42,
   RING_DIVIDER: 0x3b4262,
-  OBELISK: 0x25283d,
+  OBELISK: 0xb8b2a7,
+  OBELISK_TOP: 0x9f998f,
   PLAYER_ROBE: 0xd92638,
   PLAYER_HAT: 0x1e2238,
   AIM_LASER: 0x00f2ff,
   STORM_RING: 0xb700ff
 };
+
+export const HERO_VISUAL_SCALE = 1.4;
 
 export const BIOMES = {
   GRASS: {
@@ -23,7 +26,8 @@ export const BIOMES = {
     ambientIntensity: 1.0,
     dirLightColor: 0xfffae0,
     dirLightIntensity: 1.4,
-    obeliskColor: 0x475569,
+    obeliskColor: 0xb8b2a7,
+    obeliskTopColor: 0x9f998f,
     bushColor: 0x22c55e
   },
   SNOW: {
@@ -38,7 +42,8 @@ export const BIOMES = {
     ambientIntensity: 1.05,
     dirLightColor: 0xffffff,
     dirLightIntensity: 1.35,
-    obeliskColor: 0x334155,
+    obeliskColor: 0xcfd8dc,
+    obeliskTopColor: 0xb0bec5,
     bushColor: 0x059669
   }
 };
@@ -64,10 +69,11 @@ export const ARENA = {
 };
 
 export const CAMERA_CONFIG = {
-  OFFSET_Y: 52,
-  OFFSET_Z: 24, // Steeper top-down pitch (~65 degrees)
+  // Tuned for ~35 units ground view in all directions with 1.4x scaled heroes
+  OFFSET_Y: 56,
+  OFFSET_Z: 28,
   FOV: 45,
-  PITCH_BIAS: 1.0, // Tunable camera pitch/distance multiplier
+  PITCH_BIAS: 1.0,
   LERP_SPEED: 0.1,
   AIM_LOOKAHEAD: 3.5
 };

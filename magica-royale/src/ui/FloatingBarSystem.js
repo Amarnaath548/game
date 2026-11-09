@@ -22,14 +22,27 @@ export class FloatingBarSystem {
       el = document.createElement('div');
       el.className = 'actor-overhead';
       el.style.position = 'absolute';
-      el.style.width = '48px';
-      el.style.height = '6px';
-      el.style.background = 'rgba(0,0,0,0.6)';
-      el.style.border = '1px solid #1f2937';
-      el.style.borderRadius = '3px';
-      el.style.transform = 'translate(-50%, -50%)';
       el.style.display = 'flex';
-      el.style.overflow = 'hidden';
+      el.style.alignItems = 'center';
+      el.style.gap = '4px';
+      el.style.transform = 'translate(-50%, -50%)';
+
+      const lvlTag = document.createElement('span');
+      lvlTag.className = 'actor-lvl-tag';
+      lvlTag.style.fontSize = '10px';
+      lvlTag.style.fontWeight = '800';
+      lvlTag.style.color = '#f8fafc';
+      lvlTag.style.textShadow = '0 1px 3px rgba(0,0,0,0.9)';
+      lvlTag.textContent = `Lv ${actor.level || 1}`;
+      el.appendChild(lvlTag);
+
+      const barBg = document.createElement('div');
+      barBg.style.width = '42px';
+      barBg.style.height = '6px';
+      barBg.style.background = 'rgba(0,0,0,0.6)';
+      barBg.style.border = '1px solid #1f2937';
+      barBg.style.borderRadius = '3px';
+      barBg.style.overflow = 'hidden';
 
       const fill = document.createElement('div');
       fill.className = 'actor-hp-bar';
@@ -37,7 +50,8 @@ export class FloatingBarSystem {
       fill.style.height = '100%';
       fill.style.background = '#ef4444';
       fill.style.transition = 'width 0.1s linear';
-      el.appendChild(fill);
+      barBg.appendChild(fill);
+      el.appendChild(barBg);
 
       this.container.appendChild(el);
       this.bars.set(actor, el);
@@ -57,11 +71,10 @@ export class FloatingBarSystem {
         return;
       }
 
-      // 3D position ~3.2 units high (above head/hat)
-      this.projVec.set(actor.x, 3.2, actor.z);
+      // 3D position ~3.5 units high (above 1.4x head/hat)
+      this.projVec.set(actor.x, 3.5, actor.z);
       this.projVec.project(this.camera);
 
-      // Check if behind camera
       if (this.projVec.z > 1) {
         el.style.display = 'none';
         return;
@@ -74,17 +87,19 @@ export class FloatingBarSystem {
       el.style.left = `${screenX}px`;
       el.style.top = `${screenY}px`;
 
+      const lvlTag = el.querySelector('.actor-lvl-tag');
+      if (lvlTag) lvlTag.textContent = `Lv ${actor.level || 1}`;
+
       const hpPercent = Math.max(0, Math.min(100, (actor.hp / actor.maxHp) * 100));
-      const fill = el.firstChild;
+      const fill = el.querySelector('.actor-hp-bar');
       if (fill) {
         fill.style.width = `${hpPercent}%`;
-        fill.style.background = actor.robeColor
-          ? `#${actor.robeColor.toString(16).padStart(6, '0')}`
+        fill.style.background = actor.hero?.bodyColor
+          ? `#${actor.hero.bodyColor.toString(16).padStart(6, '0')}`
           : '#ef4444';
       }
     });
 
-    // Cleanup dead actors that are no longer in array
     this.bars.forEach((el, actor) => {
       if (!actors.includes(actor) || actor.isDead) {
         el.style.display = 'none';
@@ -92,4 +107,3 @@ export class FloatingBarSystem {
     });
   }
 }
-

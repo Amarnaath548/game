@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PLAYER_BASE, HEROES } from '../config/constants.js';
+import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE } from '../config/constants.js';
 import { buildHeroVisual } from './HeroVisual.js';
 
 export class Actor {
@@ -44,6 +44,7 @@ export class Actor {
     // Visuals
     this.group = new THREE.Group();
     this.visualMesh = new THREE.Group();
+    this.visualMesh.scale.setScalar(HERO_VISUAL_SCALE);
     this.group.add(this.visualMesh);
     this.scene.add(this.group);
 

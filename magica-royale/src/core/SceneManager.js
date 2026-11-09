@@ -60,12 +60,9 @@ export class SceneManager {
     canvas.width = 128;
     canvas.height = 128;
     const ctx = canvas.getContext('2d');
-    const colorA = new THREE.Color(c1).getStyle();
-    const colorB = new THREE.Color(c2).getStyle();
-
-    ctx.fillStyle = colorA;
+    ctx.fillStyle = new THREE.Color(c1).getStyle();
     ctx.fillRect(0, 0, 128, 128);
-    ctx.fillStyle = colorB;
+    ctx.fillStyle = new THREE.Color(c2).getStyle();
     ctx.fillRect(0, 0, 64, 64);
     ctx.fillRect(64, 64, 64, 64);
 
@@ -78,7 +75,6 @@ export class SceneManager {
   }
 
   initArena() {
-    // Checkerboard circular floor
     const floorGeo = new THREE.CylinderGeometry(ARENA.RADIUS, ARENA.RADIUS, 1, 64);
     this.floorMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
     this.floorMesh = new THREE.Mesh(floorGeo, this.floorMat);
@@ -86,7 +82,7 @@ export class SceneManager {
     this.floorMesh.receiveShadow = true;
     this.scene.add(this.floorMesh);
 
-    // Tactical zone rings: storm ring kept bright purple (0xb700ff)
+    // Tactical zone rings
     [ARENA.RINGS.SANCTUM_MAX, ARENA.RINGS.RUINS_MAX, ARENA.RINGS.SPAWN_MAX].forEach((radius, idx) => {
       const ringGeo = new THREE.RingGeometry(radius - 0.35, radius, 64);
       ringGeo.rotateX(-Math.PI / 2);
@@ -101,56 +97,40 @@ export class SceneManager {
       this.scene.add(ringMesh);
     });
 
-    // 4 Chunky Low-Poly Sanctum Obelisks with lighter edges & contact shadows
-    const positions = [
-      [10, 10], [-10, 10], [10, -10], [-10, -10]
-    ];
+    // 4 Chunky Low-Poly Sanctum Obelisks with lighter stone & darker top face
+    const positions = [[10, 10], [-10, 10], [10, -10], [-10, -10]];
     positions.forEach(([x, z]) => {
       const obeliskGroup = new THREE.Group();
       obeliskGroup.position.set(x, 0, z);
 
-      // Contact shadow decal
       const shadowGeo = new THREE.CircleGeometry(2.4, 16);
       shadowGeo.rotateX(-Math.PI / 2);
-      const shadowMat = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        opacity: 0.32,
-        depthWrite: false
-      });
+      const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false });
       const shadow = new THREE.Mesh(shadowGeo, shadowMat);
       shadow.position.y = 0.02;
       obeliskGroup.add(shadow);
 
-      // Chunky low-poly stepped pillar shaft
       const pillarGeo = new THREE.BoxGeometry(2.4, 5.6, 2.4);
-      const pillarMat = new THREE.MeshLambertMaterial({
-        color: BIOMES.GRASS.obeliskColor,
-        flatShading: true
-      });
-      const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+      const sideMat = new THREE.MeshLambertMaterial({ color: BIOMES.GRASS.obeliskColor, flatShading: true });
+      const topMat = new THREE.MeshLambertMaterial({ color: BIOMES.GRASS.obeliskTopColor, flatShading: true });
+      const pillarMats = [sideMat, sideMat, topMat, sideMat, sideMat, sideMat];
+      const pillar = new THREE.Mesh(pillarGeo, pillarMats);
       pillar.position.y = 2.8;
       pillar.castShadow = true;
       pillar.receiveShadow = true;
       obeliskGroup.add(pillar);
       this.obeliskMeshes.push(pillar);
 
-      // Pyramid top cap
       const capGeo = new THREE.ConeGeometry(1.9, 1.4, 4);
-      const cap = new THREE.Mesh(capGeo, pillarMat);
+      const cap = new THREE.Mesh(capGeo, topMat);
       cap.position.y = 6.3;
       cap.rotation.y = Math.PI / 4;
       cap.castShadow = true;
       obeliskGroup.add(cap);
       this.obeliskMeshes.push(cap);
 
-      // Lighter edge highlights
       const edgesGeo = new THREE.EdgesGeometry(pillarGeo);
-      const edgesMat = new THREE.LineBasicMaterial({
-        color: 0xcfd8dc,
-        transparent: true,
-        opacity: 0.65
-      });
+      const edgesMat = new THREE.LineBasicMaterial({ color: 0xcfd8dc, transparent: true, opacity: 0.65 });
       const edges = new THREE.LineSegments(edgesGeo, edgesMat);
       edges.position.y = 2.8;
       obeliskGroup.add(edges);
@@ -162,16 +142,13 @@ export class SceneManager {
 
   applyBiome(biomeKey = null) {
     let biome = biomeKey;
-    if (typeof biome === 'string') {
-      biome = BIOMES[biome.toUpperCase()];
-    }
+    if (typeof biome === 'string') biome = BIOMES[biome.toUpperCase()];
     if (!biome) {
       const keys = Object.keys(BIOMES);
       biome = BIOMES[keys[Math.floor(Math.random() * keys.length)]];
     }
     this.currentBiome = biome;
 
-    // Sky & fog
     this.scene.background = new THREE.Color(biome.skyColor);
     if (!this.scene.fog) {
       this.scene.fog = new THREE.FogExp2(biome.fogColor, biome.fogDensity);
@@ -180,7 +157,6 @@ export class SceneManager {
       this.scene.fog.density = biome.fogDensity;
     }
 
-    // Lights
     if (this.ambientLight) {
       this.ambientLight.color.setHex(biome.ambientColor);
       this.ambientLight.intensity = biome.ambientIntensity;
@@ -190,7 +166,6 @@ export class SceneManager {
       this.dirLight.intensity = biome.dirLightIntensity;
     }
 
-    // Floor checkerboard
     if (this.floorMesh) {
       if (this.floorTexture) this.floorTexture.dispose();
       this.floorTexture = this.createCheckerTexture(biome.floorColor, biome.floorAccentColor);
@@ -198,10 +173,18 @@ export class SceneManager {
       this.floorMesh.material.needsUpdate = true;
     }
 
-    // Obelisks
     if (this.obeliskMeshes) {
       this.obeliskMeshes.forEach((mesh) => {
-        mesh.material.color.setHex(biome.obeliskColor);
+        if (Array.isArray(mesh.material)) {
+          mesh.material[0].color.setHex(biome.obeliskColor);
+          mesh.material[1].color.setHex(biome.obeliskColor);
+          mesh.material[2].color.setHex(biome.obeliskTopColor);
+          mesh.material[3].color.setHex(biome.obeliskColor);
+          mesh.material[4].color.setHex(biome.obeliskColor);
+          mesh.material[5].color.setHex(biome.obeliskColor);
+        } else if (mesh.material) {
+          mesh.material.color.setHex(biome.obeliskTopColor || biome.obeliskColor);
+        }
       });
     }
 
@@ -212,7 +195,6 @@ export class SceneManager {
     const lookAheadX = aimDir.x * CAMERA_CONFIG.AIM_LOOKAHEAD;
     const lookAheadZ = aimDir.z * CAMERA_CONFIG.AIM_LOOKAHEAD;
 
-    // Shake offset
     let shakeX = 0;
     let shakeZ = 0;
     if (this.trauma > 0) {
@@ -228,7 +210,6 @@ export class SceneManager {
     const desiredZ = playerPos.z + (CAMERA_CONFIG.OFFSET_Z * pitchBias) + lookAheadZ + shakeZ;
 
     this.camera.position.lerp(new THREE.Vector3(desiredX, desiredY, desiredZ), CAMERA_CONFIG.LERP_SPEED);
-
     this.cameraTarget.lerp(
       new THREE.Vector3(playerPos.x + lookAheadX * 0.5, 0, playerPos.z + lookAheadZ * 0.5),
       CAMERA_CONFIG.LERP_SPEED
