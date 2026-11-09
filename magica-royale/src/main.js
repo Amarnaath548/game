@@ -72,6 +72,7 @@ const matchManager = new MatchManager({
 // UI
 const ui = new UIManager(meta, {
   questManager,
+  sceneManager,
   onSpellChange: (spellKey) => player.setSpell(spellKey),
   onHeroChange: (hero) => {
     player.hero = hero;

@@ -8,6 +8,7 @@ export class UIManager {
   constructor(metaProgression, callbacks = {}) {
     this.meta = metaProgression;
     this.questManager = callbacks.questManager;
+    this.sceneManager = callbacks.sceneManager;
     this.onSpellChange = callbacks.onSpellChange;
     this.onHeroChange = callbacks.onHeroChange;
     this.onPerkSelected = callbacks.onPerkSelected;
@@ -19,6 +20,7 @@ export class UIManager {
     this.lobbyTrophies = get('lobby-trophies');
     this.lobbyGold = get('lobby-gold');
     this.lobbyRankTitle = get('lobby-rank-title');
+    this.lobbyArenaLabel = get('lobby-arena-label');
     this.stavesContainer = get('staves-container');
     this.upgradesContainer = get('upgrades-container');
     this.heroesContainer = get('heroes-container');
@@ -41,13 +43,9 @@ export class UIManager {
     this.modalLobbyBtn = get('modal-lobby-btn');
     this.modalPlayAgainBtn = get('modal-play-again-btn');
 
-    this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (hero) => {
-      if (this.onHeroChange) this.onHeroChange(hero);
-    });
+    this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange && this.onHeroChange(h));
     if (this.questManager) {
-      this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => {
-        this.lobbyGold.textContent = this.meta.data.gold;
-      });
+      this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
     }
 
     this.initLobbyEvents();
@@ -100,6 +98,7 @@ export class UIManager {
     const currentHeroId = localStorage.getItem('magica_selected_hero') || 'ignis';
     this.heroSelectView.render(currentHeroId);
     if (this.questView) this.questView.render();
+    if (this.lobbyArenaLabel && this.sceneManager) this.lobbyArenaLabel.textContent = `ARENA: ${this.sceneManager.getNextBiomeName()}`;
 
     // Staves Armory
     this.stavesContainer.innerHTML = '';
@@ -237,7 +236,7 @@ export class UIManager {
       statsEl.id = 'match-hero-stats';
       this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box'));
     }
-    const questHtml = finishedQuests && finishedQuests.length > 0 ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
+    const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
     statsEl.innerHTML = `<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}`;
 
     const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;

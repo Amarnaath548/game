@@ -50,9 +50,9 @@ export class Player extends Actor {
     const ringGeo = new THREE.RingGeometry(1.25, 1.48, 32);
     ringGeo.rotateX(-Math.PI / 2);
     this.markerRingMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: 0x00f2ff,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.95,
       side: THREE.DoubleSide
     });
     this.markerRing = new THREE.Mesh(ringGeo, this.markerRingMat);

@@ -75,6 +75,7 @@ export class MatchManager {
     this.zoneSys = new ZoneSystem(this.sceneManager.scene);
 
     this.applyLobbyLoadout();
+    this.sceneManager.startMatchBiome(this.spawnManager.bushes);
     this.spawnManager.startMatch();
 
     this.matchTime = 0;

@@ -24,7 +24,8 @@ export class DamageNumbers {
       el.style.fontWeight = '900';
       el.style.fontSize = '18px';
       el.style.fontFamily = 'system-ui, -apple-system, sans-serif';
-      el.style.textShadow = '0 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)';
+      el.style.textShadow = '0 0 4px #000, 0 2px 4px #000, 0 0 8px #000';
+      el.style.webkitTextStroke = '0.5px rgba(0,0,0,0.8)';
       el.style.display = 'none';
       el.style.willChange = 'transform, opacity';
       this.container.appendChild(el);

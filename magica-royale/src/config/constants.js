@@ -16,7 +16,7 @@ export const HERO_VISUAL_SCALE = 1.4;
 export const BIOMES = {
   GRASS: {
     id: 'GRASS',
-    name: 'Grasslands',
+    name: 'Grass Plains',
     floorColor: 0x6fcf4a,
     floorAccentColor: 0x62bf3d,
     skyColor: 0x7acbf5,
@@ -28,11 +28,12 @@ export const BIOMES = {
     dirLightIntensity: 1.4,
     obeliskColor: 0xb8b2a7,
     obeliskTopColor: 0x9f998f,
-    bushColor: 0x22c55e
+    bushColor: 0x22c55e,
+    bushEdgeColor: 0x86efac
   },
   SNOW: {
     id: 'SNOW',
-    name: 'Snowfield',
+    name: 'Frozen Peaks',
     floorColor: 0xe8f4ff,
     floorAccentColor: 0xd6e8fa,
     skyColor: 0xbae6fd,
@@ -42,9 +43,10 @@ export const BIOMES = {
     ambientIntensity: 1.05,
     dirLightColor: 0xffffff,
     dirLightIntensity: 1.35,
-    obeliskColor: 0xcfd8dc,
-    obeliskTopColor: 0xb0bec5,
-    bushColor: 0x059669
+    obeliskColor: 0x64748b,
+    obeliskTopColor: 0x475569,
+    bushColor: 0x065f46,
+    bushEdgeColor: 0x38bdf8
   }
 };
 
@@ -54,7 +56,7 @@ export const HEROES = [
   { id: 'volt', name: 'Volt', bodyColor: 0xeab308, accentColor: 0x3b82f6, hatType: 'HORNS', extra: 'TAIL' },
   { id: 'tox', name: 'Tox', bodyColor: 0x16a34a, accentColor: 0xa3e635, hatType: 'MASK', extra: 'BACKPACK' },
   { id: 'nyx', name: 'Nyx', bodyColor: 0x7c3aed, accentColor: 0xc084fc, hatType: 'HOOD', extra: 'CAPE' },
-  { id: 'aegis', name: 'Aegis', bodyColor: 0xe2e8f0, accentColor: 0xf59e0b, hatType: 'HELMET', extra: 'PAULDRONS' },
+  { id: 'aegis', name: 'Aegis', bodyColor: 0x64748b, accentColor: 0xf59e0b, hatType: 'HELMET', extra: 'PAULDRONS' },
   { id: 'krag', name: 'Krag', bodyColor: 0x854d0e, accentColor: 0xf97316, hatType: 'HORNS', extra: 'TAIL' },
   { id: 'aurelia', name: 'Aurelia', bodyColor: 0xdb2777, accentColor: 0xfacc15, hatType: 'CROWN', extra: 'CAPE' }
 ];

@@ -183,17 +183,22 @@ export class ShadowBush {
 
     // Lighter edge highlights
     const edgesGeo = new THREE.EdgesGeometry(bushGeo);
-    const edgesMat = new THREE.LineBasicMaterial({
+    this.edgesMat = new THREE.LineBasicMaterial({
       color: 0x86efac,
       transparent: true,
       opacity: 0.55
     });
-    const edges = new THREE.LineSegments(edgesGeo, edgesMat);
+    const edges = new THREE.LineSegments(edgesGeo, this.edgesMat);
     edges.scale.copy(this.mesh.scale);
     edges.position.copy(this.mesh.position);
     this.group.add(edges);
 
     this.scene.add(this.group);
+  }
+
+  setBiomeColor(color, edgeColor = 0x86efac) {
+    if (this.mat) this.mat.color.setHex(color);
+    if (this.edgesMat) this.edgesMat.color.setHex(edgeColor);
   }
 
   checkInside(actorX, actorZ) {

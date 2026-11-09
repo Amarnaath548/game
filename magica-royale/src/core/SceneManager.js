@@ -16,8 +16,7 @@ export class SceneManager {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
     document.body.appendChild(this.renderer.domElement);
 
@@ -25,12 +24,33 @@ export class SceneManager {
     this.trauma = 0; // Screen shake trauma (0 - 1)
     this.obelisks = [];
     this.obeliskMeshes = [];
+    this.biomeHistory = [];
+    this.nextBiomeKey = this.pickNextBiome();
 
     this.initLights();
     this.initArena();
-    this.applyBiome('GRASS');
+    this.applyBiome(this.nextBiomeKey);
 
     window.addEventListener('resize', () => this.onResize());
+  }
+
+  pickNextBiome() {
+    const h = this.biomeHistory, n = h.length;
+    if (n >= 2 && h[n - 1] === h[n - 2]) return h[n - 1] === 'GRASS' ? 'SNOW' : 'GRASS';
+    return Math.random() < 0.5 ? 'GRASS' : 'SNOW';
+  }
+
+  getNextBiomeName() {
+    return (BIOMES[this.nextBiomeKey] || BIOMES.GRASS).name;
+  }
+
+  startMatchBiome(bushes = []) {
+    const biomeKey = this.nextBiomeKey || this.pickNextBiome();
+    this.biomeHistory.push(biomeKey);
+    if (this.biomeHistory.length > 8) this.biomeHistory.shift();
+    this.applyBiome(biomeKey, bushes);
+    this.nextBiomeKey = this.pickNextBiome();
+    return biomeKey;
   }
 
   addTrauma(amount = 0.4) {
@@ -47,11 +67,8 @@ export class SceneManager {
     this.dirLight.shadow.mapSize.set(1024, 1024);
     this.dirLight.shadow.camera.near = 10;
     this.dirLight.shadow.camera.far = 160;
-    const d = 60;
-    this.dirLight.shadow.camera.left = -d;
-    this.dirLight.shadow.camera.right = d;
-    this.dirLight.shadow.camera.top = d;
-    this.dirLight.shadow.camera.bottom = -d;
+    const d = 60, sc = this.dirLight.shadow.camera;
+    sc.left = -d; sc.right = d; sc.top = d; sc.bottom = -d;
     this.scene.add(this.dirLight);
   }
 
@@ -87,9 +104,9 @@ export class SceneManager {
       const ringGeo = new THREE.RingGeometry(radius - 0.35, radius, 64);
       ringGeo.rotateX(-Math.PI / 2);
       const ringMat = new THREE.MeshBasicMaterial({
-        color: idx === 2 ? COLORS.STORM_RING : 0xffffff,
+        color: idx === 2 ? COLORS.STORM_RING : COLORS.RING_DIVIDER,
         transparent: true,
-        opacity: idx === 2 ? 0.95 : 0.45,
+        opacity: idx === 2 ? 0.95 : 0.65,
         side: THREE.DoubleSide
       });
       const ringMesh = new THREE.Mesh(ringGeo, ringMat);
@@ -140,7 +157,7 @@ export class SceneManager {
     });
   }
 
-  applyBiome(biomeKey = null) {
+  applyBiome(biomeKey = null, bushes = []) {
     let biome = biomeKey;
     if (typeof biome === 'string') biome = BIOMES[biome.toUpperCase()];
     if (!biome) {
@@ -176,15 +193,16 @@ export class SceneManager {
     if (this.obeliskMeshes) {
       this.obeliskMeshes.forEach((mesh) => {
         if (Array.isArray(mesh.material)) {
-          mesh.material[0].color.setHex(biome.obeliskColor);
-          mesh.material[1].color.setHex(biome.obeliskColor);
-          mesh.material[2].color.setHex(biome.obeliskTopColor);
-          mesh.material[3].color.setHex(biome.obeliskColor);
-          mesh.material[4].color.setHex(biome.obeliskColor);
-          mesh.material[5].color.setHex(biome.obeliskColor);
+          mesh.material.forEach((m, i) => m.color.setHex(i === 2 ? biome.obeliskTopColor : biome.obeliskColor));
         } else if (mesh.material) {
           mesh.material.color.setHex(biome.obeliskTopColor || biome.obeliskColor);
         }
+      });
+    }
+
+    if (bushes && bushes.length > 0) {
+      bushes.forEach((b) => {
+        if (b.setBiomeColor) b.setBiomeColor(biome.bushColor, biome.bushEdgeColor);
       });
     }
 
