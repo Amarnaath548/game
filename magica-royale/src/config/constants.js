@@ -207,3 +207,25 @@ export const STORM_PHASES = [
   { duration: 30, startRadius: 75, endRadius: 30, tickDamage: 20 },
   { duration: 25, startRadius: 30, endRadius: 8, tickDamage: 40 }
 ];
+
+export const STAFF_SPELL_MAP = {
+  PYRO_STAFF: 'PYRO',
+  CRYO_STAFF: 'CRYO',
+  ELECTRO_STAFF: 'ELECTRO',
+  VENOM_STAFF: 'VENOM',
+  PIERCE_STAFF: 'PIERCE',
+  BLAST_STAFF: 'BLAST',
+  HOMING_STAFF: 'HOMING',
+  SHIELD_STAFF: 'SHIELD'
+};
+
+export const SPELL_STAFF_MAP = {
+  PYRO: 'PYRO_STAFF',
+  CRYO: 'CRYO_STAFF',
+  ELECTRO: 'ELECTRO_STAFF',
+  VENOM: 'VENOM_STAFF',
+  PIERCE: 'PIERCE_STAFF',
+  BLAST: 'BLAST_STAFF',
+  HOMING: 'HOMING_STAFF',
+  SHIELD: 'SHIELD_STAFF'
+};

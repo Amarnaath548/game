@@ -1,16 +1,7 @@
 import { LEVEL_TABLE } from '../config/constants.js';
 import { STAVES, UPGRADES } from '../core/MetaProgression.js';
 import { HeroSelectView } from './HeroSelectView.js';
-
-const PERK_POOL = [
-  { id: 'TWIN_CAST', title: 'Twin Cast', desc: '+1 Projectile per shot (-15% damage)' },
-  { id: 'GIANT_ARCANA', title: 'Giant Arcana', desc: '+40% Projectile AoE & blast size' },
-  { id: 'SNIPER_VELOCITY', title: 'Sniper Velocity', desc: '+35% Projectile speed & range' },
-  { id: 'VAMPIRIC_SOUL', title: 'Vampiric Soul', desc: 'Heal for 20% of damage dealt' },
-  { id: 'WINDWALKER', title: 'Windwalker', desc: '+20% Move Speed, -1s Dash CD' },
-  { id: 'ARCANE_SHIELD', title: 'Arcane Shield', desc: 'Absorbs next incoming hit' },
-  { id: 'EXECUTIONER', title: 'Executioner', desc: '+35% Damage to enemies below 40% HP' }
-];
+import { triggerLockShake, renderPerkSelection } from '../core/SpellAccess.js';
 
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
@@ -21,31 +12,30 @@ export class UIManager {
     this.onStartMatch = callbacks.onStartMatch;
     this.onReturnToLobby = callbacks.onReturnToLobby;
 
-    this.lobbyScreen = document.getElementById('lobby-screen');
-    this.lobbyTrophies = document.getElementById('lobby-trophies');
-    this.lobbyGold = document.getElementById('lobby-gold');
-    this.lobbyRankTitle = document.getElementById('lobby-rank-title');
-    this.stavesContainer = document.getElementById('staves-container');
-    this.upgradesContainer = document.getElementById('upgrades-container');
-    this.heroesContainer = document.getElementById('heroes-container');
-    this.playMatchBtn = document.getElementById('play-match-btn');
-
-    this.hud = document.getElementById('hud');
-    this.aliveCountEl = document.getElementById('alive-count');
-    this.zoneStatusEl = document.getElementById('zone-status');
-    this.hpFillEl = document.getElementById('hp-fill');
-    this.xpFillEl = document.getElementById('xp-fill');
-    this.lvlTextEl = document.getElementById('player-lvl-text');
-    this.hpTextEl = document.getElementById('player-hp-text');
-    this.perkOverlay = document.getElementById('perk-overlay');
-
-    this.endModal = document.getElementById('end-modal');
-    this.endTitle = document.getElementById('end-title');
-    this.endSubtitle = document.getElementById('end-subtitle');
-    this.rewardTrophy = document.getElementById('reward-trophy');
-    this.rewardGold = document.getElementById('reward-gold');
-    this.modalLobbyBtn = document.getElementById('modal-lobby-btn');
-    this.modalPlayAgainBtn = document.getElementById('modal-play-again-btn');
+    const get = (id) => document.getElementById(id);
+    this.lobbyScreen = get('lobby-screen');
+    this.lobbyTrophies = get('lobby-trophies');
+    this.lobbyGold = get('lobby-gold');
+    this.lobbyRankTitle = get('lobby-rank-title');
+    this.stavesContainer = get('staves-container');
+    this.upgradesContainer = get('upgrades-container');
+    this.heroesContainer = get('heroes-container');
+    this.playMatchBtn = get('play-match-btn');
+    this.hud = get('hud');
+    this.aliveCountEl = get('alive-count');
+    this.zoneStatusEl = get('zone-status');
+    this.hpFillEl = get('hp-fill');
+    this.xpFillEl = get('xp-fill');
+    this.lvlTextEl = get('player-lvl-text');
+    this.hpTextEl = get('player-hp-text');
+    this.perkOverlay = get('perk-overlay');
+    this.endModal = get('end-modal');
+    this.endTitle = get('end-title');
+    this.endSubtitle = get('end-subtitle');
+    this.rewardTrophy = get('reward-trophy');
+    this.rewardGold = get('reward-gold');
+    this.modalLobbyBtn = get('modal-lobby-btn');
+    this.modalPlayAgainBtn = get('modal-play-again-btn');
 
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (hero) => {
       if (this.onHeroChange) this.onHeroChange(hero);
@@ -114,13 +104,7 @@ export class UIManager {
           ? `<button class="staff-action-btn btn-select">EQUIP</button>`
           : `<button class="staff-action-btn btn-unlock" ${this.meta.data.gold >= staff.cost ? '' : 'disabled'}>UNLOCK (${staff.cost} 🪙)</button>`;
 
-      card.innerHTML = `
-        <div>
-          <div class="staff-name" style="color: #${staff.colorHex.toString(16).padStart(6, '0')}">${staff.name}</div>
-          <div class="staff-desc">${staff.perkDesc}</div>
-        </div>
-        ${btnHtml}
-      `;
+      card.innerHTML = `<div><div class="staff-name" style="color: #${staff.colorHex.toString(16).padStart(6, '0')}">${staff.name}</div><div class="staff-desc">${staff.perkDesc}</div></div>${btnHtml}`;
       card.querySelector('button').addEventListener('click', (e) => {
         e.stopPropagation();
         if (isSelected) return;
@@ -142,15 +126,7 @@ export class UIManager {
       const isMax = currentLevel >= upg.maxLevel;
       const row = document.createElement('div');
       row.className = 'upgrade-row';
-      row.innerHTML = `
-        <div class="upg-info">
-          <div class="upg-name">${upg.name} (Lv ${currentLevel}/${upg.maxLevel})</div>
-          <div class="upg-desc">${upg.desc}</div>
-        </div>
-        <button class="upg-btn" ${(!isMax && this.meta.data.gold >= cost) ? '' : 'disabled'}>
-          ${isMax ? 'MAX' : `${cost} 🪙`}
-        </button>
-      `;
+      row.innerHTML = `<div class="upg-info"><div class="upg-name">${upg.name} (Lv ${currentLevel}/${upg.maxLevel})</div><div class="upg-desc">${upg.desc}</div></div><button class="upg-btn" ${(!isMax && this.meta.data.gold >= cost) ? '' : 'disabled'}>${isMax ? 'MAX' : `${cost} 🪙`}</button>`;
       if (!isMax) {
         row.querySelector('.upg-btn').addEventListener('click', () => {
           if (this.meta.buyUpgrade(upg.id)) this.renderLobby();
@@ -158,16 +134,29 @@ export class UIManager {
       }
       this.upgradesContainer.appendChild(row);
     });
+    this.updateSpellBarLocks();
   }
 
   initSpellButtons() {
     const buttons = document.querySelectorAll('.spell-btn');
     buttons.forEach((btn) => {
       btn.addEventListener('click', () => {
-        buttons.forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        if (this.onSpellChange) this.onSpellChange(btn.dataset.spell);
+        const spell = btn.dataset.spell;
+        if (!this.meta.ownsSpell(spell)) {
+          triggerLockShake(btn);
+          return;
+        }
+        this.setSpellActive(spell);
+        if (this.onSpellChange) this.onSpellChange(spell);
       });
+    });
+    this.updateSpellBarLocks();
+  }
+
+  updateSpellBarLocks() {
+    document.querySelectorAll('.spell-btn').forEach((btn) => {
+      const isOwned = this.meta.ownsSpell(btn.dataset.spell);
+      btn.classList.toggle('locked', !isOwned);
     });
   }
 
@@ -183,15 +172,21 @@ export class UIManager {
       Digit5: 'PIERCE', Digit6: 'BLAST', Digit7: 'HOMING', Digit8: 'SHIELD'
     };
     window.addEventListener('keydown', (e) => {
-      if (spellMap[e.code]) {
+      const spell = spellMap[e.code];
+      if (spell) {
         if (this.perkOverlay.style.display === 'flex' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
           const index = parseInt(e.code.replace('Digit', ''), 10) - 1;
           const cards = this.perkOverlay.querySelectorAll('.perk-card');
           if (cards[index]) cards[index].click();
           return;
         }
-        this.setSpellActive(spellMap[e.code]);
-        if (this.onSpellChange) this.onSpellChange(spellMap[e.code]);
+        const btn = document.querySelector(`.spell-btn[data-spell="${spell}"]`);
+        if (!this.meta.ownsSpell(spell)) {
+          triggerLockShake(btn);
+          return;
+        }
+        this.setSpellActive(spell);
+        if (this.onSpellChange) this.onSpellChange(spell);
       }
     });
   }
@@ -215,19 +210,7 @@ export class UIManager {
   }
 
   showPerkCards(level) {
-    this.perkOverlay.innerHTML = '';
-    const shuffled = [...PERK_POOL].sort(() => 0.5 - Math.random()).slice(0, 3);
-    shuffled.forEach((perk, idx) => {
-      const card = document.createElement('div');
-      card.className = 'perk-card';
-      card.innerHTML = `<div class="perk-title">(${idx + 1}) ${perk.title}</div><div class="perk-desc">${perk.desc}</div>`;
-      card.addEventListener('click', () => {
-        this.perkOverlay.style.display = 'none';
-        if (this.onPerkSelected) this.onPerkSelected(perk);
-      });
-      this.perkOverlay.appendChild(card);
-    });
-    this.perkOverlay.style.display = 'flex';
+    renderPerkSelection(this.perkOverlay, this.onPerkSelected);
   }
 
   showEndGame(isVictory, place, player = null) {

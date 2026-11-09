@@ -1,3 +1,5 @@
+import { SPELL_STAFF_MAP } from '../config/constants.js';
+
 const STORAGE_KEY = 'MAGICA_ROYALE_PROGRESSION_V1';
 
 export const RANKS = [
@@ -14,7 +16,7 @@ export const STAVES = [
     name: 'Infernal Staff',
     element: 'PYRO',
     cost: 0,
-    perkDesc: '+10% Fireball Damage & Burn Duration',
+    perkDesc: 'Unlocks Fireball. +10% Damage & Burn Duration',
     colorHex: 0xff5500,
     robeColor: 0xd92638
   },
@@ -23,7 +25,7 @@ export const STAVES = [
     name: 'Glacial Scepter',
     element: 'CRYO',
     cost: 150,
-    perkDesc: '+15% Shard Speed & 40% Chill Slow',
+    perkDesc: 'Unlocks Frost Shards. +15% Shard Speed & 40% Chill Slow',
     colorHex: 0x00f2ff,
     robeColor: 0x0284c7
   },
@@ -32,7 +34,7 @@ export const STAVES = [
     name: 'Storm Rod',
     element: 'ELECTRO',
     cost: 300,
-    perkDesc: '+1 Extra Chain Target',
+    perkDesc: 'Unlocks Lightning Orb. +1 Extra Chain Target',
     colorHex: 0xffe600,
     robeColor: 0xf59e0b
   },
@@ -41,7 +43,7 @@ export const STAVES = [
     name: 'Vile Spire',
     element: 'VENOM',
     cost: 500,
-    perkDesc: '+20% Poison DoT & Blast Radius',
+    perkDesc: 'Unlocks Plague Glob. +20% Poison DoT & Blast Radius',
     colorHex: 0x39ff14,
     robeColor: 0x10b981
   },
@@ -50,7 +52,7 @@ export const STAVES = [
     name: 'Prismatic Lance',
     element: 'PIERCE',
     cost: 400,
-    perkDesc: 'Piercing beam penetrating all targets',
+    perkDesc: 'Unlocks Arcane Lance. Piercing beam penetrating all targets',
     colorHex: 0xd946ef,
     robeColor: 0xa21caf
   },
@@ -59,7 +61,7 @@ export const STAVES = [
     name: 'Solar Cannon',
     element: 'BLAST',
     cost: 550,
-    perkDesc: 'Devastating solar ground blast',
+    perkDesc: 'Unlocks Solar Blast. Devastating solar ground blast',
     colorHex: 0xf97316,
     robeColor: 0xc2410c
   },
@@ -68,7 +70,7 @@ export const STAVES = [
     name: 'Aether Seeker',
     element: 'HOMING',
     cost: 700,
-    perkDesc: 'Seeking orb that curves into enemies',
+    perkDesc: 'Unlocks Seeking Orb. Curves into enemies',
     colorHex: 0x06b6d4,
     robeColor: 0x0e7490
   },
@@ -77,37 +79,16 @@ export const STAVES = [
     name: 'Aegis Staff',
     element: 'SHIELD',
     cost: 850,
-    perkDesc: 'Grants an 80 HP protective barrier',
+    perkDesc: 'Unlocks Arcane Ward. Grants an 80 HP protective barrier',
     colorHex: 0x3b82f6,
     robeColor: 0x1d4ed8
   }
 ];
 
 export const UPGRADES = [
-  {
-    id: 'VITALITY',
-    name: 'Soul Vitality',
-    desc: '+25 Max Base HP per level',
-    maxLevel: 5,
-    baseCost: 80,
-    costMult: 1.5
-  },
-  {
-    id: 'SWIFTNESS',
-    name: 'Arcane Swiftness',
-    desc: '+4% Base Movement Speed per level',
-    maxLevel: 5,
-    baseCost: 100,
-    costMult: 1.6
-  },
-  {
-    id: 'MAGNETISM',
-    name: 'Mana Magnet',
-    desc: '+1.0 unit Loot Pickup Radius per level',
-    maxLevel: 5,
-    baseCost: 75,
-    costMult: 1.4
-  }
+  { id: 'VITALITY', name: 'Soul Vitality', desc: '+25 Max Base HP per level', maxLevel: 5, baseCost: 80, costMult: 1.5 },
+  { id: 'SWIFTNESS', name: 'Arcane Swiftness', desc: '+4% Base Movement Speed per level', maxLevel: 5, baseCost: 100, costMult: 1.6 },
+  { id: 'MAGNETISM', name: 'Mana Magnet', desc: '+1.0 unit Loot Pickup Radius per level', maxLevel: 5, baseCost: 75, costMult: 1.4 }
 ];
 
 export class MetaProgression {
@@ -163,6 +144,11 @@ export class MetaProgression {
 
   getSelectedStaff() {
     return STAVES.find((s) => s.id === this.data.selectedStaffId) || STAVES[0];
+  }
+
+  ownsSpell(spellId) {
+    const staffId = SPELL_STAFF_MAP[spellId];
+    return !staffId || this.data.unlockedStaves.includes(staffId);
   }
 
   selectStaff(staffId) {
