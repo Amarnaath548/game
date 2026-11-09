@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { COLORS, ARENA, CAMERA_CONFIG, BIOMES } from '../config/constants.js';
+import { COLORS, ARENA, CAMERA_CONFIG, BIOMES, QUALITY } from '../config/constants.js';
 
 export class SceneManager {
   constructor() {
@@ -8,7 +8,7 @@ export class SceneManager {
     this.camera = new THREE.PerspectiveCamera(CAMERA_CONFIG.FOV || 45, window.innerWidth / window.innerHeight, 0.5, 350);
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     document.body.appendChild(this.renderer.domElement);
@@ -19,6 +19,10 @@ export class SceneManager {
     this.obeliskMeshes = [];
     this.biomeHistory = this.loadBiomeHistory();
     this.nextBiomeKey = this.initNextBiome();
+    this.qualityMode = QUALITY || 'auto';
+    this.qualityEvaluated = false;
+    this.matchFpsTimer = 0;
+    this.matchFpsFrames = 0;
 
     this.initLights();
     this.initArena();
@@ -26,32 +30,48 @@ export class SceneManager {
     window.addEventListener('resize', () => this.onResize());
   }
 
+  onMatchStart() {
+    this.qualityEvaluated = false;
+    this.matchFpsTimer = 0;
+    this.matchFpsFrames = 0;
+    if (this.qualityMode === 'low') this.applyLowQuality();
+  }
+
+  checkPerformanceFallback(dt, particleSys = null) {
+    if (this.qualityMode !== 'auto' || this.qualityEvaluated) return;
+    this.matchFpsTimer += dt;
+    this.matchFpsFrames++;
+    if (this.matchFpsTimer >= 4.0) {
+      this.qualityEvaluated = true;
+      if (this.matchFpsFrames / this.matchFpsTimer < 40) this.applyLowQuality(particleSys);
+    }
+  }
+
+  applyLowQuality(particleSys = null) {
+    this.renderer.setPixelRatio(1);
+    this.renderer.shadowMap.enabled = false;
+    if (this.dirLight) this.dirLight.castShadow = false;
+    if (this.floorMesh) this.floorMesh.receiveShadow = false;
+    if (particleSys) {
+      if (particleSys.maxParticles) particleSys.maxParticles = Math.floor(particleSys.maxParticles * 0.5);
+      if (particleSys.maxRings) particleSys.maxRings = Math.floor(particleSys.maxRings * 0.5);
+    }
+  }
+
   loadBiomeHistory() {
-    try {
-      const saved = localStorage.getItem('magica_biome_history');
-      if (saved) {
-        const arr = JSON.parse(saved);
-        if (Array.isArray(arr)) return arr;
-      }
-    } catch (e) {}
+    try { const s = localStorage.getItem('magica_biome_history'); if (s) { const a = JSON.parse(s); if (Array.isArray(a)) return a; } } catch (e) {}
     return [];
   }
 
   saveBiomeHistory() {
-    try {
-      localStorage.setItem('magica_biome_history', JSON.stringify(this.biomeHistory));
-      localStorage.setItem('magica_next_biome', this.nextBiomeKey);
-    } catch (e) {}
+    try { localStorage.setItem('magica_biome_history', JSON.stringify(this.biomeHistory)); localStorage.setItem('magica_next_biome', this.nextBiomeKey); } catch (e) {}
   }
 
   initNextBiome() {
-    try {
-      const saved = localStorage.getItem('magica_next_biome');
-      if (saved && BIOMES[saved]) return saved;
-    } catch (e) {}
-    const picked = this.pickNextBiome();
-    try { localStorage.setItem('magica_next_biome', picked); } catch (e) {}
-    return picked;
+    try { const s = localStorage.getItem('magica_next_biome'); if (s && BIOMES[s]) return s; } catch (e) {}
+    const p = this.pickNextBiome();
+    try { localStorage.setItem('magica_next_biome', p); } catch (e) {}
+    return p;
   }
 
   pickNextBiome() {
@@ -81,7 +101,6 @@ export class SceneManager {
   initLights() {
     this.ambientLight = new THREE.AmbientLight(0xfff3db, 1.0);
     this.scene.add(this.ambientLight);
-
     this.dirLight = new THREE.DirectionalLight(0xfffae0, 1.4);
     this.dirLight.position.set(35, 65, 30);
     this.dirLight.castShadow = true;
@@ -97,12 +116,8 @@ export class SceneManager {
     const canvas = document.createElement('canvas');
     canvas.width = 128; canvas.height = 128;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = new THREE.Color(c1).getStyle();
-    ctx.fillRect(0, 0, 128, 128);
-    ctx.fillStyle = new THREE.Color(c2).getStyle();
-    ctx.fillRect(0, 0, 64, 64);
-    ctx.fillRect(64, 64, 64, 64);
-
+    ctx.fillStyle = new THREE.Color(c1).getStyle(); ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = new THREE.Color(c2).getStyle(); ctx.fillRect(0, 0, 64, 64); ctx.fillRect(64, 64, 64, 64);
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(36, 36); texture.magFilter = THREE.NearestFilter;
@@ -110,16 +125,14 @@ export class SceneManager {
   }
 
   initArena() {
-    const floorGeo = new THREE.CylinderGeometry(ARENA.RADIUS, ARENA.RADIUS, 1, 64);
     this.floorMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-    this.floorMesh = new THREE.Mesh(floorGeo, this.floorMat);
+    this.floorMesh = new THREE.Mesh(new THREE.CylinderGeometry(ARENA.RADIUS, ARENA.RADIUS, 1, 64), this.floorMat);
     this.floorMesh.position.y = -0.5;
     this.floorMesh.receiveShadow = true;
     this.scene.add(this.floorMesh);
 
     [ARENA.RINGS.SANCTUM_MAX, ARENA.RINGS.RUINS_MAX, ARENA.RINGS.SPAWN_MAX].forEach((radius, idx) => {
-      const ringGeo = new THREE.RingGeometry(radius - 0.35, radius, 64);
-      ringGeo.rotateX(-Math.PI / 2);
+      const ringGeo = new THREE.RingGeometry(radius - 0.35, radius, 64).rotateX(-Math.PI / 2);
       const ringMat = new THREE.MeshBasicMaterial({
         color: idx === 2 ? COLORS.STORM_RING : COLORS.RING_DIVIDER,
         transparent: true, opacity: idx === 2 ? 0.95 : 0.65, side: THREE.DoubleSide
@@ -129,14 +142,14 @@ export class SceneManager {
       this.scene.add(ringMesh);
     });
 
-    const positions = [[10, 10], [-10, 10], [10, -10], [-10, -10]];
-    positions.forEach(([x, z]) => {
+    [[10, 10], [-10, 10], [10, -10], [-10, -10]].forEach(([x, z]) => {
       const obeliskGroup = new THREE.Group();
       obeliskGroup.position.set(x, 0, z);
 
-      const shadowGeo = new THREE.CircleGeometry(2.4, 16);
-      shadowGeo.rotateX(-Math.PI / 2);
-      const shadow = new THREE.Mesh(shadowGeo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false }));
+      const shadow = new THREE.Mesh(
+        new THREE.CircleGeometry(2.4, 16).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false })
+      );
       shadow.position.y = 0.02;
       obeliskGroup.add(shadow);
 
@@ -163,28 +176,14 @@ export class SceneManager {
   }
 
   applyBiome(biomeKey = null, bushes = []) {
-    let biome = biomeKey;
-    if (typeof biome === 'string') biome = BIOMES[biome.toUpperCase()];
-    if (!biome) {
-      const keys = Object.keys(BIOMES);
-      biome = BIOMES[keys[Math.floor(Math.random() * keys.length)]];
-    }
+    let biome = typeof biomeKey === 'string' ? BIOMES[biomeKey.toUpperCase()] : biomeKey;
+    if (!biome) { const k = Object.keys(BIOMES); biome = BIOMES[k[Math.floor(Math.random() * k.length)]]; }
     this.currentBiome = biome;
     this.scene.background = new THREE.Color(biome.skyColor);
-    if (!this.scene.fog) {
-      this.scene.fog = new THREE.FogExp2(biome.fogColor, biome.fogDensity);
-    } else {
-      this.scene.fog.color.setHex(biome.fogColor);
-      this.scene.fog.density = biome.fogDensity;
-    }
-    if (this.ambientLight) {
-      this.ambientLight.color.setHex(biome.ambientColor);
-      this.ambientLight.intensity = biome.ambientIntensity;
-    }
-    if (this.dirLight) {
-      this.dirLight.color.setHex(biome.dirLightColor);
-      this.dirLight.intensity = biome.dirLightIntensity;
-    }
+    if (!this.scene.fog) this.scene.fog = new THREE.FogExp2(biome.fogColor, biome.fogDensity);
+    else { this.scene.fog.color.setHex(biome.fogColor); this.scene.fog.density = biome.fogDensity; }
+    if (this.ambientLight) { this.ambientLight.color.setHex(biome.ambientColor); this.ambientLight.intensity = biome.ambientIntensity; }
+    if (this.dirLight) { this.dirLight.color.setHex(biome.dirLightColor); this.dirLight.intensity = biome.dirLightIntensity; }
     if (this.floorMesh) {
       if (this.floorTexture) this.floorTexture.dispose();
       this.floorTexture = this.createCheckerTexture(biome.floorColor, biome.floorAccentColor);
@@ -193,18 +192,11 @@ export class SceneManager {
     }
     if (this.obeliskMeshes) {
       this.obeliskMeshes.forEach((mesh) => {
-        if (Array.isArray(mesh.material)) {
-          mesh.material.forEach((m, i) => m.color.setHex(i === 2 ? biome.obeliskTopColor : biome.obeliskColor));
-        } else if (mesh.material) {
-          mesh.material.color.setHex(biome.obeliskTopColor || biome.obeliskColor);
-        }
+        if (Array.isArray(mesh.material)) mesh.material.forEach((m, i) => m.color.setHex(i === 2 ? biome.obeliskTopColor : biome.obeliskColor));
+        else if (mesh.material) mesh.material.color.setHex(biome.obeliskTopColor || biome.obeliskColor);
       });
     }
-    if (bushes && bushes.length > 0) {
-      bushes.forEach((b) => {
-        if (b.setBiomeColor) b.setBiomeColor(biome.bushColor, biome.bushEdgeColor);
-      });
-    }
+    if (bushes && bushes.length > 0) bushes.forEach((b) => b.setBiomeColor && b.setBiomeColor(biome.bushColor, biome.bushEdgeColor));
     return biome;
   }
 

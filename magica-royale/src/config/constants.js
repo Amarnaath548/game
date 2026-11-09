@@ -12,6 +12,7 @@ export const COLORS = {
 };
 
 export const HERO_VISUAL_SCALE = 1.4;
+export const QUALITY = 'auto'; // 'auto' | 'high' | 'low'
 
 export const BIOMES = {
   GRASS: {

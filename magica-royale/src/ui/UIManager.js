@@ -16,32 +16,18 @@ export class UIManager {
     this.onReturnToLobby = callbacks.onReturnToLobby;
 
     const get = (id) => document.getElementById(id);
-    this.lobbyScreen = get('lobby-screen');
-    this.lobbyTrophies = get('lobby-trophies');
-    this.lobbyGold = get('lobby-gold');
-    this.lobbyRankTitle = get('lobby-rank-title');
-    this.lobbyArenaLabel = get('lobby-arena-label');
-    this.stavesContainer = get('staves-container');
-    this.upgradesContainer = get('upgrades-container');
-    this.heroesContainer = get('heroes-container');
-    this.questsContainer = get('quests-container');
-    this.questsBadgeEl = get('quests-badge');
-    this.playMatchBtn = get('play-match-btn');
-    this.hud = get('hud');
-    this.aliveCountEl = get('alive-count');
-    this.zoneStatusEl = get('zone-status');
-    this.hpFillEl = get('hp-fill');
-    this.xpFillEl = get('xp-fill');
-    this.lvlTextEl = get('player-lvl-text');
-    this.hpTextEl = get('player-hp-text');
-    this.perkOverlay = get('perk-overlay');
-    this.endModal = get('end-modal');
-    this.endTitle = get('end-title');
-    this.endSubtitle = get('end-subtitle');
-    this.rewardTrophy = get('reward-trophy');
-    this.rewardGold = get('reward-gold');
-    this.modalLobbyBtn = get('modal-lobby-btn');
-    this.modalPlayAgainBtn = get('modal-play-again-btn');
+    this.lobbyScreen = get('lobby-screen'); this.lobbyTrophies = get('lobby-trophies'); this.lobbyGold = get('lobby-gold');
+    this.lobbyRankTitle = get('lobby-rank-title'); this.lobbyArenaLabel = get('lobby-arena-label');
+    this.stavesContainer = get('staves-container'); this.upgradesContainer = get('upgrades-container');
+    this.heroesContainer = get('heroes-container'); this.questsContainer = get('quests-container');
+    this.questsBadgeEl = get('quests-badge'); this.playMatchBtn = get('play-match-btn'); this.hud = get('hud');
+    this.aliveCountEl = get('alive-count'); this.zoneStatusEl = get('zone-status');
+    this.hpFillEl = get('hp-fill'); this.xpFillEl = get('xp-fill');
+    this.lvlTextEl = get('player-lvl-text'); this.hpTextEl = get('player-hp-text');
+    this.perkOverlay = get('perk-overlay'); this.endModal = get('end-modal');
+    this.endTitle = get('end-title'); this.endSubtitle = get('end-subtitle');
+    this.rewardTrophy = get('reward-trophy'); this.rewardGold = get('reward-gold');
+    this.modalLobbyBtn = get('modal-lobby-btn'); this.modalPlayAgainBtn = get('modal-play-again-btn');
 
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange && this.onHeroChange(h));
     if (this.questManager) {
@@ -55,13 +41,32 @@ export class UIManager {
   }
 
   initLobbyEvents() {
+    const fsBtn = document.getElementById('fullscreen-btn');
+    if (fsBtn) {
+      if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) fsBtn.style.display = 'none';
+      else {
+        fsBtn.addEventListener('click', () => {
+          if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+          } else {
+            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          }
+        });
+      }
+    }
+
     this.playMatchBtn.addEventListener('click', () => {
+      document.body.classList.add('in-match');
       this.lobbyScreen.style.display = 'none';
       this.hud.style.display = 'block';
       if (this.onStartMatch) this.onStartMatch();
     });
 
     this.modalLobbyBtn.addEventListener('click', () => {
+      document.body.classList.remove('in-match');
       this.endModal.style.display = 'none';
       this.hud.style.display = 'none';
       this.lobbyScreen.style.display = 'flex';
@@ -70,6 +75,7 @@ export class UIManager {
     });
 
     this.modalPlayAgainBtn.addEventListener('click', () => {
+      document.body.classList.add('in-match');
       this.endModal.style.display = 'none';
       if (this.onStartMatch) this.onStartMatch();
     });
@@ -226,7 +232,6 @@ export class UIManager {
     const results = this.meta.applyMatchResults(place);
     this.endModal.style.display = 'flex';
     const heroName = player?.hero?.name || 'Archmage', kills = player?.kills || 0;
-
     this.endTitle.innerHTML = isVictory ? `<span class="title-win">#1 VICTORY ROYALE!</span>` : `<span class="title-loss">DEFEAT - #${place} of 12</span>`;
     this.endSubtitle.textContent = isVictory ? `Glory to ${heroName}! Sanctum Champion.` : `${heroName} eliminated at rank #${place}.`;
 
@@ -238,9 +243,7 @@ export class UIManager {
     }
     const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
     statsEl.innerHTML = `<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}`;
-
     const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
-    this.rewardTrophy.textContent = `${tSign} 🏆 (${results.newTrophies})`;
-    this.rewardGold.textContent = `+${results.goldEarned} 🪙 (${results.newGold})`;
+    this.rewardTrophy.textContent = `${tSign} 🏆 (${results.newTrophies})`; this.rewardGold.textContent = `+${results.goldEarned} 🪙 (${results.newGold})`;
   }
 }

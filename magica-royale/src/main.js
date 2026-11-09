@@ -84,12 +84,20 @@ const ui = new UIManager(meta, {
     sound.playLevelUp();
   },
   onStartMatch: () => {
+    sceneManager.onMatchStart();
     matchManager.startMatch();
     lastTime = performance.now();
   },
   onReturnToLobby: () => matchManager.resetToLobby()
 });
 matchManager.ui = ui;
+
+// Debug Overlay (?debug=1)
+const isDebug = new URLSearchParams(window.location.search).get('debug') === '1';
+const debugEl = document.getElementById('debug-overlay');
+if (isDebug && debugEl) debugEl.style.display = 'block';
+let debugTimer = 0;
+let debugFrames = 0;
 
 // Game Loop
 let lastTime = performance.now();
@@ -102,7 +110,19 @@ function animate() {
   lastTime = now;
   totalTime += dt;
 
+  if (isDebug && debugEl) {
+    debugFrames++;
+    debugTimer += dt;
+    if (debugTimer >= 0.25) {
+      const fps = Math.round(debugFrames / debugTimer);
+      debugEl.textContent = `FPS: ${fps} | Calls: ${sceneManager.renderer.info.render.calls}`;
+      debugFrames = 0;
+      debugTimer = 0;
+    }
+  }
+
   if (matchManager.matchActive) {
+    sceneManager.checkPerformanceFallback(dt, particleSys);
     input.update(player.group.position, spawnManager.bots, player.currentSpell.range);
 
     if (player.dashTimer > 0 && player.dashTimer - dt <= 0) {

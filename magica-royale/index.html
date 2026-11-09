@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Magica Royale</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="stylesheet" href="./src/style.css" />
@@ -12,9 +12,12 @@
   <div id="lobby-screen">
     <div class="lobby-header">
       <div class="game-logo">MAGICA ROYALE</div>
-      <div class="currency-display">
-        <div class="cur-pill">🏆 <span id="lobby-trophies" class="trophy-val">0</span> Trophies</div>
-        <div class="cur-pill">🪙 <span id="lobby-gold" class="gold-val">100</span> Gold</div>
+      <div class="header-right">
+        <button id="fullscreen-btn" class="fs-btn" title="Toggle Fullscreen">⛶</button>
+        <div class="currency-display">
+          <div class="cur-pill">🏆 <span id="lobby-trophies" class="trophy-val">0</span> Trophies</div>
+          <div class="cur-pill">🪙 <span id="lobby-gold" class="gold-val">100</span> Gold</div>
+        </div>
       </div>
     </div>
 
@@ -116,6 +119,16 @@
     <div class="modal-actions">
       <button id="modal-lobby-btn" class="modal-btn">Return to Lobby</button>
       <button id="modal-play-again-btn" class="modal-btn">Play Again</button>
+    </div>
+  </div>
+
+  <!-- DEBUG & ROTATE OVERLAYS -->
+  <div id="debug-overlay"></div>
+  <div id="rotate-device-overlay">
+    <div class="rotate-card">
+      <div class="rotate-icon">📱 ↷</div>
+      <div class="rotate-title">Rotate Your Phone</div>
+      <div class="rotate-sub">Magica Royale plays in landscape mode</div>
     </div>
   </div>
 

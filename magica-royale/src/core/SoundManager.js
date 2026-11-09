@@ -16,12 +16,11 @@ export class SoundManager {
       if (this.ctx && this.ctx.state === 'suspended') {
         this.ctx.resume();
       }
-      window.removeEventListener('pointerdown', startAudio);
-      window.removeEventListener('keydown', startAudio);
     };
 
-    window.addEventListener('pointerdown', startAudio, { once: true });
-    window.addEventListener('keydown', startAudio, { once: true });
+    ['pointerdown', 'keydown', 'touchstart', 'click'].forEach((evt) => {
+      window.addEventListener(evt, startAudio, { once: true, passive: true });
+    });
   }
 
   playCast(spellId = 'PYRO') {

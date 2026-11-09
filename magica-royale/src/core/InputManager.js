@@ -161,10 +161,24 @@ export class InputManager {
     rightZone.addEventListener('touchend', endRight);
     rightZone.addEventListener('touchcancel', endRight);
 
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    let lastTap = 0;
+    window.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTap < 300) e.preventDefault();
+      lastTap = now;
+    }, { passive: false });
+
     dashBtn.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
       this.dashRequested = true;
     });
+    dashBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.dashRequested = true;
+    }, { passive: false });
   }
 
   update(playerPos, potentialTargets = [], spellRange = 24) {

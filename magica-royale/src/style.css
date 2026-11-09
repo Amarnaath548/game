@@ -1,11 +1,14 @@
-* { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
-html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; font-family: system-ui, -apple-system, sans-serif; touch-action: none; color: #fff; }
+* { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; font-family: system-ui, -apple-system, sans-serif; touch-action: none; overscroll-behavior: none; -webkit-touch-callout: none; color: #fff; }
 #game-canvas { display: block; width: 100vw; height: 100vh; }
 
 /* ---------------- LOBBY SCREEN & TABS ---------------- */
-#lobby-screen { position: fixed; inset: 0; background: radial-gradient(circle at center, #242254 0%, #3b0764 100%); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 16px 20px; z-index: 50; }
+#lobby-screen { position: fixed; inset: 0; background: radial-gradient(circle at center, #242254 0%, #3b0764 100%); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: calc(14px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) calc(16px + env(safe-area-inset-left, 0px)); z-index: 50; }
 .lobby-header { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; }
 .game-logo { font-size: 24px; font-weight: 900; letter-spacing: 1.5px; background: linear-gradient(135deg, #00f2ff, #b700ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.fs-btn { background: rgba(18, 20, 32, 0.85); border: 1px solid #3b4262; color: #38bdf8; border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: all 0.2s; }
+.fs-btn:active { border-color: #00f2ff; color: #fff; }
 .currency-display { display: flex; gap: 10px; }
 .cur-pill { background: rgba(18, 20, 32, 0.85); border: 1px solid #3b4262; padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px; }
 .trophy-val { color: #fbbf24; } .gold-val { color: #facc15; }
@@ -92,11 +95,11 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
 
 /* ---------------- IN-GAME HUD ---------------- */
 #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; display: none; }
-#top-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; background: rgba(15, 23, 42, 0.92); border: 1px solid #334155; padding: 6px 16px; border-radius: 999px; color: #f8fafc; font-size: 12px; letter-spacing: 0.5px; box-shadow: 0 4px 16px rgba(0,0,0,0.6); text-shadow: 0 1px 3px rgba(0,0,0,0.95); white-space: nowrap; }
+#top-bar { position: absolute; top: calc(8px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; background: rgba(15, 23, 42, 0.92); border: 1px solid #334155; padding: 6px 16px; border-radius: 999px; color: #f8fafc; font-size: 12px; letter-spacing: 0.5px; box-shadow: 0 4px 16px rgba(0,0,0,0.6); text-shadow: 0 1px 3px rgba(0,0,0,0.95); white-space: nowrap; }
 .badge { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
 .badge-alive { color: #39ff14; } .badge-zone { color: #b700ff; }
 
-#player-status { position: absolute; top: 48px; left: 50%; transform: translateX(-50%); width: 280px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 4px; pointer-events: none; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 10px; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); }
+#player-status { position: absolute; top: calc(44px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: 280px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 4px; pointer-events: none; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 10px; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); }
 .status-labels { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; color: #f8fafc; padding: 0 2px; text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 2px #000; }
 .bar-container { width: 100%; height: 14px; background: rgba(15, 17, 26, 0.9); border: 2px solid #1e293b; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
 .bar-xp { position: relative; height: 8px; border-width: 1px; }
@@ -105,7 +108,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
 #xp-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #00f2ff, #0284c7); transition: width 0.15s ease-out; }
 
 /* Spell Bar: Bottom-Center */
-#spell-bar { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: auto; z-index: 25; }
+#spell-bar { position: absolute; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: auto; z-index: 25; }
 .spell-btn { min-width: 44px; min-height: 44px; padding: 3px 6px; border-radius: 8px; background: rgba(18, 20, 32, 0.9); border: 2px solid #3b4262; color: #94a3b8; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; transition: all 0.15s; position: relative; }
 .spell-btn.active { color: #fff; border-color: #00f2ff; background: rgba(0, 242, 255, 0.25); box-shadow: 0 0 12px rgba(0, 242, 255, 0.4); }
 .spell-num { font-size: 10px; font-weight: 800; color: #fbbf24; line-height: 1; text-shadow: 0 1px 2px #000; }
@@ -121,7 +124,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
   100% { transform: translateX(0); }
 }
 
-#kill-feed { position: absolute; top: 10px; right: 12px; display: flex; flex-direction: column; gap: 5px; pointer-events: none; z-index: 20; max-width: 220px; }
+#kill-feed { position: absolute; top: calc(8px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 5px; pointer-events: none; z-index: 20; max-width: 220px; }
 .kill-feed-row { background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(255, 255, 255, 0.15); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #f1f5f9; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.6); text-shadow: 0 1px 3px rgba(0,0,0,0.95); transition: opacity 0.4s, transform 0.4s; }
 .kill-feed-row.fade-out { opacity: 0; transform: translateX(12px); }
 .kill-feed-player { color: #00f2ff; font-weight: 800; text-shadow: 0 1px 2px #000; }
@@ -134,7 +137,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
 .joystick-knob { position: absolute; top: 50%; left: 50%; width: 46px; height: 46px; margin-left: -23px; margin-top: -23px; border-radius: 50%; background: rgba(0, 242, 255, 0.65); box-shadow: 0 0 14px rgba(0, 242, 255, 0.8); }
 #right-base .joystick-knob { background: rgba(255, 85, 0, 0.75); box-shadow: 0 0 14px rgba(255, 85, 0, 0.8); }
 
-#dash-btn { position: absolute; bottom: 28px; right: 36px; width: 72px; height: 72px; min-width: 44px; min-height: 44px; border-radius: 50%; background: rgba(183, 0, 255, 0.3); border: 3px solid #b700ff; color: #fff; font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; box-shadow: 0 0 20px rgba(183, 0, 255, 0.5); text-shadow: 0 1px 3px rgba(0,0,0,0.9); z-index: 25; }
+#dash-btn { position: absolute; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); right: calc(32px + env(safe-area-inset-right, 0px)); width: 72px; height: 72px; min-width: 44px; min-height: 44px; border-radius: 50%; background: rgba(183, 0, 255, 0.3); border: 3px solid #b700ff; color: #fff; font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; box-shadow: 0 0 20px rgba(183, 0, 255, 0.5); text-shadow: 0 1px 3px rgba(0,0,0,0.9); z-index: 25; }
 #dash-btn:active { transform: scale(0.92); background: rgba(183, 0, 255, 0.55); }
 
 #perk-overlay { position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; pointer-events: auto; z-index: 30; }
@@ -174,19 +177,41 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
 #modal-lobby-btn { background: #334155; color: white; }
 #modal-play-again-btn { background: #2563eb; color: white; box-shadow: 0 0 16px rgba(37, 99, 235, 0.5); }
 
-/* ---------------- MOBILE RESPONSIVE (360x640) ---------------- */
-@media (max-width: 640px) {
-  #spell-bar { flex-wrap: wrap; width: 216px; gap: 4px; bottom: 8px; }
-  .spell-btn { min-width: 48px; min-height: 44px; }
-  #dash-btn { right: 14px; bottom: 80px; width: 66px; height: 66px; font-size: 12px; }
-  #top-bar { top: 6px; padding: 4px 12px; font-size: 11px; }
-  #player-status { top: 40px; width: 230px; }
-  #kill-feed { top: 6px; right: 6px; max-width: 130px; }
-  .kill-feed-row { font-size: 9px; padding: 3px 6px; }
-  .game-logo { font-size: 20px; }
-  .cur-pill { padding: 4px 10px; font-size: 11px; }
-  .lobby-tab-btn { font-size: 11px; }
-  #play-match-btn { padding: 10px 24px; font-size: 14px; }
-  #end-title { font-size: 26px; }
-  #end-subtitle { font-size: 13px; }
+/* ---------------- OVERLAYS (DEBUG & ROTATE) ---------------- */
+#debug-overlay { position: fixed; top: calc(6px + env(safe-area-inset-top, 0px)); left: calc(8px + env(safe-area-inset-left, 0px)); background: rgba(0, 0, 0, 0.75); color: #38bdf8; font-family: monospace; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.4); pointer-events: none; z-index: 9999; display: none; }
+
+#rotate-device-overlay { display: none; position: fixed; inset: 0; background: rgba(5, 7, 15, 0.96); backdrop-filter: blur(8px); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+.rotate-card { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 280px; }
+.rotate-icon { font-size: 44px; }
+.rotate-title { font-size: 18px; font-weight: 900; color: #00f2ff; }
+.rotate-sub { font-size: 12px; color: #94a3b8; }
+@media (orientation: portrait) {
+  body.in-match #rotate-device-overlay { display: flex; }
+}
+
+/* ---------------- MOBILE RESPONSIVE (800x360, 667x375, 360x640) ---------------- */
+@media (max-height: 440px) {
+  #top-bar { top: calc(4px + env(safe-area-inset-top, 0px)); padding: 3px 10px; font-size: 11px; }
+  #player-status { top: calc(34px + env(safe-area-inset-top, 0px)); width: 220px; padding: 4px 8px; }
+  .status-labels { font-size: 10px; }
+  .bar-container { height: 10px; }
+  .bar-xp { height: 6px; }
+  #spell-bar { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); gap: 4px; }
+  .spell-btn { min-width: 38px; min-height: 38px; padding: 2px 4px; }
+  .spell-num { font-size: 8px; }
+  .spell-name { font-size: 10px; }
+  #dash-btn { width: 56px; height: 56px; font-size: 11px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: calc(16px + env(safe-area-inset-right, 0px)); }
+  #kill-feed { top: calc(4px + env(safe-area-inset-top, 0px)); right: calc(8px + env(safe-area-inset-right, 0px)); max-width: 140px; }
+  .kill-feed-row { font-size: 9px; padding: 2px 5px; }
+  .touch-zone { height: 75%; }
+  .lobby-tabs { margin: 4px 0; }
+  .lobby-tab-btn { min-height: 36px; font-size: 11px; }
+  .hero-preview-box { height: 46px; }
+  #play-match-btn { min-height: 38px; padding: 8px 24px; font-size: 13px; }
+}
+
+@media (max-width: 640px) and (orientation: landscape) {
+  #spell-bar { flex-wrap: nowrap; gap: 3px; }
+  .spell-btn { min-width: 34px; min-height: 36px; }
+  #player-status { width: 200px; }
 }
