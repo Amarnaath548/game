@@ -33,13 +33,11 @@ const player = new Player(sceneManager.scene, input);
 
 // Pools
 const projPool = new ObjectPool(() => {
-  const geo = new THREE.SphereGeometry(0.5, 8, 8);
-  const mat = new THREE.MeshBasicMaterial({ color: SPELLS.PYRO.color });
-  const mesh = new THREE.Mesh(geo, mat);
-  sceneManager.scene.add(mesh);
-  return mesh;
+  const group = new THREE.Group();
+  sceneManager.scene.add(group);
+  return group;
 }, 50);
-const projectiles = projPool.pool.map((mesh) => new Projectile(mesh, projPool));
+const projectiles = projPool.pool.map((group) => new Projectile(group, projPool));
 
 const gemPool = new ObjectPool(() => {
   const geo = new THREE.OctahedronGeometry(0.35);
@@ -333,7 +331,7 @@ function dropLoot(x, z, gemCount = 3, healthOrbChance = 0.35) {
 function triggerCrystalExplosion(crystal) {
   sound.playExplosion();
   sceneManager.addTrauma(0.5);
-  particleSys.spawnBurst(crystal.x, 1.2, crystal.z, 0xff0055, 30, 14, 1.6);
+  particleSys.spawnImpact(crystal.x, crystal.z, 0xff0055, 3.0, crystal.explosionRadius);
   const targets = [...getAllAliveActors(), ...chests.filter((c) => !c.isDead)];
   targets.forEach((t) => {
     const d = Math.hypot(t.x - crystal.x, t.z - crystal.z);
@@ -409,7 +407,7 @@ function animate() {
       if (proj.lobHeight <= 0) {
         for (const o of sceneManager.obelisks) {
           if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, o.x, o.z, o.radius)) {
-            particleSys.spawnBurst(proj.x, proj.y, proj.z, 0x888899, 8, 6);
+            particleSys.spawnImpact(proj.x, proj.z, 0x888899, 1.2);
             proj.despawn();
             return;
           }
@@ -422,12 +420,12 @@ function animate() {
         if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, chest.x, chest.z, chest.radius)) {
           const destroyed = chest.takeDamage(proj.damage);
           sound.playHit();
-          particleSys.spawnBurst(proj.x, proj.y, proj.z, chest.isMythic ? 0x9333ea : 0x8b5a2b, 10, 8);
+          particleSys.spawnImpact(proj.x, proj.z, chest.isMythic ? 0x9333ea : 0x8b5a2b, 1.5);
           proj.despawn();
           if (destroyed) {
             sound.playExplosion();
             dropLoot(chest.x, chest.z, chest.isMythic ? 8 : 3, chest.isMythic ? 1.0 : 0.35);
-            particleSys.spawnBurst(chest.x, 1.0, chest.z, 0xffd700, 24, 12, 1.4);
+            particleSys.spawnImpact(chest.x, chest.z, 0xffd700, 2.5);
           }
         }
       });
@@ -467,14 +465,15 @@ function animate() {
           sound.playHit();
           target.applyKnockback(proj.vx, proj.vz, 2.5);
           damageNumbers.spawn(target.x, target.z, dealt, proj.spellConfig.color);
-          if (target === player) sceneManager.addTrauma(0.4);
 
-          particleSys.spawnBurst(proj.x, proj.y, proj.z, proj.spellConfig.color, 14, 9);
+          const isBigHit = !!proj.spellConfig.aoeRadius || target === player || dealt >= 50;
+          sceneManager.addTrauma(isBigHit ? 0.35 : 0.12);
+          particleSys.spawnImpact(proj.x, proj.z, proj.spellConfig.color, proj.radius, proj.spellConfig.aoeRadius || 0);
 
           // Solar Blast / AoE Detonation
           if (proj.spellConfig.aoeRadius) {
             sound.playExplosion();
-            particleSys.spawnBurst(proj.x, 1.0, proj.z, proj.spellConfig.color, 24, 12, 1.5);
+            particleSys.spawnImpact(proj.x, proj.z, proj.spellConfig.color, proj.radius, proj.spellConfig.aoeRadius);
             possibleTargets.forEach((other) => {
               if (other !== target && !other.isDead) {
                 const od = Math.hypot(other.x - proj.x, other.z - proj.z);
@@ -522,7 +521,7 @@ function animate() {
           // Actor Death Drop & Kill Feed (drop loot for ANY kill!)
           if (target.isDead) {
             sound.playExplosion();
-            particleSys.spawnBurst(target.x, 1.0, target.z, 0xff0055, 20, 10);
+            particleSys.spawnImpact(target.x, target.z, 0xff0055, 2.2);
             dropLoot(target.x, target.z, 5, 0.6);
             if (proj.owner) {
               proj.owner.kills = (proj.owner.kills || 0) + 1;
