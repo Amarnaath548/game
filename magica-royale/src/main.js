@@ -12,10 +12,11 @@ import { Bot } from './entities/Bot.js';
 import { Projectile } from './entities/Projectile.js';
 import { Chest, ArcaneCrystal, ShadowBush, XPGem, HealthOrb } from './entities/Prop.js';
 import { UIManager } from './ui/UIManager.js';
+import { BannerManager } from './ui/Banners.js';
 import { FloatingBarSystem } from './ui/FloatingBarSystem.js';
 import { DamageNumbers } from './ui/DamageNumbers.js';
 import { KillFeed } from './ui/KillFeed.js';
-import { SPELLS, ARENA, PLAYER_BASE } from './config/constants.js';
+import { SPELLS, ARENA, PLAYER_BASE, HEROES } from './config/constants.js';
 
 // Setup Core
 const sceneManager = new SceneManager();
@@ -27,6 +28,7 @@ let zoneSys = new ZoneSystem(sceneManager.scene);
 const floatingBars = new FloatingBarSystem(sceneManager.camera);
 const damageNumbers = new DamageNumbers(sceneManager.camera);
 const killFeed = new KillFeed();
+const banners = new BannerManager();
 
 // Player Entity
 const player = new Player(sceneManager.scene, input);
@@ -77,6 +79,11 @@ let isGameOver = false;
 // UI Manager
 const ui = new UIManager(meta, {
   onSpellChange: (spellKey) => player.setSpell(spellKey),
+  onHeroChange: (hero) => {
+    player.hero = hero;
+    if (player.bodyMat) player.bodyMat.color.setHex(hero.bodyColor);
+    if (player.accentMat) player.accentMat.color.setHex(hero.accentColor);
+  },
   onPerkSelected: (perk) => {
     player.applyPerk(perk);
     sound.playLevelUp();
@@ -88,6 +95,13 @@ const ui = new UIManager(meta, {
 function applyLobbyLoadout() {
   const staff = meta.getSelectedStaff();
   const bonuses = meta.getMetaBonuses();
+
+  // Apply selected hero from lobby
+  const selectedHeroId = localStorage.getItem('magica_selected_hero') || 'ignis';
+  const hero = HEROES.find((h) => h.id === selectedHeroId) || HEROES[0];
+  player.hero = hero;
+  if (player.bodyMat) player.bodyMat.color.setHex(hero.bodyColor);
+  if (player.accentMat) player.accentMat.color.setHex(hero.accentColor);
 
   // Apply staff element and cosmetic robe color
   player.setSpell(staff.element);
@@ -202,6 +216,7 @@ function resetToLobby() {
   floatingBars.update([]);
   damageNumbers.reset();
   killFeed.reset();
+  banners.reset();
   telegraphMesh.visible = false;
   telegraphTimer = 0;
 }
@@ -529,6 +544,7 @@ function animate() {
               const killerName = proj.owner.isPlayer ? 'Player' : (proj.owner.name || 'Bot');
               const victimName = target.isPlayer ? 'Player' : (target.name || 'Bot');
               killFeed.addKill(killerName, victimName, proj.owner.isPlayer, target.isPlayer);
+              banners.onKill(killerName, proj.owner.isPlayer);
             }
           }
 
@@ -599,16 +615,17 @@ function animate() {
     const aliveActors = getAllAliveActors();
     const isSafe = zoneSys.getSafeDistance(player.x, player.z) > 0;
     ui.updateHUD(player, aliveActors.length, isSafe);
+    banners.checkZoneStatus(isSafe);
 
     if (!isGameOver) {
       if (player.isDead) {
         isGameOver = true;
         matchActive = false;
-        ui.showEndGame(false, aliveActors.length + 1);
+        ui.showEndGame(false, aliveActors.length + 1, player);
       } else if (aliveActors.length === 1 && aliveActors[0] === player) {
         isGameOver = true;
         matchActive = false;
-        ui.showEndGame(true, 1);
+        ui.showEndGame(true, 1, player);
       }
     }
 

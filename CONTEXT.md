@@ -21,6 +21,8 @@
 - `magica-royale/src/systems/ParticleSystem.js`: GPU instanced particle pool and burst effects.
 - `magica-royale/src/systems/ZoneSystem.js`: Shrinking storm cylinder, perimeter ring, tick damage.
 - `magica-royale/src/ui/UIManager.js`: Lobby UI, 8 staff selection, meta upgrades, HUD, 8-spell key shortcuts.
+- `magica-royale/src/ui/Banners.js`: Animated multi-kill banners (Double, Triple, Rampage) and zone transition toasts.
+- `magica-royale/src/ui/HeroSelectView.js`: Lobby hero roster grid view with unlock/select states.
 - `magica-royale/src/ui/FloatingBarSystem.js`: 2D overhead projected health bars for bots.
 - `magica-royale/src/ui/DamageNumbers.js`: Pooled 2D floating combat damage numbers over targets.
 - `magica-royale/src/ui/KillFeed.js`: Top-right animated match elimination feed.
@@ -36,3 +38,4 @@
 - **Phase A Complete**: Bright biomes system (`GRASS` & `SNOW`) with procedural checkerboard arena floor, high-contrast chunky low-poly obelisks and faceted bushes with contact shadows and edge highlights, steeper camera pitch (`OFFSET_Y: 52`, `OFFSET_Z: 24`, tunable constants), and vibrant navy-to-purple lobby background.
 - **Phase B Complete**: 8 distinct blocky heroes in `HEROES` list with custom boxy body, cube head, block arms, visible staff, and unique top-down silhouettes (pointed hat, hood, horns, helmet crest, crown, mask, cape, backpack, tail, pauldrons) built with shared geometries. Bots dynamically assign different heroes, player loads selected hero.
 - **Phase C Complete**: Cartoon spell effects with bright core and translucent outer shell, 8 pooled fading quad trails per projectile, custom spell visuals (Pyro flickering flames, Cryo rotating ice octahedrons, Electro crackling jitter, Venom bulging globs), expanding ground impact ring decals (0.4s fade, full radius on AoE), and trauma camera kick on big hits.
+- **Phase D Complete**: Multi-kill pop-in banners (Double Kill, Triple Kill, Rampage) within 4s window, safe zone toasts, victory/defeat modal with player hero name, placement rank (#N of 12), and kill stats, lobby hero selection roster grid with preview styling and unlocking, and enlarged chunky touch HUD (dash button 86px, thicker 18px HP bar, larger spell buttons).
