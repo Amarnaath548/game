@@ -31,7 +31,7 @@ export class ParticleSystem {
     }
     this.dummy = new THREE.Object3D();
 
-    // Pooled Impact Ring Decals (flat colored rings expanding on the ground)
+    // Pooled Impact Ring Decals (high-contrast border for Grass and Snow biomes)
     this.maxRings = 12;
     this.rings = [];
     const ringGeo = new THREE.RingGeometry(0.85, 1.0, 32);
@@ -98,7 +98,7 @@ export class ParticleSystem {
 
   spawnImpact(x, z, colorHex, radius = 2.5, aoeRadius = 0) {
     const targetRadius = aoeRadius > 0 ? aoeRadius : Math.max(1.8, radius * 3.0);
-    const particleCount = aoeRadius > 0 ? 26 : 14;
+    const particleCount = aoeRadius > 0 ? 24 : 12;
     const speed = aoeRadius > 0 ? 12 : 8;
 
     this.spawnBurst(x, 0.8, z, colorHex, particleCount, speed, aoeRadius > 0 ? 1.4 : 1.0);
@@ -118,7 +118,7 @@ export class ParticleSystem {
 
         r.mesh.position.set(x, 0.04, z);
         r.mesh.material.color.setHex(colorHex);
-        r.mesh.material.opacity = 0.85;
+        r.mesh.material.opacity = 0.9;
         r.mesh.scale.set(0.1, 1, 0.1);
         r.mesh.visible = true;
         break;
@@ -127,7 +127,6 @@ export class ParticleSystem {
   }
 
   update(dt) {
-    // Update Debris/Sparks
     for (let i = 0; i < this.maxParticles; i++) {
       const p = this.particles[i];
       if (!p.active) continue;
@@ -168,7 +167,6 @@ export class ParticleSystem {
     this.mesh.count = this.maxParticles;
     this.mesh.instanceMatrix.needsUpdate = true;
 
-    // Update Ground Ring Decals
     for (let i = 0; i < this.maxRings; i++) {
       const r = this.rings[i];
       if (!r.active) continue;
@@ -181,10 +179,9 @@ export class ParticleSystem {
         continue;
       }
 
-      // Smooth expanding scale and fading opacity
       const scale = THREE.MathUtils.lerp(0.2, r.maxRadius, Math.sqrt(progress));
       r.mesh.scale.set(scale, 1, scale);
-      r.mesh.material.opacity = 0.85 * (1.0 - progress);
+      r.mesh.material.opacity = 0.9 * (1.0 - progress);
     }
   }
 }
