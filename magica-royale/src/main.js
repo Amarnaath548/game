@@ -74,6 +74,16 @@ const ui = new UIManager(meta, {
   questManager,
   sceneManager,
   onSpellChange: (spellKey) => player.setSpell(spellKey),
+  onAddElement: (elem) => {
+    if (player.spellSlot.elements.length >= 3) {
+      player.spellSlot.reset('F');
+    }
+    player.spellSlot.addElement(elem);
+    player.setSpell(player.spellSlot.currentSpell.id);
+  },
+  onCastRequested: () => {
+    input.fireReleased = true;
+  },
   onHeroChange: (hero) => {
     player.hero = hero;
     if (player.bodyMat) player.bodyMat.color.setHex(hero.bodyColor);

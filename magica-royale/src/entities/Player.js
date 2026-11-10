@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { Actor } from './Actor.js';
 import { PLAYER_BASE, SPELLS, LEVEL_TABLE, COLORS, ARENA, HEROES } from '../config/constants.js';
+import { SpellSlotController } from './SpellSlotController.js';
+import { getSpell } from '../config/spellRegistry.js';
 
 export class Player extends Actor {
   constructor(scene, inputManager, hero = null) {
@@ -18,7 +20,7 @@ export class Player extends Actor {
 
     this.input = inputManager;
     this.isPlayer = true;
-    this.currentSpell = SPELLS.PYRO;
+    this.spellSlot = new SpellSlotController('F');
     this.level = 1;
     this.xp = 0;
     this.kills = 0;
@@ -36,7 +38,7 @@ export class Player extends Actor {
     aimLineGeo.translate(0, 4.5, 0);
     aimLineGeo.rotateX(-Math.PI / 2);
     this.aimLineMat = new THREE.MeshBasicMaterial({
-      color: COLORS.AIM_LASER,
+      color: this.currentSpell.color || COLORS.AIM_LASER,
       transparent: true,
       opacity: 0.45,
       side: THREE.DoubleSide
@@ -82,13 +84,26 @@ export class Player extends Actor {
     this.markerArrow = new THREE.Mesh(arrowGeo, this.markerArrowMat);
     this.markerArrow.position.y = 3.6;
     this.group.add(this.markerArrow);
+
+    if (this.staffOrbMat && this.currentSpell) {
+      this.staffOrbMat.color.setHex(this.currentSpell.color);
+    }
+  }
+
+  get currentSpell() {
+    return this.spellSlot ? this.spellSlot.currentSpell : SPELLS.PYRO;
+  }
+
+  set currentSpell(val) {
+    if (this.spellSlot) this.spellSlot.currentSpell = val;
   }
 
   setSpell(spellKey) {
-    if (SPELLS[spellKey]) {
-      this.currentSpell = SPELLS[spellKey];
-      this.staffOrbMat.color.setHex(this.currentSpell.color);
-      this.aimLineMat.color.setHex(this.currentSpell.color);
+    const sp = getSpell(spellKey) || SPELLS[spellKey];
+    if (sp) {
+      if (this.spellSlot) this.spellSlot.currentSpell = sp;
+      if (this.staffOrbMat) this.staffOrbMat.color.setHex(sp.color);
+      if (this.aimLineMat) this.aimLineMat.color.setHex(sp.color);
     }
   }
 
@@ -117,9 +132,14 @@ export class Player extends Actor {
   update(dt, bushes = []) {
     if (this.isDead) return;
 
-    // Timers
+    if (this.spellSlot) {
+      this.spellSlot.update(dt);
+      this.shootCooldown = this.spellSlot.cooldownTimer;
+    } else if (this.shootCooldown > 0) {
+      this.shootCooldown -= dt;
+    }
+
     if (this.dashCooldownTimer > 0) this.dashCooldownTimer -= dt;
-    if (this.shootCooldown > 0) this.shootCooldown -= dt;
 
     // Dash Trigger
     if (this.input.dashRequested) {
@@ -144,15 +164,13 @@ export class Player extends Actor {
       this.dashTimer -= dt;
       this.x += this.dashVec.x * PLAYER_BASE.DASH_SPEED * dt;
       this.z += this.dashVec.z * PLAYER_BASE.DASH_SPEED * dt;
-      if (this.dashTimer <= 0) {
-        this.isInvulnerable = false;
-      }
+      if (this.dashTimer <= 0) this.isInvulnerable = false;
     } else {
       this.x += this.input.moveDir.x * this.speed * dt;
       this.z += this.input.moveDir.z * this.speed * dt;
     }
 
-    // Arena Boundary Clamp
+    // Arena Clamp
     const distFromCenter = Math.hypot(this.x, this.z);
     const maxAllowed = ARENA.RADIUS - this.radius;
     if (distFromCenter > maxAllowed) {
@@ -166,17 +184,16 @@ export class Player extends Actor {
     this.aimLine.rotation.y = aimAngle;
     this.aimLine.visible = this.input.isAiming || !this.input.usingTouch;
 
-    // Wobble
     const isMoving = Math.hypot(this.input.moveDir.x, this.input.moveDir.z) > 0.05;
     this.setWobble(isMoving && this.dashTimer <= 0, dt);
 
-    // Bush Stealth & Player Marker Fading
+    // Bush Stealth
     const inBush = bushes.some((bush) => bush.checkInside(this.x, this.z));
     const targetOpacity = inBush ? 0.35 : 1.0;
     this.robeMat.transparent = inBush;
     this.robeMat.opacity = targetOpacity;
 
-    // Marker animation & pulsing
+    // Marker animation
     this.markerTime += dt;
     const pulse = 1.0 + Math.sin(this.markerTime * 4.5) * 0.08;
     this.markerRing.scale.set(pulse, 1, pulse);

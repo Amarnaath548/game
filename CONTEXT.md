@@ -33,6 +33,9 @@
 - `magica-royale/src/ui/DamageNumbers.js`: Pooled 2D floating combat damage numbers over targets.
 - `magica-royale/src/ui/KillFeed.js`: Top-right animated match elimination feed.
 - `magica-royale/src/style.css` & `index.html`: UI styling, lobby layout, responsive touch overlay, 8-spell bar.
+- `magica-royale/src/config/spellRegistry.js`: Elemental enum (E/F/W), trajectory enum, T1 & T2 spell definitions, and sorted combo lookup getSpell().
+- `magica-royale/src/config/spellRegistryT3.js`: Tier 3 spell definitions (10 spells including placeholder Hurricane E_F_W).
+- `magica-royale/src/entities/SpellSlotController.js`: Player spell controller with 3-element sorted multiset key lookup, cooldown tracking, and cast payload generation.
 
 ## Completed Features
 - 2.5D Battle Royale on 120u arena with 11 bots and 8 spells (Pyro, Cryo, Electro, Venom, Pierce, Blast, Homing, Shield).
@@ -54,3 +57,4 @@
 - **Phase A (Mobile & Deployment Polish) Complete**: Fixed HUD contrast for snow biome with semi-transparent dark pill backgrounds, heavy shadows, and black outlines across player status, HP/XP bars, bot Lv tags, kill feed, banners, and floating damage numbers; persisted biome history and next-biome selection in localStorage so the lobby preview arena truthfully matches the upcoming match with 3-in-a-row streak protection across reloads.
 - **Phase B (Deployment) Complete**: Added `vite.config.js` with `base: './'` and relative asset paths throughout `index.html`; created GitHub Actions workflow `.github/workflows/deploy.yml` for automated GitHub Pages build & deploy; added short `README.md` with Pages & Netlify deployment instructions; added SVG purple wizard-hat favicon and updated `<title>` to "Magica Royale".
 - **Phase C (Phone Behavior & Performance) Complete**: Implemented viewport-fit=cover, blocked contextmenu/double-tap zoom, added safe-area insets across HUD/controls, landscape compact layouts (800x360 and 667x375), portrait in-match "Rotate your phone" overlay, renderer pixel ratio cap at 2, automatic 40 FPS quality fallback during the first 4 seconds of a match, URL `?debug=1` FPS/calls counter, lobby header FULLSCREEN button, and multi-event audio unlocking on user gesture.
+- **Phase A (Elemental Evolution System) Complete**: Implemented 19-spell elemental registry split across `config/spellRegistry.js` (T1-T2) and `config/spellRegistryT3.js` (T3 with E_F_W Hurricane), sorted multiset key lookup in `SpellSlotController`, drag-distance range scaling on lobbed spells, spread and linear projectiles, status mapping (burn, chill/slow, stun/freeze, electro chain, knockback, lifesteal), temporary 1/2/3 debug hotkeys to add Earth/Fire/Water elements, and replaced the 8-button spell bar with a spell HUD panel and cast button cooldown ring while preserving bot SPELLS data.

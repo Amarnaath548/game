@@ -37,7 +37,12 @@ export class MatchManager {
     if (this.player.bodyMat) this.player.bodyMat.color.setHex(hero.bodyColor);
     if (this.player.accentMat) this.player.accentMat.color.setHex(hero.accentColor);
 
-    this.player.setSpell(staff.element);
+    if (this.player.spellSlot) {
+      this.player.spellSlot.reset('F');
+      this.player.setSpell('F');
+    } else {
+      this.player.setSpell(staff.element);
+    }
     if (this.ui) {
       this.ui.updateSpellBarLocks();
       this.ui.setSpellActive(staff.element);

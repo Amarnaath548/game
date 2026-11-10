@@ -2,18 +2,20 @@ import { LEVEL_TABLE } from '../config/constants.js';
 import { STAVES, UPGRADES } from '../core/MetaProgression.js';
 import { HeroSelectView } from './HeroSelectView.js';
 import { QuestView } from './QuestView.js';
-import { triggerLockShake, renderPerkSelection } from '../core/SpellAccess.js';
+import { renderPerkSelection } from '../core/SpellAccess.js';
+import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
 
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
     this.meta = metaProgression;
     this.questManager = callbacks.questManager;
     this.sceneManager = callbacks.sceneManager;
-    this.onSpellChange = callbacks.onSpellChange;
     this.onHeroChange = callbacks.onHeroChange;
     this.onPerkSelected = callbacks.onPerkSelected;
     this.onStartMatch = callbacks.onStartMatch;
     this.onReturnToLobby = callbacks.onReturnToLobby;
+    this.onAddElement = callbacks.onAddElement;
+    this.onCastRequested = callbacks.onCastRequested;
 
     const get = (id) => document.getElementById(id);
     this.lobbyScreen = get('lobby-screen'); this.lobbyTrophies = get('lobby-trophies'); this.lobbyGold = get('lobby-gold');
@@ -35,7 +37,8 @@ export class UIManager {
     }
 
     this.initLobbyEvents();
-    this.initSpellButtons();
+    this.initSpellPanel();
+    this.initCastButton();
     this.initKeyboardShortcuts();
     this.renderLobby();
   }
@@ -43,19 +46,16 @@ export class UIManager {
   initLobbyEvents() {
     const fsBtn = document.getElementById('fullscreen-btn');
     if (fsBtn) {
-      if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) fsBtn.style.display = 'none';
-      else {
-        fsBtn.addEventListener('click', () => {
-          if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-            const el = document.documentElement;
-            if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-          } else {
-            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-          }
-        });
-      }
+      fsBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          const el = document.documentElement;
+          if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+      });
     }
 
     this.playMatchBtn.addEventListener('click', () => {
@@ -80,7 +80,6 @@ export class UIManager {
       if (this.onStartMatch) this.onStartMatch();
     });
 
-    // Lobby Tabs switching
     const tabBtns = document.querySelectorAll('.lobby-tab-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
     tabBtns.forEach((btn) => {
@@ -91,6 +90,58 @@ export class UIManager {
         const panel = document.getElementById(`tab-${btn.dataset.tab}`);
         if (panel) panel.classList.add('active');
       });
+    });
+  }
+
+  initSpellPanel() {
+    const bar = document.getElementById('spell-bar');
+    if (!bar) return;
+    bar.innerHTML = `
+      <div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(15,23,42,0.92);border:2px solid #3b4262;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Fire Ball</span>
+            <span id="spell-tier-label" style="font-size:10px;font-weight:800;background:#334155;color:#38bdf8;padding:1px 6px;border-radius:999px;">Tier 1</span>
+          </div>
+          <div id="spell-chips-box" style="display:flex;gap:4px;"></div>
+        </div>
+      </div>`;
+    this.spellNameEl = document.getElementById('spell-name-label');
+    this.spellTierEl = document.getElementById('spell-tier-label');
+    this.spellChipsEl = document.getElementById('spell-chips-box');
+  }
+
+  initCastButton() {
+    if (document.getElementById('cast-btn') || !this.hud) return;
+    const castBtn = document.createElement('div');
+    castBtn.id = 'cast-btn';
+    castBtn.style.cssText = 'position:absolute;bottom:calc(24px + env(safe-area-inset-bottom,0px));right:calc(116px + env(safe-area-inset-right,0px));width:68px;height:68px;border-radius:50%;background:rgba(15,23,42,0.85);border:2px solid #38bdf8;box-shadow:0 0 16px rgba(0,242,255,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;z-index:25;user-select:none;';
+    castBtn.innerHTML = `
+      <svg viewBox="0 0 68 68" style="position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);">
+        <circle cx="34" cy="34" r="30" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4"></circle>
+        <circle id="cast-cd-ring" cx="34" cy="34" r="30" fill="none" stroke="#00f2ff" stroke-width="4" stroke-dasharray="188.5" stroke-dashoffset="0"></circle>
+      </svg>
+      <span style="font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;z-index:2;">CAST</span>`;
+    const trigger = (e) => { e.preventDefault(); e.stopPropagation(); if (this.onCastRequested) this.onCastRequested(); };
+    castBtn.addEventListener('pointerdown', trigger);
+    castBtn.addEventListener('touchstart', trigger, { passive: false });
+    this.hud.appendChild(castBtn);
+    this.castCdRing = document.getElementById('cast-cd-ring');
+  }
+
+  initKeyboardShortcuts() {
+    window.addEventListener('keydown', (e) => {
+      if (this.perkOverlay.style.display === 'flex' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
+        const index = parseInt(e.code.replace('Digit', ''), 10) - 1;
+        const cards = this.perkOverlay.querySelectorAll('.perk-card');
+        if (cards[index]) cards[index].click();
+        return;
+      }
+      // Temporary debug hotkeys: 1 = Earth, 2 = Fire, 3 = Water
+      const elemMap = { Digit1: 'E', Digit2: 'F', Digit3: 'W' };
+      if (elemMap[e.code] && this.onAddElement) {
+        this.onAddElement(elemMap[e.code]);
+      }
     });
   }
 
@@ -106,7 +157,6 @@ export class UIManager {
     if (this.questView) this.questView.render();
     if (this.lobbyArenaLabel && this.sceneManager) this.lobbyArenaLabel.textContent = `ARENA: ${this.sceneManager.getNextBiomeName()}`;
 
-    // Staves Armory
     this.stavesContainer.innerHTML = '';
     STAVES.forEach((staff) => {
       const isUnlocked = this.meta.data.unlockedStaves.includes(staff.id);
@@ -123,17 +173,12 @@ export class UIManager {
       card.querySelector('button').addEventListener('click', (e) => {
         e.stopPropagation();
         if (isSelected) return;
-        if (isUnlocked) {
-          this.meta.selectStaff(staff.id);
-          this.renderLobby();
-        } else if (this.meta.unlockStaff(staff.id)) {
-          this.renderLobby();
-        }
+        if (isUnlocked) { this.meta.selectStaff(staff.id); this.renderLobby(); }
+        else if (this.meta.unlockStaff(staff.id)) { this.renderLobby(); }
       });
       this.stavesContainer.appendChild(card);
     });
 
-    // Upgrades
     this.upgradesContainer.innerHTML = '';
     UPGRADES.forEach((upg) => {
       const currentLevel = this.meta.data.upgradeLevels[upg.id] || 0;
@@ -149,61 +194,24 @@ export class UIManager {
       }
       this.upgradesContainer.appendChild(row);
     });
-    this.updateSpellBarLocks();
   }
 
-  initSpellButtons() {
-    const buttons = document.querySelectorAll('.spell-btn');
-    buttons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const spell = btn.dataset.spell;
-        if (!this.meta.ownsSpell(spell)) {
-          triggerLockShake(btn);
-          return;
-        }
-        this.setSpellActive(spell);
-        if (this.onSpellChange) this.onSpellChange(spell);
-      });
-    });
-    this.updateSpellBarLocks();
-  }
+  updateSpellBarLocks() {}
+  setSpellActive(spellKey) {}
 
-  updateSpellBarLocks() {
-    document.querySelectorAll('.spell-btn').forEach((btn) => {
-      const isOwned = this.meta.ownsSpell(btn.dataset.spell);
-      btn.classList.toggle('locked', !isOwned);
-    });
-  }
+  updateSpellPanel(player) {
+    if (!this.spellNameEl) return;
+    const spell = player.currentSpell;
+    const elements = player.spellSlot?.elements?.length ? player.spellSlot.elements : (spell.elements || ['F']);
+    this.spellNameEl.textContent = spell.name || 'Fire Ball';
+    this.spellTierEl.textContent = `Tier ${spell.tier || 1}`;
+    this.spellTierEl.style.color = `#${(spell.color || 0x38bdf8).toString(16).padStart(6, '0')}`;
 
-  setSpellActive(spellKey) {
-    document.querySelectorAll('.spell-btn').forEach((b) => {
-      b.classList.toggle('active', b.dataset.spell === spellKey);
-    });
-  }
-
-  initKeyboardShortcuts() {
-    const spellMap = {
-      Digit1: 'PYRO', Digit2: 'CRYO', Digit3: 'ELECTRO', Digit4: 'VENOM',
-      Digit5: 'PIERCE', Digit6: 'BLAST', Digit7: 'HOMING', Digit8: 'SHIELD'
-    };
-    window.addEventListener('keydown', (e) => {
-      const spell = spellMap[e.code];
-      if (spell) {
-        if (this.perkOverlay.style.display === 'flex' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
-          const index = parseInt(e.code.replace('Digit', ''), 10) - 1;
-          const cards = this.perkOverlay.querySelectorAll('.perk-card');
-          if (cards[index]) cards[index].click();
-          return;
-        }
-        const btn = document.querySelector(`.spell-btn[data-spell="${spell}"]`);
-        if (!this.meta.ownsSpell(spell)) {
-          triggerLockShake(btn);
-          return;
-        }
-        this.setSpellActive(spell);
-        if (this.onSpellChange) this.onSpellChange(spell);
-      }
-    });
+    const icons = { E: '🪨', F: '🔥', W: '💧' };
+    this.spellChipsEl.innerHTML = elements.map((e) => {
+      const color = ELEMENT_COLORS[e] ? `#${ELEMENT_COLORS[e].toString(16).padStart(6, '0')}` : '#888';
+      return `<span style="font-size:10px;font-weight:800;background:rgba(255,255,255,0.08);border:1px solid ${color};color:${color};padding:1px 6px;border-radius:4px;">${icons[e] || ''} ${ELEMENT_NAMES[e] || e}</span>`;
+    }).join('');
   }
 
   updateHUD(player, aliveCount, isSafe) {
@@ -222,6 +230,15 @@ export class UIManager {
     const progress = Math.max(0, player.xp - currentLvlConfig.xpReq);
     this.xpFillEl.style.width = `${Math.min(100, (progress / range) * 100)}%`;
     this.lvlTextEl.textContent = `Lv ${player.level} ${player.hero?.name || ''}`;
+
+    this.updateSpellPanel(player);
+
+    if (this.castCdRing) {
+      const cd = player.spellSlot ? player.spellSlot.getCooldownProgress() : Math.max(0, (player.shootCooldown || 0) / (player.currentSpell?.cooldown || 1));
+      const circ = 188.5;
+      this.castCdRing.style.strokeDashoffset = `${circ * cd}`;
+      this.castCdRing.style.stroke = cd > 0 ? '#f59e0b' : '#00f2ff';
+    }
   }
 
   showPerkCards(level) {

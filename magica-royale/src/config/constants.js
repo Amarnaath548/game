@@ -232,3 +232,6 @@ export const SPELL_STAFF_MAP = {
   HOMING: 'HOMING_STAFF',
   SHIELD: 'SHIELD_STAFF'
 };
+
+export { ELEMENTS, ELEMENT_NAMES, ELEMENT_COLORS, TRAJECTORY, getSpell } from './spellRegistry.js';
+

@@ -9,6 +9,7 @@ export class InputManager {
     this.isAiming = false;
     this.fireReleased = false;
     this.dashRequested = false;
+    this.dragRatio = 1.0;
 
     this.keys = {};
     this.raycaster = new THREE.Raycaster();
@@ -37,12 +38,12 @@ export class InputManager {
     });
 
     window.addEventListener('pointerdown', (e) => {
-      if (e.pointerType === 'touch' || e.target.id === 'dash-btn') return;
+      if (e.pointerType === 'touch' || e.target.id === 'dash-btn' || e.target.closest('#cast-btn')) return;
       this.isAiming = true;
     });
 
     window.addEventListener('pointerup', (e) => {
-      if (e.pointerType === 'touch' || e.target.id === 'dash-btn') return;
+      if (e.pointerType === 'touch' || e.target.id === 'dash-btn' || e.target.closest('#cast-btn')) return;
       if (this.isAiming) {
         this.isAiming = false;
         this.fireReleased = true;
@@ -58,12 +59,9 @@ export class InputManager {
     const rightBase = document.getElementById('right-base');
     const rightKnob = document.getElementById('right-knob');
     const dashBtn = document.getElementById('dash-btn');
-
     const maxRadius = 45;
 
-    // Left Joystick (Movement)
-    let leftId = null;
-    let leftOrigin = { x: 0, y: 0 };
+    let leftId = null, leftOrigin = { x: 0, y: 0 };
 
     leftZone.addEventListener('touchstart', (e) => {
       e.preventDefault();
@@ -81,13 +79,9 @@ export class InputManager {
       e.preventDefault();
       for (const touch of e.changedTouches) {
         if (touch.identifier === leftId) {
-          const dx = touch.clientX - leftOrigin.x;
-          const dy = touch.clientY - leftOrigin.y;
-          const dist = Math.hypot(dx, dy);
-          const angle = Math.atan2(dy, dx);
-          const clamped = Math.min(dist, maxRadius);
+          const dx = touch.clientX - leftOrigin.x, dy = touch.clientY - leftOrigin.y;
+          const dist = Math.hypot(dx, dy), angle = Math.atan2(dy, dx), clamped = Math.min(dist, maxRadius);
           leftKnob.style.transform = `translate(${Math.cos(angle) * clamped}px, ${Math.sin(angle) * clamped}px)`;
-
           if (dist > 6) {
             this.moveDir.x = (dx / dist) * (clamped / maxRadius);
             this.moveDir.z = (dy / dist) * (clamped / maxRadius);
@@ -112,9 +106,7 @@ export class InputManager {
     leftZone.addEventListener('touchend', endLeft);
     leftZone.addEventListener('touchcancel', endLeft);
 
-    // Right Joystick (Aim & Release to Cast)
-    let rightId = null;
-    let rightOrigin = { x: 0, y: 0 };
+    let rightId = null, rightOrigin = { x: 0, y: 0 };
 
     rightZone.addEventListener('touchstart', (e) => {
       e.preventDefault();
@@ -133,16 +125,13 @@ export class InputManager {
       e.preventDefault();
       for (const touch of e.changedTouches) {
         if (touch.identifier === rightId) {
-          const dx = touch.clientX - rightOrigin.x;
-          const dy = touch.clientY - rightOrigin.y;
-          const dist = Math.hypot(dx, dy);
-          const angle = Math.atan2(dy, dx);
-          const clamped = Math.min(dist, maxRadius);
+          const dx = touch.clientX - rightOrigin.x, dy = touch.clientY - rightOrigin.y;
+          const dist = Math.hypot(dx, dy), angle = Math.atan2(dy, dx), clamped = Math.min(dist, maxRadius);
           rightKnob.style.transform = `translate(${Math.cos(angle) * clamped}px, ${Math.sin(angle) * clamped}px)`;
-
           if (dist > 10) {
             this.aimDir.x = dx / dist;
             this.aimDir.z = dy / dist;
+            this.dragRatio = clamped / maxRadius;
           }
         }
       }
@@ -170,60 +159,42 @@ export class InputManager {
       lastTap = now;
     }, { passive: false });
 
-    dashBtn.addEventListener('pointerdown', (e) => {
-      e.stopPropagation();
-      this.dashRequested = true;
-    });
-    dashBtn.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.dashRequested = true;
-    }, { passive: false });
+    dashBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.dashRequested = true; });
+    dashBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); this.dashRequested = true; }, { passive: false });
   }
 
   update(playerPos, potentialTargets = [], spellRange = 24) {
     if (!this.usingTouch) {
-      let kx = 0;
-      let kz = 0;
+      let kx = 0, kz = 0;
       if (this.keys['KeyW'] || this.keys['ArrowUp']) kz -= 1;
       if (this.keys['KeyS'] || this.keys['ArrowDown']) kz += 1;
       if (this.keys['KeyA'] || this.keys['ArrowLeft']) kx -= 1;
       if (this.keys['KeyD'] || this.keys['ArrowRight']) kx += 1;
-
       const len = Math.hypot(kx, kz);
       this.moveDir.x = len > 0 ? kx / len : 0;
       this.moveDir.z = len > 0 ? kz / len : 0;
 
-      // Raycast mouse onto Y=0 ground plane for desktop aiming
       this.raycaster.setFromCamera(this.mouseNormalized, this.camera);
       const intersect = new THREE.Vector3();
       if (this.raycaster.ray.intersectPlane(this.groundPlane, intersect)) {
-        const dx = intersect.x - playerPos.x;
-        const dz = intersect.z - playerPos.z;
+        const dx = intersect.x - playerPos.x, dz = intersect.z - playerPos.z;
         const dist = Math.hypot(dx, dz);
         if (dist > 0.01) {
           this.aimDir.x = dx / dist;
           this.aimDir.z = dz / dist;
+          this.dragRatio = Math.max(0.2, Math.min(1.0, dist / spellRange));
         }
       }
     }
 
-    // Aim Assist (+/- 20 degrees snap within spell range)
     if (AIM_ASSIST && potentialTargets.length > 0) {
-      const minDot = Math.cos(20 * Math.PI / 180); // ~0.9396
-      let bestTarget = null;
-      let bestDot = minDot;
-      let snapDirX = this.aimDir.x;
-      let snapDirZ = this.aimDir.z;
-
+      const minDot = Math.cos(20 * Math.PI / 180);
+      let bestTarget = null, bestDot = minDot, snapDirX = this.aimDir.x, snapDirZ = this.aimDir.z;
       for (const t of potentialTargets) {
         if (t.isDead || t.isPlayer) continue;
-        const dx = t.x - playerPos.x;
-        const dz = t.z - playerPos.z;
-        const dist = Math.hypot(dx, dz);
+        const dx = t.x - playerPos.x, dz = t.z - playerPos.z, dist = Math.hypot(dx, dz);
         if (dist <= spellRange && dist > 0.5) {
-          const tdx = dx / dist;
-          const tdz = dz / dist;
+          const tdx = dx / dist, tdz = dz / dist;
           const dot = this.aimDir.x * tdx + this.aimDir.z * tdz;
           if (dot > bestDot) {
             bestDot = dot;
@@ -233,7 +204,6 @@ export class InputManager {
           }
         }
       }
-
       if (bestTarget) {
         this.aimDir.x = snapDirX;
         this.aimDir.z = snapDirZ;
