@@ -14,6 +14,8 @@ export class CombatResolver {
     this.player = deps.player;
     this.projectiles = deps.projectiles;
     this.questManager = deps.questManager;
+    this.meta = deps.meta;
+    this.spellbookManager = deps.spellbookManager;
     this.spellEffects = deps.spellEffects || new SpellEffects(this.sceneManager.scene, this.particleSys);
     this.delayedStrikes = [];
     this.spellDashes = [];
@@ -40,6 +42,10 @@ export class CombatResolver {
     if (owner?.dmgBonus) config.damage += owner.dmgBonus;
     if (isPlayer && this.player.staffElement && config.elements?.includes(this.player.staffElement)) {
       config.damage = Math.round(config.damage * 1.12);
+    }
+    if (isPlayer && this.spellbookManager) {
+      const starMult = this.spellbookManager.getDamageMultiplier(config.id);
+      if (starMult > 1.0) config.damage = Math.round(config.damage * starMult);
     }
     if (isPlayer && this.player.perks.includes('SNIPER_VELOCITY')) { config.speed = (config.speed || 28) * 1.35; config.range = (config.range || 24) * 1.35; }
     if (isPlayer && this.player.perks.includes('GIANT_ARCANA')) { config.radius = (config.radius || 0.5) * 1.4; if (config.aoeRadius) config.aoeRadius *= 1.4; }
@@ -141,7 +147,7 @@ export class CombatResolver {
       const p = this.projectiles.find((proj) => !proj.active);
       if (!p) break;
       const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-      const subConfig = { id: 'CLUSTER_SUB', color: cfg.color || 0xf43f5e, damage: Math.round((cfg.damage || 50) * 0.45), speed: 18, range: 4.5 + Math.random() * 2.0, radius: 0.35, aoeRadius: 2.2, lobArcHeight: 1.8, burnDuration: 1.5, burnDps: 6 };
+      const subConfig = { id: cfg.id || 'E_F_F', color: cfg.color || 0xf43f5e, damage: Math.round((cfg.damage || 50) * 0.45), speed: 18, range: 4.5 + Math.random() * 2.0, radius: 0.35, aoeRadius: 2.2, lobArcHeight: 1.8, burnDuration: 1.5, burnDps: 6 };
       p.spawn(x, z, Math.sin(angle), Math.cos(angle), subConfig, owner);
     }
   }
@@ -157,7 +163,7 @@ export class CombatResolver {
     target.applyKnockback(kx, kz, cfg.knockback || 2.5);
     this.damageNumbers.spawn(target.x, target.z, dealt, cfg.color || 0xff5500);
     this.applyStatuses(target, cfg);
-    if (target.isDead) this.handleKill(owner, target);
+    if (target.isDead) this.handleKill(owner, target, cfg.id);
   }
 
   detonateAoE(x, z, cfg, owner, directTarget = null, targets = []) {
@@ -183,13 +189,16 @@ export class CombatResolver {
     if (cfg.id === 'VENOM') target.applyPoison(cfg.dps || 8, cfg.duration || 4.0);
   }
 
-  handleKill(killer, victim) {
+  handleKill(killer, victim, sourceSpellId = null) {
     this.sound.playExplosion();
     this.particleSys.spawnImpact(victim.x, victim.z, 0xff0055, 2.2);
     this.spawnManager.dropLoot(victim.x, victim.z, 5, 0.6);
     if (killer) {
       killer.kills = (killer.kills || 0) + 1;
       if (killer.isPlayer && this.questManager) this.questManager.record('kill', 1);
+      if (killer.isPlayer && this.spellbookManager && sourceSpellId) {
+        this.spellbookManager.recordKill(sourceSpellId, this.meta);
+      }
       if (killer.addXP) killer.addXP(60);
       const kName = killer.isPlayer ? 'Player' : (killer.name || 'Bot');
       const vName = victim.isPlayer ? 'Player' : (victim.name || 'Bot');

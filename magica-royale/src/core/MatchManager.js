@@ -20,6 +20,7 @@ export class MatchManager {
     this.gemPool = deps.gemPool;
     this.orbPool = deps.orbPool;
     this.questManager = deps.questManager;
+    this.spellbookManager = deps.spellbookManager;
 
     this.zoneSys = new ZoneSystem(this.sceneManager.scene);
     this.matchActive = false;
@@ -40,6 +41,7 @@ export class MatchManager {
     if (this.player.spellSlot) {
       this.player.spellSlot.reset('F');
       this.player.setSpell('F');
+      if (this.spellbookManager) this.spellbookManager.recordSpellReached('F', this.meta);
     } else {
       this.player.setSpell(staff.element);
     }
@@ -88,6 +90,7 @@ export class MatchManager {
 
     this.matchTime = 0;
     if (this.questManager) this.questManager.onMatchStart();
+    if (this.spellbookManager) this.spellbookManager.onMatchStart();
     this.isGameOver = false;
     this.matchActive = true;
   }
@@ -180,13 +183,13 @@ export class MatchManager {
         const place = aliveActors.length + 1;
         if (this.questManager) this.questManager.record('matchEnd', { placement: place, survivalTime: this.matchTime, level: this.player.level });
         const finished = this.questManager ? this.questManager.getQuestsCompletedThisMatch() : [];
-        this.ui.showEndGame(false, place, this.player, finished);
+        this.ui.showEndGame(false, place, this.player, finished, this.spellbookManager?.getMatchSummary());
       } else if (aliveActors.length === 1 && aliveActors[0] === this.player) {
         this.isGameOver = true;
         this.matchActive = false;
         if (this.questManager) this.questManager.record('matchEnd', { placement: 1, survivalTime: this.matchTime, level: this.player.level });
         const finished = this.questManager ? this.questManager.getQuestsCompletedThisMatch() : [];
-        this.ui.showEndGame(true, 1, this.player, finished);
+        this.ui.showEndGame(true, 1, this.player, finished, this.spellbookManager?.getMatchSummary());
       }
     }
   }

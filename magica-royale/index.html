@@ -24,6 +24,7 @@
     <!-- LOBBY TABS -->
     <div class="lobby-tabs">
       <button class="lobby-tab-btn active" data-tab="heroes">HEROES</button>
+      <button class="lobby-tab-btn" data-tab="spellbook">SPELLBOOK</button>
       <button class="lobby-tab-btn" data-tab="staves">STAVES</button>
       <button class="lobby-tab-btn" data-tab="upgrades">UPGRADES</button>
       <button class="lobby-tab-btn" data-tab="quests" id="quests-tab-btn">QUESTS<span id="quests-badge" class="tab-badge"></span></button>
@@ -33,6 +34,9 @@
     <div class="lobby-tab-content">
       <div id="tab-heroes" class="tab-panel active">
         <div id="heroes-container" class="heroes-grid"></div>
+      </div>
+      <div id="tab-spellbook" class="tab-panel">
+        <div id="spellbook-container" class="spellbook-list" style="overflow-y: auto; max-height: 100%; padding: 4px 6px;"></div>
       </div>
       <div id="tab-staves" class="tab-panel">
         <div id="staves-container" class="staves-grid"></div>

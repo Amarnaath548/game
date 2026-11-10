@@ -5,11 +5,13 @@ import { QuestView } from './QuestView.js';
 import { renderPerkSelection } from '../core/SpellAccess.js';
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
 import { ElementPicker } from './ElementPicker.js';
+import { SpellbookView } from './SpellbookView.js';
 
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
     this.meta = metaProgression;
     this.questManager = callbacks.questManager;
+    this.spellbookManager = callbacks.spellbookManager;
     this.sceneManager = callbacks.sceneManager;
     this.onHeroChange = callbacks.onHeroChange;
     this.onPerkSelected = callbacks.onPerkSelected;
@@ -22,7 +24,8 @@ export class UIManager {
     this.lobbyRankTitle = get('lobby-rank-title'); this.lobbyArenaLabel = get('lobby-arena-label');
     this.stavesContainer = get('staves-container'); this.upgradesContainer = get('upgrades-container');
     this.heroesContainer = get('heroes-container'); this.questsContainer = get('quests-container');
-    this.questsBadgeEl = get('quests-badge'); this.playMatchBtn = get('play-match-btn'); this.hud = get('hud');
+    this.spellbookContainer = get('spellbook-container'); this.questsBadgeEl = get('quests-badge');
+    this.playMatchBtn = get('play-match-btn'); this.hud = get('hud');
     this.aliveCountEl = get('alive-count'); this.zoneStatusEl = get('zone-status');
     this.hpFillEl = get('hp-fill'); this.xpFillEl = get('xp-fill');
     this.lvlTextEl = get('player-lvl-text'); this.hpTextEl = get('player-hp-text');
@@ -36,6 +39,9 @@ export class UIManager {
     if (this.questManager) {
       this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
     }
+    if (this.spellbookContainer && this.spellbookManager) {
+      this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
+    }
 
     this.initLobbyEvents();
     this.initSpellPanel();
@@ -48,23 +54,21 @@ export class UIManager {
     const fsBtn = document.getElementById('fullscreen-btn');
     if (fsBtn) {
       fsBtn.addEventListener('click', () => {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (!document.fullscreenElement) {
           const el = document.documentElement;
           if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-        } else {
-          if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        }
+        } else if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
       });
     }
 
-    this.playMatchBtn.addEventListener('click', () => {
+    const startMatchUI = () => {
       document.body.classList.add('in-match');
       this.lobbyScreen.style.display = 'none';
       this.hud.style.display = 'block';
       if (this.onStartMatch) this.onStartMatch();
-    });
+    };
+    this.playMatchBtn.addEventListener('click', startMatchUI);
+    this.modalPlayAgainBtn.addEventListener('click', () => { this.endModal.style.display = 'none'; startMatchUI(); });
 
     this.modalLobbyBtn.addEventListener('click', () => {
       document.body.classList.remove('in-match');
@@ -73,12 +77,6 @@ export class UIManager {
       this.lobbyScreen.style.display = 'flex';
       this.renderLobby();
       if (this.onReturnToLobby) this.onReturnToLobby();
-    });
-
-    this.modalPlayAgainBtn.addEventListener('click', () => {
-      document.body.classList.add('in-match');
-      this.endModal.style.display = 'none';
-      if (this.onStartMatch) this.onStartMatch();
     });
 
     const tabBtns = document.querySelectorAll('.lobby-tab-btn');
@@ -97,16 +95,7 @@ export class UIManager {
   initSpellPanel() {
     const bar = document.getElementById('spell-bar');
     if (!bar) return;
-    bar.innerHTML = `
-      <div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(15,23,42,0.92);border:2px solid #3b4262;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;">
-        <div style="display:flex;flex-direction:column;gap:2px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Fire Ball</span>
-            <span id="spell-tier-label" style="font-size:10px;font-weight:800;background:#334155;color:#38bdf8;padding:1px 6px;border-radius:999px;">Tier 1</span>
-          </div>
-          <div id="spell-chips-box" style="display:flex;gap:4px;"></div>
-        </div>
-      </div>`;
+    bar.innerHTML = `<div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(15,23,42,0.92);border:2px solid #3b4262;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Fire Ball</span><span id="spell-tier-label" style="font-size:10px;font-weight:800;background:#334155;color:#38bdf8;padding:1px 6px;border-radius:999px;">Tier 1</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
     this.spellNameEl = document.getElementById('spell-name-label');
     this.spellTierEl = document.getElementById('spell-tier-label');
     this.spellChipsEl = document.getElementById('spell-chips-box');
@@ -117,12 +106,7 @@ export class UIManager {
     const castBtn = document.createElement('div');
     castBtn.id = 'cast-btn';
     castBtn.style.cssText = 'position:absolute;bottom:calc(24px + env(safe-area-inset-bottom,0px));right:calc(116px + env(safe-area-inset-right,0px));width:68px;height:68px;border-radius:50%;background:rgba(15,23,42,0.85);border:2px solid #38bdf8;box-shadow:0 0 16px rgba(0,242,255,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;z-index:25;user-select:none;';
-    castBtn.innerHTML = `
-      <svg viewBox="0 0 68 68" style="position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);">
-        <circle cx="34" cy="34" r="30" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4"></circle>
-        <circle id="cast-cd-ring" cx="34" cy="34" r="30" fill="none" stroke="#00f2ff" stroke-width="4" stroke-dasharray="188.5" stroke-dashoffset="0"></circle>
-      </svg>
-      <span style="font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;z-index:2;">CAST</span>`;
+    castBtn.innerHTML = `<svg viewBox="0 0 68 68" style="position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);"><circle cx="34" cy="34" r="30" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4"></circle><circle id="cast-cd-ring" cx="34" cy="34" r="30" fill="none" stroke="#00f2ff" stroke-width="4" stroke-dasharray="188.5" stroke-dashoffset="0"></circle></svg><span style="font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;z-index:2;">CAST</span>`;
     const trigger = (e) => { e.preventDefault(); e.stopPropagation(); if (this.onCastRequested) this.onCastRequested(); };
     castBtn.addEventListener('pointerdown', trigger);
     castBtn.addEventListener('touchstart', trigger, { passive: false });
@@ -150,6 +134,7 @@ export class UIManager {
     const currentHeroId = localStorage.getItem('magica_selected_hero') || 'ignis';
     this.heroSelectView.render(currentHeroId);
     if (this.questView) this.questView.render();
+    if (this.spellbookView) this.spellbookView.render();
     if (this.lobbyArenaLabel && this.sceneManager) this.lobbyArenaLabel.textContent = `ARENA: ${this.sceneManager.getNextBiomeName()}`;
 
     this.stavesContainer.innerHTML = '';
@@ -230,8 +215,7 @@ export class UIManager {
 
     if (this.castCdRing) {
       const cd = player.spellSlot ? player.spellSlot.getCooldownProgress() : Math.max(0, (player.shootCooldown || 0) / (player.currentSpell?.cooldown || 1));
-      const circ = 188.5;
-      this.castCdRing.style.strokeDashoffset = `${circ * cd}`;
+      this.castCdRing.style.strokeDashoffset = `${188.5 * cd}`;
       this.castCdRing.style.stroke = cd > 0 ? '#f59e0b' : '#00f2ff';
     }
   }
@@ -242,6 +226,8 @@ export class UIManager {
         player.spellSlot.addElement(element);
         player.setSpell(player.spellSlot.currentSpell.id);
         this.updateSpellPanel(player);
+        if (this.spellbookManager) this.spellbookManager.recordSpellReached(player.currentSpell.id, this.meta);
+        if (player.currentSpell.tier === 3 && this.questManager) this.questManager.record('reachT3', 1);
       });
     } else {
       this.showPerkCards(level);
@@ -252,7 +238,7 @@ export class UIManager {
     renderPerkSelection(this.perkOverlay, this.onPerkSelected);
   }
 
-  showEndGame(isVictory, place, player = null, finishedQuests = []) {
+  showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null) {
     const results = this.meta.applyMatchResults(place);
     this.endModal.style.display = 'flex';
     const heroName = player?.hero?.name || 'Archmage', kills = player?.kills || 0;
@@ -266,7 +252,10 @@ export class UIManager {
       this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box'));
     }
     const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
-    statsEl.innerHTML = `<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}`;
+    const newSpellHtml = spellbookSummary?.newSpells?.length ? `<div class="quest-done-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New spell unlocked: ${spellbookSummary.newSpells.join(', ')}!</div>` : '';
+    const starHtml = spellbookSummary?.starsEarned ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ ${spellbookSummary.starsEarned} Star${spellbookSummary.starsEarned > 1 ? 's' : ''} earned!</div>` : '';
+
+    statsEl.innerHTML = `<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}${newSpellHtml}${starHtml}`;
     const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
     this.rewardTrophy.textContent = `${tSign} 🏆 (${results.newTrophies})`; this.rewardGold.textContent = `+${results.goldEarned} 🪙 (${results.newGold})`;
   }

@@ -46,10 +46,14 @@ function generateDailyQuests(dateStr) {
     () => {
       const target = Math.floor(rng() * 3) + 4;
       return { type: 'level', text: `Reach level ${target} in one match`, target, goldReward: 50 + (target - 4) * 25 };
+    },
+    () => {
+      const target = Math.floor(rng() * 3) + 1;
+      return { type: 'reachT3', text: `Reach a Tier 3 spell ${target} time${target > 1 ? 's' : ''}`, target, goldReward: 40 + target * 20 };
     }
   ];
 
-  const indices = [0, 1, 2, 3, 4, 5, 6, 7];
+  const indices = [0, 1, 2, 3, 4, 5, 6, 7, 8];
   for (let i = indices.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [indices[i], indices[j]] = [indices[j], indices[i]];
@@ -128,6 +132,9 @@ export class QuestManager {
         q.progress = Math.min(q.target, q.progress + 1);
         updated = true;
       } else if (event === 'cast' && q.type === 'casts') {
+        q.progress = Math.min(q.target, q.progress + 1);
+        updated = true;
+      } else if (event === 'reachT3' && q.type === 'reachT3') {
         q.progress = Math.min(q.target, q.progress + 1);
         updated = true;
       } else if (event === 'matchEnd' && typeof data === 'object') {

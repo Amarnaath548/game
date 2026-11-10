@@ -17,6 +17,7 @@ import { SpawnManager } from './core/SpawnManager.js';
 import { CombatResolver } from './core/CombatResolver.js';
 import { MatchManager } from './core/MatchManager.js';
 import { QuestManager } from './core/QuestManager.js';
+import { SpellbookManager } from './core/SpellbookManager.js';
 
 // Core Systems
 const sceneManager = new SceneManager();
@@ -24,6 +25,7 @@ const input = new InputManager(sceneManager.camera);
 const sound = new SoundManager();
 const meta = new MetaProgression();
 const questManager = new QuestManager();
+const spellbookManager = new SpellbookManager();
 const particleSys = new ParticleSystem(sceneManager.scene, 400);
 const floatingBars = new FloatingBarSystem(sceneManager.camera);
 const damageNumbers = new DamageNumbers(sceneManager.camera);
@@ -62,16 +64,17 @@ const healthOrbs = orbPool.pool.map((mesh) => new HealthOrb(mesh, orbPool));
 // Managers
 const spawnManager = new SpawnManager(sceneManager.scene, gems, healthOrbs);
 const combatResolver = new CombatResolver({
-  sceneManager, sound, particleSys, damageNumbers, killFeed, banners, spawnManager, player, projectiles, questManager
+  sceneManager, sound, particleSys, damageNumbers, killFeed, banners, spawnManager, player, projectiles, questManager, meta, spellbookManager
 });
 const matchManager = new MatchManager({
   sceneManager, sound, meta, ui: null, banners, floatingBars, damageNumbers, killFeed,
-  particleSys, player, spawnManager, combatResolver, projectiles, projPool, gemPool, orbPool, questManager
+  particleSys, player, spawnManager, combatResolver, projectiles, projPool, gemPool, orbPool, questManager, spellbookManager
 });
 
 // UI
 const ui = new UIManager(meta, {
   questManager,
+  spellbookManager,
   sceneManager,
   onSpellChange: (spellKey) => player.setSpell(spellKey),
   onCastRequested: () => {

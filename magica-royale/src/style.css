@@ -157,7 +157,8 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
 #end-subtitle { font-size: 15px; color: #94a3b8; }
 .title-win { color: #fbbf24; text-shadow: 0 0 20px rgba(251, 191, 36, 0.6); }
 .title-loss { color: #ef4444; text-shadow: 0 0 16px rgba(239, 68, 68, 0.5); }
-#match-hero-stats { display: flex; gap: 10px; margin: 4px 0; }
+#match-hero-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 4px 0; }
+.quest-done-pill { background: rgba(16, 185, 129, 0.95); border: 1px solid #059669; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px #000; }
 .stat-pill { background: rgba(30, 41, 59, 0.85); border: 1px solid #475569; padding: 6px 14px; border-radius: 8px; font-size: 13px; color: #cbd5e1; }
 .match-rewards-box { display: flex; gap: 16px; margin: 8px 0; }
 .reward-pill { background: rgba(18, 20, 32, 0.8); border: 1px solid #3b4262; padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 14px; }
