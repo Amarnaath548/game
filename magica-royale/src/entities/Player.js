@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Actor } from './Actor.js';
-import { PLAYER_BASE, SPELLS, LEVEL_TABLE, COLORS, ARENA, HEROES } from '../config/constants.js';
+import { PLAYER_BASE, LEVEL_TABLE, COLORS, ARENA, HEROES } from '../config/constants.js';
 import { SpellSlotController } from './SpellSlotController.js';
 import { getSpell } from '../config/spellRegistry.js';
 
@@ -26,6 +26,8 @@ export class Player extends Actor {
     this.kills = 0;
     this.dmgBonus = 0;
     this.perks = [];
+    this.staffElement = null;
+    this.cooldownMult = 1.0;
 
     // Dash state
     this.dashTimer = 0;
@@ -33,7 +35,7 @@ export class Player extends Actor {
     this.dashVec = { x: 0, z: 0 };
     this.shootCooldown = 0;
 
-    // Ground Aim Indicator
+    // Aim Indicator
     const aimLineGeo = new THREE.PlaneGeometry(0.35, 9);
     aimLineGeo.translate(0, 4.5, 0);
     aimLineGeo.rotateX(-Math.PI / 2);
@@ -47,40 +49,25 @@ export class Player extends Actor {
     this.aimLine.position.y = 0.06;
     this.group.add(this.aimLine);
 
-    // Player Marker: White ground ring with cyan glow & downward floating arrow
+    // Player Marker
     this.markerTime = 0;
     const ringGeo = new THREE.RingGeometry(1.25, 1.48, 32);
     ringGeo.rotateX(-Math.PI / 2);
-    this.markerRingMat = new THREE.MeshBasicMaterial({
-      color: 0x00f2ff,
-      transparent: true,
-      opacity: 0.95,
-      side: THREE.DoubleSide
-    });
+    this.markerRingMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.95, side: THREE.DoubleSide });
     this.markerRing = new THREE.Mesh(ringGeo, this.markerRingMat);
     this.markerRing.position.y = 0.04;
     this.group.add(this.markerRing);
 
     const glowGeo = new THREE.RingGeometry(1.05, 1.75, 32);
     glowGeo.rotateX(-Math.PI / 2);
-    this.markerGlowMat = new THREE.MeshBasicMaterial({
-      color: 0x00f2ff,
-      transparent: true,
-      opacity: 0.5,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
+    this.markerGlowMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false });
     this.markerGlow = new THREE.Mesh(glowGeo, this.markerGlowMat);
     this.markerGlow.position.y = 0.035;
     this.group.add(this.markerGlow);
 
     const arrowGeo = new THREE.ConeGeometry(0.32, 0.58, 4);
     arrowGeo.rotateX(Math.PI);
-    this.markerArrowMat = new THREE.MeshBasicMaterial({
-      color: 0x00f2ff,
-      transparent: true,
-      opacity: 0.95
-    });
+    this.markerArrowMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.95 });
     this.markerArrow = new THREE.Mesh(arrowGeo, this.markerArrowMat);
     this.markerArrow.position.y = 3.6;
     this.group.add(this.markerArrow);
@@ -91,7 +78,7 @@ export class Player extends Actor {
   }
 
   get currentSpell() {
-    return this.spellSlot ? this.spellSlot.currentSpell : SPELLS.PYRO;
+    return this.spellSlot ? this.spellSlot.currentSpell : getSpell('F');
   }
 
   set currentSpell(val) {
@@ -99,7 +86,7 @@ export class Player extends Actor {
   }
 
   setSpell(spellKey) {
-    const sp = getSpell(spellKey) || SPELLS[spellKey];
+    const sp = getSpell(spellKey);
     if (sp) {
       if (this.spellSlot) this.spellSlot.currentSpell = sp;
       if (this.staffOrbMat) this.staffOrbMat.color.setHex(sp.color);
@@ -109,24 +96,24 @@ export class Player extends Actor {
 
   addXP(amount, onLevelUp) {
     this.xp += amount;
-    const nextConfig = LEVEL_TABLE.find((lvl) => lvl.level === this.level + 1);
-    if (nextConfig && this.xp >= nextConfig.xpReq) {
-      this.level += 1;
-      this.maxHp += nextConfig.hpBonus;
-      this.hp = Math.min(this.maxHp, this.hp + nextConfig.hpBonus);
-      this.dmgBonus += nextConfig.dmgBonus;
-      if (onLevelUp) onLevelUp(this.level, nextConfig.rewardType);
+    while (true) {
+      const nextConfig = LEVEL_TABLE.find((lvl) => lvl.level === this.level + 1);
+      if (nextConfig && this.xp >= nextConfig.xpReq) {
+        this.level += 1;
+        this.maxHp += nextConfig.hpBonus;
+        this.hp = Math.min(this.maxHp, this.hp + nextConfig.hpBonus);
+        this.dmgBonus += nextConfig.dmgBonus;
+        if (onLevelUp) onLevelUp(this.level, nextConfig.rewardType);
+      } else {
+        break;
+      }
     }
   }
 
   applyPerk(perk) {
     this.perks.push(perk.id);
-    if (perk.id === 'WINDWALKER') {
-      this.baseSpeed *= 1.2;
-    }
-    if (perk.id === 'ARCANE_SHIELD') {
-      this.shieldActive = true;
-    }
+    if (perk.id === 'WINDWALKER') this.baseSpeed *= 1.2;
+    if (perk.id === 'ARCANE_SHIELD') this.shieldActive = true;
   }
 
   update(dt, bushes = []) {
@@ -141,7 +128,6 @@ export class Player extends Actor {
 
     if (this.dashCooldownTimer > 0) this.dashCooldownTimer -= dt;
 
-    // Dash Trigger
     if (this.input.dashRequested) {
       this.input.dashRequested = false;
       const cooldown = this.perks.includes('WINDWALKER')
@@ -159,7 +145,6 @@ export class Player extends Actor {
       }
     }
 
-    // Movement
     if (this.dashTimer > 0) {
       this.dashTimer -= dt;
       this.x += this.dashVec.x * PLAYER_BASE.DASH_SPEED * dt;
@@ -170,7 +155,6 @@ export class Player extends Actor {
       this.z += this.input.moveDir.z * this.speed * dt;
     }
 
-    // Arena Clamp
     const distFromCenter = Math.hypot(this.x, this.z);
     const maxAllowed = ARENA.RADIUS - this.radius;
     if (distFromCenter > maxAllowed) {
@@ -178,7 +162,6 @@ export class Player extends Actor {
       this.z = (this.z / distFromCenter) * maxAllowed;
     }
 
-    // Orient Mesh & Aim Indicator
     const aimAngle = Math.atan2(this.input.aimDir.x, this.input.aimDir.z);
     this.visualMesh.rotation.y = aimAngle;
     this.aimLine.rotation.y = aimAngle;
@@ -187,13 +170,11 @@ export class Player extends Actor {
     const isMoving = Math.hypot(this.input.moveDir.x, this.input.moveDir.z) > 0.05;
     this.setWobble(isMoving && this.dashTimer <= 0, dt);
 
-    // Bush Stealth
     const inBush = bushes.some((bush) => bush.checkInside(this.x, this.z));
     const targetOpacity = inBush ? 0.35 : 1.0;
     this.robeMat.transparent = inBush;
     this.robeMat.opacity = targetOpacity;
 
-    // Marker animation
     this.markerTime += dt;
     const pulse = 1.0 + Math.sin(this.markerTime * 4.5) * 0.08;
     this.markerRing.scale.set(pulse, 1, pulse);

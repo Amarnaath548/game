@@ -53,6 +53,9 @@ export class MatchManager {
     this.player.hp = this.player.maxHp;
     this.player.baseSpeed = PLAYER_BASE.MOVE_SPEED * bonuses.speedMultiplier;
     this.player.speed = this.player.baseSpeed;
+    this.player.staffElement = bonuses.staffElementBonus;
+    this.player.cooldownMult = bonuses.cooldownMultiplier;
+    this.player.pickupRadiusBonus = bonuses.pickupRadiusBonus;
     this.player.level = 1;
     this.player.xp = 0;
     this.player.kills = 0;
@@ -91,6 +94,7 @@ export class MatchManager {
 
   resetToLobby() {
     this.matchActive = false;
+    if (this.ui?.elementPicker) this.ui.elementPicker.hide();
     this.spawnManager.cleanup();
     this.projectiles.forEach((p) => p.despawn());
     this.spawnManager.gems.forEach((g) => g.despawn());
@@ -122,7 +126,7 @@ export class MatchManager {
         this.particleSys.spawnBurst(gem.x, 0.6, gem.z, 0x00f2ff, 6, 4);
         this.player.addXP(gem.xpValue, (lvl) => {
           this.sound.playLevelUp();
-          this.ui.showPerkCards(lvl);
+          this.ui.showLevelUp(this.player, lvl);
         });
       }
     });

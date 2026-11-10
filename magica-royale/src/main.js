@@ -74,13 +74,6 @@ const ui = new UIManager(meta, {
   questManager,
   sceneManager,
   onSpellChange: (spellKey) => player.setSpell(spellKey),
-  onAddElement: (elem) => {
-    if (player.spellSlot.elements.length >= 3) {
-      player.spellSlot.reset('F');
-    }
-    player.spellSlot.addElement(elem);
-    player.setSpell(player.spellSlot.currentSpell.id);
-  },
   onCastRequested: () => {
     input.fireReleased = true;
   },
@@ -101,6 +94,7 @@ const ui = new UIManager(meta, {
   onReturnToLobby: () => matchManager.resetToLobby()
 });
 matchManager.ui = ui;
+combatResolver.ui = ui;
 
 // Debug Overlay (?debug=1)
 const isDebug = new URLSearchParams(window.location.search).get('debug') === '1';

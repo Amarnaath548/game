@@ -4,6 +4,7 @@ import { HeroSelectView } from './HeroSelectView.js';
 import { QuestView } from './QuestView.js';
 import { renderPerkSelection } from '../core/SpellAccess.js';
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
+import { ElementPicker } from './ElementPicker.js';
 
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
@@ -14,7 +15,6 @@ export class UIManager {
     this.onPerkSelected = callbacks.onPerkSelected;
     this.onStartMatch = callbacks.onStartMatch;
     this.onReturnToLobby = callbacks.onReturnToLobby;
-    this.onAddElement = callbacks.onAddElement;
     this.onCastRequested = callbacks.onCastRequested;
 
     const get = (id) => document.getElementById(id);
@@ -31,6 +31,7 @@ export class UIManager {
     this.rewardTrophy = get('reward-trophy'); this.rewardGold = get('reward-gold');
     this.modalLobbyBtn = get('modal-lobby-btn'); this.modalPlayAgainBtn = get('modal-play-again-btn');
 
+    this.elementPicker = new ElementPicker(this.perkOverlay);
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange && this.onHeroChange(h));
     if (this.questManager) {
       this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
@@ -135,12 +136,6 @@ export class UIManager {
         const index = parseInt(e.code.replace('Digit', ''), 10) - 1;
         const cards = this.perkOverlay.querySelectorAll('.perk-card');
         if (cards[index]) cards[index].click();
-        return;
-      }
-      // Temporary debug hotkeys: 1 = Earth, 2 = Fire, 3 = Water
-      const elemMap = { Digit1: 'E', Digit2: 'F', Digit3: 'W' };
-      if (elemMap[e.code] && this.onAddElement) {
-        this.onAddElement(elemMap[e.code]);
       }
     });
   }
@@ -197,7 +192,7 @@ export class UIManager {
   }
 
   updateSpellBarLocks() {}
-  setSpellActive(spellKey) {}
+  setSpellActive() {}
 
   updateSpellPanel(player) {
     if (!this.spellNameEl) return;
@@ -241,7 +236,19 @@ export class UIManager {
     }
   }
 
-  showPerkCards(level) {
+  showLevelUp(player, level) {
+    if (player.spellSlot && player.spellSlot.elements.length < 3) {
+      this.elementPicker.show(player, (element) => {
+        player.spellSlot.addElement(element);
+        player.setSpell(player.spellSlot.currentSpell.id);
+        this.updateSpellPanel(player);
+      });
+    } else {
+      this.showPerkCards(level);
+    }
+  }
+
+  showPerkCards() {
     renderPerkSelection(this.perkOverlay, this.onPerkSelected);
   }
 

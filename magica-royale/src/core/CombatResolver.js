@@ -38,6 +38,9 @@ export class CombatResolver {
     const isPlayer = owner === this.player;
     const config = { ...payload };
     if (owner?.dmgBonus) config.damage += owner.dmgBonus;
+    if (isPlayer && this.player.staffElement && config.elements?.includes(this.player.staffElement)) {
+      config.damage = Math.round(config.damage * 1.12);
+    }
     if (isPlayer && this.player.perks.includes('SNIPER_VELOCITY')) { config.speed = (config.speed || 28) * 1.35; config.range = (config.range || 24) * 1.35; }
     if (isPlayer && this.player.perks.includes('GIANT_ARCANA')) { config.radius = (config.radius || 0.5) * 1.4; if (config.aoeRadius) config.aoeRadius *= 1.4; }
 
@@ -73,6 +76,7 @@ export class CombatResolver {
     if (this.player.spellSlot) {
       if (!this.player.spellSlot.canCast()) return;
       this.player.spellSlot.startCooldown();
+      if (this.player.cooldownMult) this.player.spellSlot.cooldownTimer *= this.player.cooldownMult;
       this.player.shootCooldown = this.player.spellSlot.cooldownTimer;
       const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, input.aimDir, input.dragRatio || 1.0);
       if (this.questManager) this.questManager.record('cast', 1);
@@ -105,7 +109,14 @@ export class CombatResolver {
 
   botShoot(bot, aimX, aimZ) {
     if (bot.isDead) return;
-    this.spawnSpell(bot.x, bot.z, aimX, aimZ, bot.currentSpell, bot);
+    if (bot.spellSlot) {
+      bot.spellSlot.startCooldown();
+      bot.shootCooldown = bot.spellSlot.cooldownTimer;
+      const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, { x: aimX, z: aimZ }, 1.0);
+      payloads.forEach((payload) => this.executeCastPayload(payload, bot));
+    } else {
+      this.spawnSpell(bot.x, bot.z, aimX, aimZ, bot.currentSpell, bot);
+    }
   }
 
   triggerCrystalExplosion(crystal, allActors, chests) {

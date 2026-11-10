@@ -1,5 +1,3 @@
-import { SPELL_STAFF_MAP } from '../config/constants.js';
-
 const STORAGE_KEY = 'MAGICA_ROYALE_PROGRESSION_V1';
 
 export const RANKS = [
@@ -14,72 +12,73 @@ export const STAVES = [
   {
     id: 'PYRO_STAFF',
     name: 'Infernal Staff',
-    element: 'PYRO',
+    elementBonus: 'F',
     cost: 0,
-    perkDesc: 'Unlocks Fireball. +10% Damage & Burn Duration',
+    perkDesc: '+12% Damage for Fire spells',
     colorHex: 0xff5500,
     robeColor: 0xd92638
   },
   {
     id: 'CRYO_STAFF',
     name: 'Glacial Scepter',
-    element: 'CRYO',
+    elementBonus: 'W',
     cost: 150,
-    perkDesc: 'Unlocks Frost Shards. +15% Shard Speed & 40% Chill Slow',
+    perkDesc: '+12% Damage for Water spells',
     colorHex: 0x00f2ff,
     robeColor: 0x0284c7
   },
   {
     id: 'ELECTRO_STAFF',
     name: 'Storm Rod',
-    element: 'ELECTRO',
+    elementBonus: 'E',
     cost: 300,
-    perkDesc: 'Unlocks Lightning Orb. +1 Extra Chain Target',
+    perkDesc: '+12% Damage for Earth spells',
     colorHex: 0xffe600,
     robeColor: 0xf59e0b
   },
   {
     id: 'VENOM_STAFF',
     name: 'Vile Spire',
-    element: 'VENOM',
+    cooldownReduction: 0.15,
     cost: 500,
-    perkDesc: 'Unlocks Plague Glob. +20% Poison DoT & Blast Radius',
+    perkDesc: '-15% Spell Cooldown',
     colorHex: 0x39ff14,
     robeColor: 0x10b981
   },
   {
     id: 'PIERCE_STAFF',
     name: 'Prismatic Lance',
-    element: 'PIERCE',
+    speedBonus: 0.10,
     cost: 400,
-    perkDesc: 'Unlocks Arcane Lance. Piercing beam penetrating all targets',
+    perkDesc: '+10% Movement Speed',
     colorHex: 0xd946ef,
     robeColor: 0xa21caf
   },
   {
     id: 'BLAST_STAFF',
     name: 'Solar Cannon',
-    element: 'BLAST',
+    hpBonus: 60,
     cost: 550,
-    perkDesc: 'Unlocks Solar Blast. Devastating solar ground blast',
+    perkDesc: '+60 Max HP',
     colorHex: 0xf97316,
     robeColor: 0xc2410c
   },
   {
     id: 'HOMING_STAFF',
     name: 'Aether Seeker',
-    element: 'HOMING',
+    pickupRadiusBonus: 3.0,
     cost: 700,
-    perkDesc: 'Unlocks Seeking Orb. Curves into enemies',
+    perkDesc: '+3.0m Pickup Magnet Radius',
     colorHex: 0x06b6d4,
     robeColor: 0x0e7490
   },
   {
     id: 'SHIELD_STAFF',
     name: 'Aegis Staff',
-    element: 'SHIELD',
+    hpBonus: 40,
+    cooldownReduction: 0.10,
     cost: 850,
-    perkDesc: 'Unlocks Arcane Ward. Grants an 80 HP protective barrier',
+    perkDesc: '+40 Max HP & -10% Spell Cooldown',
     colorHex: 0x3b82f6,
     robeColor: 0x1d4ed8
   }
@@ -104,22 +103,16 @@ export class MetaProgression {
       wins: 0,
       selectedStaffId: 'PYRO_STAFF',
       unlockedStaves: ['PYRO_STAFF'],
-      upgradeLevels: {
-        VITALITY: 0,
-        SWIFTNESS: 0,
-        MAGNETISM: 0
-      }
+      upgradeLevels: { VITALITY: 0, SWIFTNESS: 0, MAGNETISM: 0 }
     };
   }
 
   load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        return { ...this.getDefaultData(), ...JSON.parse(raw) };
-      }
+      if (raw) return { ...this.getDefaultData(), ...JSON.parse(raw) };
     } catch (e) {
-      console.warn('Could not load progression from localStorage:', e);
+      console.warn('Could not load progression:', e);
     }
     return this.getDefaultData();
   }
@@ -128,16 +121,14 @@ export class MetaProgression {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
     } catch (e) {
-      console.warn('Could not save progression to localStorage:', e);
+      console.warn('Could not save progression:', e);
     }
   }
 
   getRank() {
     let currentRank = RANKS[0];
     for (const r of RANKS) {
-      if (this.data.trophies >= r.minTrophies) {
-        currentRank = r;
-      }
+      if (this.data.trophies >= r.minTrophies) currentRank = r;
     }
     return currentRank;
   }
@@ -146,9 +137,8 @@ export class MetaProgression {
     return STAVES.find((s) => s.id === this.data.selectedStaffId) || STAVES[0];
   }
 
-  ownsSpell(spellId) {
-    const staffId = SPELL_STAFF_MAP[spellId];
-    return !staffId || this.data.unlockedStaves.includes(staffId);
+  ownsSpell() {
+    return true;
   }
 
   selectStaff(staffId) {
@@ -194,23 +184,11 @@ export class MetaProgression {
 
   applyMatchResults(placement) {
     this.data.matchesPlayed++;
-    let trophyChange = -10;
-    let goldEarned = 25;
+    let trophyChange = -10, goldEarned = 20;
 
-    if (placement === 1) {
-      trophyChange = 30;
-      goldEarned = 150;
-      this.data.wins++;
-    } else if (placement <= 3) {
-      trophyChange = 15;
-      goldEarned = 80;
-    } else if (placement <= 6) {
-      trophyChange = 5;
-      goldEarned = 45;
-    } else {
-      trophyChange = -10;
-      goldEarned = 20;
-    }
+    if (placement === 1) { trophyChange = 30; goldEarned = 150; this.data.wins++; }
+    else if (placement <= 3) { trophyChange = 15; goldEarned = 80; }
+    else if (placement <= 6) { trophyChange = 5; goldEarned = 45; }
 
     this.data.trophies = Math.max(0, this.data.trophies + trophyChange);
     this.data.gold += goldEarned;
@@ -226,7 +204,6 @@ export class MetaProgression {
     };
   }
 
-  // Helper stats computed from purchased upgrades
   addGold(amount) {
     this.data.gold += amount;
     this.save();
@@ -237,12 +214,19 @@ export class MetaProgression {
     const hpLevel = this.data.upgradeLevels.VITALITY || 0;
     const speedLevel = this.data.upgradeLevels.SWIFTNESS || 0;
     const magLevel = this.data.upgradeLevels.MAGNETISM || 0;
+    const staff = this.getSelectedStaff();
+
+    const staffHp = staff.hpBonus || 0;
+    const staffSpeed = staff.speedBonus || 0;
+    const staffPickup = staff.pickupRadiusBonus || 0;
+    const staffCd = staff.cooldownReduction || 0;
 
     return {
-      bonusHp: hpLevel * 25,
-      speedMultiplier: 1.0 + speedLevel * 0.04,
-      pickupRadiusBonus: magLevel * 1.0
+      bonusHp: hpLevel * 25 + staffHp,
+      speedMultiplier: (1.0 + speedLevel * 0.04) * (1.0 + staffSpeed),
+      pickupRadiusBonus: magLevel * 1.0 + staffPickup,
+      cooldownMultiplier: Math.max(0.6, 1.0 - staffCd),
+      staffElementBonus: staff.elementBonus || null
     };
   }
 }
-
