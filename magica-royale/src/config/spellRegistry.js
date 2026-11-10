@@ -19,6 +19,7 @@ export const ELEMENT_COLORS = {
 };
 
 export const TRAJECTORY = {
+  MELEE: 'MELEE',
   LINEAR: 'LINEAR',
   SPREAD: 'SPREAD',
   LOBBED: 'LOBBED',
@@ -26,6 +27,20 @@ export const TRAJECTORY = {
   RADIAL: 'RADIAL',
   WAVE: 'WAVE',
   INSTANT_STRIKE: 'INSTANT_STRIKE'
+};
+
+export const FIST_SPELL = {
+  id: 'fist',
+  name: 'Fist',
+  tier: 0,
+  elements: [],
+  trajectory: TRAJECTORY.MELEE,
+  damage: 18,
+  cooldown: 0.55,
+  range: 2.2,
+  arc: 1.75,
+  knockback: 1.5,
+  color: 0xffaa44
 };
 
 export const SPELLS_T1_T2 = {
@@ -183,6 +198,7 @@ export const ALL_SPELLS = { ...SPELLS_T1_T2, ...SPELLS_T3 };
 
 export function getSpell(key) {
   if (!key) return null;
+  if (key === 'fist') return FIST_SPELL;
   if (Array.isArray(key)) {
     key = key.slice().sort().join('_');
   } else if (typeof key === 'string' && key.includes('_')) {

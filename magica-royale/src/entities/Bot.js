@@ -30,9 +30,8 @@ export class Bot extends Actor {
       skill: 0.3 + Math.random() * 0.7
     };
 
-    // SpellSlotController with start element weighted by personality
-    const startElem = this.personality.aggression > 0.65 ? 'F' : (this.personality.caution > 0.65 ? 'W' : 'E');
-    this.spellSlot = new SpellSlotController(startElem);
+    // SpellSlotController starts with Fist
+    this.spellSlot = new SpellSlotController();
     if (this.staffOrbMat && this.currentSpell) {
       this.staffOrbMat.color.setHex(this.currentSpell.color);
     }
@@ -55,7 +54,7 @@ export class Bot extends Actor {
   }
 
   get currentSpell() {
-    return this.spellSlot ? this.spellSlot.currentSpell : null;
+    return this.spellSlot ? this.spellSlot.activeSpell : null;
   }
 
   set currentSpell(val) {

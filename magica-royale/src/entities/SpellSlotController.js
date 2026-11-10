@@ -1,10 +1,14 @@
-import { getSpell } from '../config/spellRegistry.js';
+import { getSpell, FIST_SPELL } from '../config/spellRegistry.js';
 
 export class SpellSlotController {
-  constructor(startSpellKey = 'F') {
+  constructor(startSpellKey = null) {
     this.elements = [];
-    this.currentSpell = getSpell(startSpellKey) || getSpell('F');
+    this.currentSpell = startSpellKey ? (getSpell(startSpellKey) || FIST_SPELL) : FIST_SPELL;
     this.cooldownTimer = 0;
+  }
+
+  get activeSpell() {
+    return this.elements.length === 0 ? FIST_SPELL : this.currentSpell;
   }
 
   addElement(element) {
@@ -12,16 +16,15 @@ export class SpellSlotController {
     this.elements.push(element);
     const key = this.elements.slice().sort().join('_');
     const nextSpell = getSpell(key);
-    // If a combo has no registry entry, keep the previous spell but still count the pick
     if (nextSpell) {
       this.currentSpell = nextSpell;
     }
     return true;
   }
 
-  reset(startSpellKey = 'F') {
+  reset(startSpellKey = null) {
     this.elements = [];
-    this.currentSpell = getSpell(startSpellKey) || getSpell('F');
+    this.currentSpell = startSpellKey ? (getSpell(startSpellKey) || FIST_SPELL) : FIST_SPELL;
     this.cooldownTimer = 0;
   }
 
@@ -30,11 +33,12 @@ export class SpellSlotController {
   }
 
   startCooldown() {
-    this.cooldownTimer = this.currentSpell?.cooldown || 0.65;
+    const spell = this.activeSpell;
+    this.cooldownTimer = spell?.cooldown || 0.55;
   }
 
   getCooldownProgress() {
-    const cd = this.currentSpell?.cooldown || 1.0;
+    const cd = this.activeSpell?.cooldown || 1.0;
     return Math.max(0, Math.min(1.0, this.cooldownTimer / cd));
   }
 
@@ -45,7 +49,7 @@ export class SpellSlotController {
   }
 
   buildCastPayloads(originX, originZ, aimDir, dragRatio = 1.0) {
-    const spell = this.currentSpell;
+    const spell = this.activeSpell;
     if (!spell) return [];
 
     const clampedDrag = Math.max(0.2, Math.min(1.0, dragRatio));
@@ -55,19 +59,19 @@ export class SpellSlotController {
     const nx = dirX / len;
     const nz = dirZ / len;
 
-    // Pass every spell field through
     const basePayload = {
       ...spell,
       originX,
       originZ,
       dragRatio: clampedDrag,
+      arc: spell.arc || 1.75,
       chainTargets: spell.chainTargets !== undefined ? spell.chainTargets : (spell.chainCount || 0),
       chainRange: spell.chainRange !== undefined ? spell.chainRange : (spell.chainRadius || 0),
       width: spell.width || 0,
       depth: spell.depth || 0,
       strikeDelay: spell.strikeDelay || 0,
       lifesteal: spell.lifesteal || 0,
-      knockback: spell.knockback || 2.5,
+      knockback: spell.knockback || 1.5,
       stunDuration: spell.stunDuration || 0,
       freezeDuration: spell.freezeDuration || 0,
       slowFactor: spell.slowFactor || 0,
@@ -79,6 +83,16 @@ export class SpellSlotController {
       hazardZone: spell.hazardZone || null,
       onImpactSpawn: spell.onImpactSpawn || null
     };
+
+    if (spell.trajectory === 'MELEE') {
+      return [{
+        ...basePayload,
+        dirX: nx,
+        dirZ: nz,
+        range: spell.range || 2.2,
+        arc: spell.arc || 1.75
+      }];
+    }
 
     if (spell.trajectory === 'SPREAD') {
       const count = spell.projectiles || 3;
@@ -121,7 +135,7 @@ export class SpellSlotController {
       }];
     }
 
-    // LINEAR, RADIAL, WAVE, SELF_DASH
+    // Default: LINEAR, RADIAL, WAVE, SELF_DASH
     return [{
       ...basePayload,
       dirX: nx,
@@ -129,4 +143,3 @@ export class SpellSlotController {
     }];
   }
 }
-

@@ -39,15 +39,13 @@ export class MatchManager {
     if (this.player.accentMat) this.player.accentMat.color.setHex(hero.accentColor);
 
     if (this.player.spellSlot) {
-      this.player.spellSlot.reset('F');
-      this.player.setSpell('F');
-      if (this.spellbookManager) this.spellbookManager.recordSpellReached('F', this.meta);
+      this.player.spellSlot.reset();
+      this.player.setSpell('fist');
     } else {
       this.player.setSpell(staff.element);
     }
     if (this.ui) {
-      this.ui.updateSpellBarLocks();
-      this.ui.setSpellActive(staff.element);
+      this.ui.updateSpellPanel(this.player);
     }
     this.player.robeMat.color.setHex(staff.robeColor);
 

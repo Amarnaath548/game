@@ -66,7 +66,9 @@ export class BotBrain {
       let baseAngle = Math.atan2(edx, edz);
       const tvx = target.vx || 0, tvz = target.vz || 0;
 
-      if (traj === 'SELF_DASH') {
+      if (traj === 'MELEE') {
+        baseAngle = Math.atan2(edx, edz);
+      } else if (traj === 'SELF_DASH') {
         baseAngle = Math.atan2(edx, edz);
       } else if (traj === 'WAVE' || traj === 'INSTANT_STRIKE') {
         baseAngle = Math.atan2(edx + tvx * 0.15, edz + tvz * 0.15);
@@ -79,23 +81,28 @@ export class BotBrain {
         baseAngle = Math.atan2(leadX - bot.x, leadZ - bot.z);
       }
 
-      const maxErrDeg = 18 - bot.personality.skill * 15;
+      const maxErrDeg = traj === 'MELEE' ? 0 : (18 - bot.personality.skill * 15);
       const aimOffset = (Math.random() - 0.5) * 2 * (maxErrDeg * Math.PI / 180);
       aimX = Math.sin(baseAngle + aimOffset);
       aimZ = Math.cos(baseAngle + aimOffset);
 
       // Positioning per trajectory
-      const perpX = -Math.cos(baseAngle) * bot.strafeDir, perpZ = Math.sin(baseAngle) * bot.strafeDir;
-      let idealDist = 12;
-      if (traj === 'SELF_DASH') idealDist = 7;
-      else if (traj === 'LOBBED') idealDist = 14;
+      if (traj === 'MELEE') {
+        moveX = edx / (edist || 1);
+        moveZ = edz / (edist || 1);
+      } else {
+        const perpX = -Math.cos(baseAngle) * bot.strafeDir, perpZ = Math.sin(baseAngle) * bot.strafeDir;
+        let idealDist = 12;
+        if (traj === 'SELF_DASH') idealDist = 7;
+        else if (traj === 'LOBBED') idealDist = 14;
 
-      const distBias = edist > idealDist ? 0.75 : (edist < idealDist - 3 ? -0.7 : 0.1);
-      moveX = perpX * 0.65 + (edx / edist) * distBias;
-      moveZ = perpZ * 0.65 + (edz / edist) * distBias;
+        const distBias = edist > idealDist ? 0.75 : (edist < idealDist - 3 ? -0.7 : 0.1);
+        moveX = perpX * 0.65 + (edx / edist) * distBias;
+        moveZ = perpZ * 0.65 + (edz / edist) * distBias;
+      }
 
       // Shooting condition per trajectory
-      const inRange = edist <= (spell.range || 22);
+      const inRange = traj === 'MELEE' ? (edist <= 1.8) : (edist <= (spell.range || 22));
       const dashReady = traj !== 'SELF_DASH' || (edist <= 12 && edist >= 2.0);
 
       if (bot.shootCooldown <= 0 && onShoot && inRange && dashReady) {

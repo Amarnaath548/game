@@ -4,27 +4,14 @@ import { SpellEffects } from '../systems/SpellEffects.js';
 
 export class CombatResolver {
   constructor(deps) {
-    this.sceneManager = deps.sceneManager;
-    this.sound = deps.sound;
-    this.particleSys = deps.particleSys;
-    this.damageNumbers = deps.damageNumbers;
-    this.killFeed = deps.killFeed;
-    this.banners = deps.banners;
-    this.spawnManager = deps.spawnManager;
-    this.player = deps.player;
-    this.projectiles = deps.projectiles;
-    this.questManager = deps.questManager;
-    this.meta = deps.meta;
-    this.spellbookManager = deps.spellbookManager;
-    this.spellEffects = deps.spellEffects || new SpellEffects(this.sceneManager.scene, this.particleSys);
+    Object.assign(this, deps);
+    this.spellEffects = deps.spellEffects || new SpellEffects(deps.sceneManager.scene, deps.particleSys);
     this.delayedStrikes = [];
     this.spellDashes = [];
-
-    const telegraphGeo = new THREE.RingGeometry(5.0, 5.5, 32);
-    telegraphGeo.rotateX(-Math.PI / 2);
-    this.telegraphMesh = new THREE.Mesh(telegraphGeo, new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
-    this.telegraphMesh.position.y = 0.05;
-    this.telegraphMesh.visible = false;
+    const tgGeo = new THREE.RingGeometry(5.0, 5.5, 32);
+    tgGeo.rotateX(-Math.PI / 2);
+    this.telegraphMesh = new THREE.Mesh(tgGeo, new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
+    this.telegraphMesh.position.y = 0.05; this.telegraphMesh.visible = false;
     this.sceneManager.scene.add(this.telegraphMesh);
     this.telegraphTimer = 0;
   }
@@ -32,102 +19,78 @@ export class CombatResolver {
   showTelegraph(x, z, radius = 5.5, duration = 0.4) {
     this.telegraphMesh.position.set(x, 0.05, z);
     this.telegraphMesh.scale.setScalar(radius / 5.5);
-    this.telegraphMesh.visible = true;
-    this.telegraphTimer = duration;
+    this.telegraphMesh.visible = true; this.telegraphTimer = duration;
   }
 
   executeCastPayload(payload, owner) {
-    const isPlayer = owner === this.player;
-    const config = { ...payload };
-    if (owner?.dmgBonus) config.damage += owner.dmgBonus;
-    if (isPlayer && this.player.staffElement && config.elements?.includes(this.player.staffElement)) {
-      config.damage = Math.round(config.damage * 1.12);
+    const isP = owner === this.player, cfg = { ...payload };
+    if (owner?.dmgBonus) cfg.damage += owner.dmgBonus;
+    if (isP && this.player.staffElement && cfg.elements?.includes(this.player.staffElement)) cfg.damage = Math.round(cfg.damage * 1.12);
+    if (isP && this.spellbookManager) {
+      const sm = this.spellbookManager.getDamageMultiplier(cfg.id);
+      if (sm > 1.0) cfg.damage = Math.round(cfg.damage * sm);
     }
-    if (isPlayer && this.spellbookManager) {
-      const starMult = this.spellbookManager.getDamageMultiplier(config.id);
-      if (starMult > 1.0) config.damage = Math.round(config.damage * starMult);
-    }
-    if (isPlayer && this.player.perks.includes('SNIPER_VELOCITY')) { config.speed = (config.speed || 28) * 1.35; config.range = (config.range || 24) * 1.35; }
-    if (isPlayer && this.player.perks.includes('GIANT_ARCANA')) { config.radius = (config.radius || 0.5) * 1.4; if (config.aoeRadius) config.aoeRadius *= 1.4; }
+    if (isP && this.player.perks.includes('SNIPER_VELOCITY')) { cfg.speed = (cfg.speed || 28) * 1.35; cfg.range = (cfg.range || 24) * 1.35; }
+    if (isP && this.player.perks.includes('GIANT_ARCANA')) { cfg.radius = (cfg.radius || 0.5) * 1.4; if (cfg.aoeRadius) cfg.aoeRadius *= 1.4; }
+    const sx = cfg.originX ?? owner.x, sz = cfg.originZ ?? owner.z;
 
-    const sx = config.originX !== undefined ? config.originX : owner.x;
-    const sz = config.originZ !== undefined ? config.originZ : owner.z;
-
-    if (config.trajectory === 'SELF_DASH') {
-      const spd = config.speed || 42, rng = config.range || 14;
+    if (cfg.trajectory === 'MELEE') return this.executeMelee(cfg, owner);
+    if (cfg.trajectory === 'SELF_DASH') {
+      const spd = cfg.speed || 42, rng = cfg.range || 14;
       owner.isInvulnerable = true;
-      this.spellDashes.push({ owner, dirX: config.dirX, dirZ: config.dirZ, speed: spd, duration: rng / spd, elapsed: 0, config, hitTargets: new Set() });
+      this.spellDashes.push({ owner, dirX: cfg.dirX, dirZ: cfg.dirZ, speed: spd, duration: rng / spd, elapsed: 0, config: cfg, hitTargets: new Set() });
       if (this.sound) this.sound.playDash();
       return;
     }
-    if (config.trajectory === 'RADIAL') { this.spellEffects.spawnRadial(sx, sz, config, owner); return; }
-    if (config.trajectory === 'WAVE') { this.spellEffects.spawnWave(sx, sz, config.dirX, config.dirZ, config, owner); return; }
-    if (config.trajectory === 'INSTANT_STRIKE' || config.strikeDelay > 0) {
-      const tx = config.targetX !== undefined ? config.targetX : (sx + (config.dirX || 0) * (config.range || 20));
-      const tz = config.targetZ !== undefined ? config.targetZ : (sz + (config.dirZ || 1) * (config.range || 20));
-      const delay = config.strikeDelay || 0.45;
-      this.showTelegraph(tx, tz, config.aoeRadius || 4.0, delay);
-      this.delayedStrikes.push({ ...config, targetX: tx, targetZ: tz, timer: delay, owner });
+    if (cfg.trajectory === 'RADIAL') return this.spellEffects.spawnRadial(sx, sz, cfg, owner);
+    if (cfg.trajectory === 'WAVE') return this.spellEffects.spawnWave(sx, sz, cfg.dirX, cfg.dirZ, cfg, owner);
+    if (cfg.trajectory === 'INSTANT_STRIKE' || cfg.strikeDelay > 0) {
+      const tx = cfg.targetX ?? (sx + (cfg.dirX || 0) * (cfg.range || 20)), tz = cfg.targetZ ?? (sz + (cfg.dirZ || 1) * (cfg.range || 20));
+      const delay = cfg.strikeDelay || 0.45;
+      this.showTelegraph(tx, tz, cfg.aoeRadius || 4.0, delay);
+      this.delayedStrikes.push({ ...cfg, targetX: tx, targetZ: tz, timer: delay, owner });
       return;
     }
-
     const p = this.projectiles.find((proj) => !proj.active);
-    if (!p) return;
-    const spawnOffset = (owner.radius || 1.0) + 0.35;
-    p.spawn(sx + config.dirX * spawnOffset, sz + config.dirZ * spawnOffset, config.dirX, config.dirZ, config, owner);
+    if (p) p.spawn(sx + cfg.dirX * ((owner.radius || 1) + 0.35), sz + cfg.dirZ * ((owner.radius || 1) + 0.35), cfg.dirX, cfg.dirZ, cfg, owner);
+  }
+
+  executeMelee(cfg, owner) {
+    if (owner.punchTimer !== undefined) owner.punchTimer = 0.15;
+    this.particleSys.spawnBurst(owner.x + cfg.dirX * 1.1, 1.0, owner.z + cfg.dirZ * 1.1, 0xffaa44, 8, 4);
+    if (this.sound) this.sound.playHit();
+    const halfCos = Math.cos((cfg.arc || 1.75) / 2), range = cfg.range || 2.2;
+    const tgts = (owner === this.player || !!owner?.isPlayer) ? this.spawnManager.bots : [this.player, ...this.spawnManager.bots.filter((b) => b !== owner)];
+    const inCone = (t) => {
+      const dx = t.x - owner.x, dz = t.z - owner.z, d = Math.hypot(dx, dz);
+      return d <= range + (t.radius || 0.8) && (cfg.dirX * dx + cfg.dirZ * dz) / (d || 1) >= halfCos;
+    };
+    tgts.forEach((t) => { if (!t.isDead && inCone(t)) this.applySpellHit(t, cfg, owner, owner.x, owner.z, cfg.dirX, cfg.dirZ); });
+    this.spawnManager.chests?.forEach((c) => { if (!c.isDead && inCone(c) && c.takeDamage(cfg.damage)) this.spawnManager.dropLoot(c.x, c.z, c.isMythic ? 8 : 3, c.isMythic ? 1.0 : 0.35); });
+    this.spawnManager.crystals?.forEach((c) => { if (!c.isDead && inCone(c) && c.takeDamage(cfg.damage)) this.triggerCrystalExplosion(c, tgts, this.spawnManager.chests); });
   }
 
   playerShoot(input) {
-    if (this.player.isDead) return;
-    if (this.player.spellSlot) {
-      if (!this.player.spellSlot.canCast()) return;
-      this.player.spellSlot.startCooldown();
-      if (this.player.cooldownMult) this.player.spellSlot.cooldownTimer *= this.player.cooldownMult;
-      this.player.shootCooldown = this.player.spellSlot.cooldownTimer;
-      const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, input.aimDir, input.dragRatio || 1.0);
-      if (this.questManager) this.questManager.record('cast', 1);
-      this.sound.playCast(this.player.currentSpell.id);
-      payloads.forEach((payload) => this.executeCastPayload(payload, this.player));
-    } else {
-      if (this.player.shootCooldown > 0) return;
-      this.player.shootCooldown = this.player.currentSpell.cooldown;
-      this.spawnSpell(this.player.x, this.player.z, input.aimDir.x, input.aimDir.z, this.player.currentSpell, this.player);
-    }
-  }
-
-  spawnSpell(originX, originZ, dirX, dirZ, spellConfig, owner) {
-    const config = { ...spellConfig };
-    if (config.id === 'SHIELD' || config.isSelfCast) {
-      owner.applyShield(config.shieldAmount || 80, config.shieldDuration || 3.0);
-      if (owner === this.player) this.sound.playCast('SHIELD');
-      this.particleSys.spawnBurst(owner.x, 1.2, owner.z, config.color, 16, 6);
-      return;
-    }
-    if (config.id === 'CRYO') {
-      const spread = config.spreadAngle || 0.35, baseAngle = Math.atan2(dirX, dirZ);
-      [-spread, 0, spread].forEach((offset) => {
-        this.executeCastPayload({ ...config, dirX: Math.sin(baseAngle + offset), dirZ: Math.cos(baseAngle + offset), originX, originZ }, owner);
-      });
-      return;
-    }
-    this.executeCastPayload({ ...config, dirX, dirZ, originX, originZ }, owner);
+    if (this.player.isDead || !this.player.spellSlot?.canCast()) return;
+    this.player.spellSlot.startCooldown();
+    if (this.player.cooldownMult) this.player.spellSlot.cooldownTimer *= this.player.cooldownMult;
+    this.player.shootCooldown = this.player.spellSlot.cooldownTimer;
+    const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, input.aimDir, input.dragRatio || 1.0);
+    if (this.questManager && this.player.currentSpell?.id !== 'fist') this.questManager.record('cast', 1);
+    this.sound.playCast(this.player.currentSpell.id);
+    payloads.forEach((payload) => this.executeCastPayload(payload, this.player));
   }
 
   botShoot(bot, aimX, aimZ) {
-    if (bot.isDead) return;
-    if (bot.spellSlot) {
-      bot.spellSlot.startCooldown();
-      bot.shootCooldown = bot.spellSlot.cooldownTimer;
-      const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, { x: aimX, z: aimZ }, 1.0);
-      payloads.forEach((payload) => this.executeCastPayload(payload, bot));
-    } else {
-      this.spawnSpell(bot.x, bot.z, aimX, aimZ, bot.currentSpell, bot);
-    }
+    if (bot.isDead || !bot.spellSlot) return;
+    bot.spellSlot.startCooldown();
+    bot.shootCooldown = bot.spellSlot.cooldownTimer;
+    const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, { x: aimX, z: aimZ }, 1.0);
+    payloads.forEach((payload) => this.executeCastPayload(payload, bot));
   }
 
   triggerCrystalExplosion(crystal, allActors, chests) {
-    this.sound.playExplosion();
-    this.sceneManager.addTrauma(0.5);
+    this.sound.playExplosion(); this.sceneManager.addTrauma(0.5);
     this.particleSys.spawnImpact(crystal.x, crystal.z, 0xff0055, 3.0, crystal.explosionRadius);
     [...allActors, ...chests.filter((c) => !c.isDead)].forEach((t) => {
       if (Math.hypot(t.x - crystal.x, t.z - crystal.z) <= crystal.explosionRadius) t.takeDamage(crystal.explosionDamage);
@@ -147,8 +110,7 @@ export class CombatResolver {
       const p = this.projectiles.find((proj) => !proj.active);
       if (!p) break;
       const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-      const subConfig = { id: cfg.id || 'E_F_F', color: cfg.color || 0xf43f5e, damage: Math.round((cfg.damage || 50) * 0.45), speed: 18, range: 4.5 + Math.random() * 2.0, radius: 0.35, aoeRadius: 2.2, lobArcHeight: 1.8, burnDuration: 1.5, burnDps: 6 };
-      p.spawn(x, z, Math.sin(angle), Math.cos(angle), subConfig, owner);
+      p.spawn(x, z, Math.sin(angle), Math.cos(angle), { id: cfg.id || 'E_F_F', color: cfg.color || 0xf43f5e, damage: Math.round((cfg.damage || 50) * 0.45), speed: 18, range: 4.5 + Math.random() * 2.0, radius: 0.35, aoeRadius: 2.2, lobArcHeight: 1.8, burnDuration: 1.5, burnDps: 6 }, owner);
     }
   }
 
@@ -172,20 +134,17 @@ export class CombatResolver {
     this.particleSys.spawnImpact(x, z, cfg.color || 0xff5500, cfg.radius || 0.5, aoe);
     if (cfg.hazardZone) this.spellEffects.spawnHazardZone(x, z, cfg, owner);
     if (cfg.onImpactSpawn) this.spawnSubMunitions(x, z, cfg, owner);
-    targets.forEach((other) => {
-      if (other === directTarget || other.isDead || other === owner) return;
-      if (Math.hypot(other.x - x, other.z - z) <= aoe) this.applySpellHit(other, { ...cfg, damage: Math.round(cfg.damage * 0.7) }, owner, x, z);
+    targets.forEach((o) => {
+      if (o !== directTarget && !o.isDead && o !== owner && Math.hypot(o.x - x, o.z - z) <= aoe) {
+        this.applySpellHit(o, { ...cfg, damage: Math.round(cfg.damage * 0.7) }, owner, x, z);
+      }
     });
   }
 
   applyStatuses(target, cfg) {
-    if (cfg.freezeDuration) target.applyChill(1.0, cfg.freezeDuration);
-    else if (cfg.stunDuration) target.applyChill(1.0, cfg.stunDuration);
+    if (cfg.freezeDuration || cfg.stunDuration) target.applyChill(1.0, cfg.freezeDuration || cfg.stunDuration);
     else if (cfg.slowFactor) target.applyChill(cfg.slowFactor, cfg.slowDuration || 1.5);
-    else if (cfg.id === 'CRYO') target.applyChill(cfg.slowFactor || 0.3, 1.5);
-
     if (cfg.burnDuration) target.applyBurn(cfg.burnDps || 8, cfg.burnDuration);
-    else if (cfg.id === 'PYRO') target.applyBurn(10, 2.0);
     if (cfg.id === 'VENOM') target.applyPoison(cfg.dps || 8, cfg.duration || 4.0);
   }
 
@@ -193,41 +152,68 @@ export class CombatResolver {
     this.sound.playExplosion();
     this.particleSys.spawnImpact(victim.x, victim.z, 0xff0055, 2.2);
     this.spawnManager.dropLoot(victim.x, victim.z, 5, 0.6);
-    if (killer) {
-      killer.kills = (killer.kills || 0) + 1;
-      if (killer.isPlayer && this.questManager) this.questManager.record('kill', 1);
-      if (killer.isPlayer && this.spellbookManager && sourceSpellId) {
-        this.spellbookManager.recordKill(sourceSpellId, this.meta);
+    if (!killer) return;
+    killer.kills = (killer.kills || 0) + 1;
+    if (killer.isPlayer && this.questManager) this.questManager.record('kill', 1);
+    if (killer.isPlayer && this.spellbookManager && sourceSpellId) this.spellbookManager.recordKill(sourceSpellId, this.meta);
+    if (killer.addXP) killer.addXP(60);
+    const kName = killer.isPlayer ? 'Player' : (killer.name || 'Bot'), vName = victim.isPlayer ? 'Player' : (victim.name || 'Bot');
+    this.killFeed.addKill(kName, vName, killer.isPlayer, victim.isPlayer);
+    this.banners.onKill(kName, killer.isPlayer);
+  }
+
+  updateProjectiles(dt, allActors, chests, crystals, bots) {
+    this.projectiles.forEach((p) => {
+      if (!p.active) return;
+      p.update(dt, allActors);
+      const tgts = (p.owner === this.player || !!p.owner?.isPlayer) ? bots : [this.player, ...bots.filter((b) => b !== p.owner)];
+      if (!p.active && p.reachedMaxRange && (p.lobHeight > 0 || p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn)) {
+        return this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, null, tgts);
       }
-      if (killer.addXP) killer.addXP(60);
-      const kName = killer.isPlayer ? 'Player' : (killer.name || 'Bot');
-      const vName = victim.isPlayer ? 'Player' : (victim.name || 'Bot');
-      this.killFeed.addKill(kName, vName, killer.isPlayer, victim.isPlayer);
-      this.banners.onKill(kName, killer.isPlayer);
-    }
+      if (!p.active) return;
+      if (p.lobHeight <= 0 && this.sceneManager.obelisks.some((o) => CollisionSystem.checkCircle(p.x, p.z, p.radius, o.x, o.z, o.radius))) {
+        this.particleSys.spawnImpact(p.x, p.z, 0x888899, 1.2); p.despawn(); return;
+      }
+      for (const c of chests) {
+        if (!c.isDead && p.active && CollisionSystem.checkCircle(p.x, p.z, p.radius, c.x, c.z, c.radius)) {
+          this.sound.playHit(); this.particleSys.spawnImpact(p.x, p.z, c.isMythic ? 0x9333ea : 0x8b5a2b, 1.5);
+          if (c.takeDamage(p.damage)) { this.sound.playExplosion(); this.spawnManager.dropLoot(c.x, c.z, c.isMythic ? 8 : 3, c.isMythic ? 1 : 0.35); }
+          p.despawn();
+        }
+      }
+      for (const cr of crystals) {
+        if (!cr.isDead && p.active && CollisionSystem.checkCircle(p.x, p.z, p.radius, cr.x, cr.z, cr.radius)) {
+          this.sound.playHit(); p.despawn(); if (cr.takeDamage(p.damage)) this.triggerCrystalExplosion(cr, allActors, chests);
+        }
+      }
+      for (const t of tgts) {
+        if (!t.isDead && p.active && CollisionSystem.checkCircle(p.x, p.z, p.radius, t.x, t.z, t.radius)) {
+          if (p.hitTargets?.has(t)) continue;
+          p.hitTargets?.add(t);
+          this.applySpellHit(t, p.spellConfig, p.owner, p.x, p.z, p.vx, p.vz);
+          if (p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn || p.spellConfig?.hazardZone) this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, t, tgts);
+          const chains = p.spellConfig?.chainTargets || (p.spellConfig?.id === 'ELECTRO' ? 2 : 0);
+          if (chains > 0) this.resolveChain(t.x, t.z, p.spellConfig, p.owner, t, tgts);
+          if (!p.spellConfig?.pierce) { p.despawn(); break; }
+        }
+      }
+    });
   }
 
   update(dt, allActors, chests, crystals, bots) {
     if (this.telegraphTimer > 0 && (this.telegraphTimer -= dt) <= 0) this.telegraphMesh.visible = false;
-
-    // Self Dash (Stone Ram)
     for (let i = this.spellDashes.length - 1; i >= 0; i--) {
       const d = this.spellDashes[i];
-      d.elapsed += dt;
-      d.owner.x += d.dirX * d.speed * dt;
-      d.owner.z += d.dirZ * d.speed * dt;
+      d.elapsed += dt; d.owner.x += d.dirX * d.speed * dt; d.owner.z += d.dirZ * d.speed * dt;
       this.particleSys.spawnBurst(d.owner.x, 0.4, d.owner.z, d.config.color || 0x854d0e, 2, 4);
-      const targets = d.owner?.isPlayer ? bots : [this.player, ...bots.filter((b) => b !== d.owner)];
-      targets.forEach((t) => {
+      const tgts = d.owner?.isPlayer ? bots : [this.player, ...bots.filter((b) => b !== d.owner)];
+      tgts.forEach((t) => {
         if (!t.isDead && !d.hitTargets.has(t) && CollisionSystem.checkCircle(d.owner.x, d.owner.z, d.owner.radius + 0.5, t.x, t.z, t.radius)) {
-          d.hitTargets.add(t);
-          this.applySpellHit(t, d.config, d.owner, d.owner.x, d.owner.z, d.dirX, d.dirZ);
+          d.hitTargets.add(t); this.applySpellHit(t, d.config, d.owner, d.owner.x, d.owner.z, d.dirX, d.dirZ);
         }
       });
       if (d.elapsed >= d.duration) { d.owner.isInvulnerable = false; this.spellDashes.splice(i, 1); }
     }
-
-    // Delayed Instant Strikes (Thunderbolt)
     for (let i = this.delayedStrikes.length - 1; i >= 0; i--) {
       const s = this.delayedStrikes[i];
       if ((s.timer -= dt) <= 0) {
@@ -238,80 +224,12 @@ export class CombatResolver {
         if (s.chainTargets > 0) this.resolveChain(s.targetX, s.targetZ, s, s.owner, null, tgts);
       }
     }
-
-    // SpellEffects (Radials, Waves, Hazards)
-    this.spellEffects.update(dt, allActors, (target, cfg, owner, hx, hz, dx, dz) => {
-      this.applySpellHit(target, cfg, owner, hx, hz, dx, dz);
-    });
-
-    this.projectiles.forEach((proj) => {
-      if (!proj.active) return;
-      proj.update(dt, allActors);
-      const isPlayerProj = proj.owner === this.player || !!proj.owner?.isPlayer;
-      const targets = isPlayerProj ? bots : [this.player, ...bots.filter((b) => b !== proj.owner)];
-
-      if (!proj.active && proj.reachedMaxRange && (proj.lobHeight > 0 || proj.spellConfig?.aoeRadius || proj.spellConfig?.onImpactSpawn)) {
-        this.detonateAoE(proj.x, proj.z, proj.spellConfig, proj.owner, null, targets);
-        return;
-      }
-      if (!proj.active) return;
-
-      if (proj.lobHeight <= 0) {
-        for (const o of this.sceneManager.obelisks) {
-          if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, o.x, o.z, o.radius)) {
-            this.particleSys.spawnImpact(proj.x, proj.z, 0x888899, 1.2);
-            proj.despawn();
-            return;
-          }
-        }
-      }
-
-      chests.forEach((chest) => {
-        if (chest.isDead || !proj.active) return;
-        if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, chest.x, chest.z, chest.radius)) {
-          const destroyed = chest.takeDamage(proj.damage);
-          this.sound.playHit();
-          this.particleSys.spawnImpact(proj.x, proj.z, chest.isMythic ? 0x9333ea : 0x8b5a2b, 1.5);
-          proj.despawn();
-          if (destroyed) { this.sound.playExplosion(); this.spawnManager.dropLoot(chest.x, chest.z, chest.isMythic ? 8 : 3, chest.isMythic ? 1.0 : 0.35); }
-        }
-      });
-      if (!proj.active) return;
-
-      crystals.forEach((c) => {
-        if (c.isDead || !proj.active) return;
-        if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, c.x, c.z, c.radius)) {
-          const exploded = c.takeDamage(proj.damage);
-          this.sound.playHit();
-          proj.despawn();
-          if (exploded) this.triggerCrystalExplosion(c, allActors, chests);
-        }
-      });
-      if (!proj.active) return;
-
-      for (const target of targets) {
-        if (target.isDead) continue;
-        if (CollisionSystem.checkCircle(proj.x, proj.z, proj.radius, target.x, target.z, target.radius)) {
-          if (proj.hitTargets && proj.hitTargets.has(target)) continue;
-          if (proj.hitTargets) proj.hitTargets.add(target);
-
-          this.applySpellHit(target, proj.spellConfig, proj.owner, proj.x, proj.z, proj.vx, proj.vz);
-          if (proj.spellConfig?.aoeRadius || proj.spellConfig?.onImpactSpawn || proj.spellConfig?.hazardZone) {
-            this.detonateAoE(proj.x, proj.z, proj.spellConfig, proj.owner, target, targets);
-          }
-
-          const chains = proj.spellConfig?.chainTargets || (proj.spellConfig?.id === 'ELECTRO' ? (proj.spellConfig?.chainCount || 2) : 0);
-          if (chains > 0) this.resolveChain(target.x, target.z, proj.spellConfig, proj.owner, target, targets);
-
-          if (!proj.spellConfig?.pierce) { proj.despawn(); break; }
-        }
-      }
-    });
+    this.spellEffects.update(dt, allActors, (target, cfg, owner, hx, hz, dx, dz) => this.applySpellHit(target, cfg, owner, hx, hz, dx, dz));
+    this.updateProjectiles(dt, allActors, chests, crystals, bots);
   }
 
   resolveChain(originX, originZ, cfg, owner, directTarget, targets) {
-    const chainTargets = cfg.chainTargets || cfg.chainCount || 2;
-    const chainRange = cfg.chainRange || cfg.chainRadius || 6.0;
+    const chainTargets = cfg.chainTargets || 2, chainRange = cfg.chainRange || 6.0;
     const others = targets.filter((a) => a !== directTarget && !a.isDead && a !== owner);
     let count = 0;
     for (const other of others) {
@@ -324,10 +242,8 @@ export class CombatResolver {
   }
 
   reset() {
-    this.telegraphMesh.visible = false;
-    this.telegraphTimer = 0;
-    this.delayedStrikes = [];
-    this.spellDashes = [];
+    this.telegraphMesh.visible = false; this.telegraphTimer = 0;
+    this.delayedStrikes = []; this.spellDashes = [];
     if (this.spellEffects) this.spellEffects.reset();
   }
 }

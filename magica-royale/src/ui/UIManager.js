@@ -52,42 +52,29 @@ export class UIManager {
 
   initLobbyEvents() {
     const fsBtn = document.getElementById('fullscreen-btn');
-    if (fsBtn) {
-      fsBtn.addEventListener('click', () => {
-        if (!document.fullscreenElement) {
-          const el = document.documentElement;
-          if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-        } else if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-      });
-    }
+    if (fsBtn) fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) { document.documentElement.requestFullscreen?.().catch(() => {}); }
+      else { document.exitFullscreen?.().catch(() => {}); }
+    });
 
     const startMatchUI = () => {
-      document.body.classList.add('in-match');
-      this.lobbyScreen.style.display = 'none';
-      this.hud.style.display = 'block';
+      document.body.classList.add('in-match'); this.lobbyScreen.style.display = 'none'; this.hud.style.display = 'block';
       if (this.onStartMatch) this.onStartMatch();
     };
     this.playMatchBtn.addEventListener('click', startMatchUI);
     this.modalPlayAgainBtn.addEventListener('click', () => { this.endModal.style.display = 'none'; startMatchUI(); });
-
     this.modalLobbyBtn.addEventListener('click', () => {
-      document.body.classList.remove('in-match');
-      this.endModal.style.display = 'none';
-      this.hud.style.display = 'none';
-      this.lobbyScreen.style.display = 'flex';
-      this.renderLobby();
+      document.body.classList.remove('in-match'); this.endModal.style.display = 'none'; this.hud.style.display = 'none';
+      this.lobbyScreen.style.display = 'flex'; this.renderLobby();
       if (this.onReturnToLobby) this.onReturnToLobby();
     });
 
-    const tabBtns = document.querySelectorAll('.lobby-tab-btn');
-    const tabPanels = document.querySelectorAll('.tab-panel');
+    const tabBtns = document.querySelectorAll('.lobby-tab-btn'), tabPanels = document.querySelectorAll('.tab-panel');
     tabBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
-        tabBtns.forEach((b) => b.classList.remove('active'));
-        tabPanels.forEach((p) => p.classList.remove('active'));
+        tabBtns.forEach((b) => b.classList.remove('active')); tabPanels.forEach((p) => p.classList.remove('active'));
         btn.classList.add('active');
-        const panel = document.getElementById(`tab-${btn.dataset.tab}`);
-        if (panel) panel.classList.add('active');
+        document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add('active');
       });
     });
   }
@@ -176,17 +163,18 @@ export class UIManager {
     });
   }
 
-  updateSpellBarLocks() {}
-  setSpellActive() {}
-
   updateSpellPanel(player) {
     if (!this.spellNameEl) return;
     const spell = player.currentSpell;
-    const elements = player.spellSlot?.elements?.length ? player.spellSlot.elements : (spell.elements || ['F']);
-    this.spellNameEl.textContent = spell.name || 'Fire Ball';
-    this.spellTierEl.textContent = `Tier ${spell.tier || 1}`;
+    const elements = player.spellSlot ? player.spellSlot.elements : (spell.elements || []);
+    this.spellNameEl.textContent = spell.name || (spell.id === 'fist' ? 'Fist' : 'Fire Ball');
+    this.spellTierEl.textContent = spell.id === 'fist' ? 'Tier 0' : `Tier ${spell.tier || 1}`;
     this.spellTierEl.style.color = `#${(spell.color || 0x38bdf8).toString(16).padStart(6, '0')}`;
 
+    if (!elements || elements.length === 0) {
+      this.spellChipsEl.innerHTML = '';
+      return;
+    }
     const icons = { E: '🪨', F: '🔥', W: '💧' };
     this.spellChipsEl.innerHTML = elements.map((e) => {
       const color = ELEMENT_COLORS[e] ? `#${ELEMENT_COLORS[e].toString(16).padStart(6, '0')}` : '#888';
@@ -252,9 +240,8 @@ export class UIManager {
       this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box'));
     }
     const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
-    const newSpellHtml = spellbookSummary?.newSpells?.length ? `<div class="quest-done-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New spell unlocked: ${spellbookSummary.newSpells.join(', ')}!</div>` : '';
-    const starHtml = spellbookSummary?.starsEarned ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ ${spellbookSummary.starsEarned} Star${spellbookSummary.starsEarned > 1 ? 's' : ''} earned!</div>` : '';
-
+    const newSpellHtml = spellbookSummary?.newSpells?.length ? `<div class="quest-done-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New spell: ${spellbookSummary.newSpells.join(', ')}!</div>` : '';
+    const starHtml = spellbookSummary?.starsEarned ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ ${spellbookSummary.starsEarned} Star${spellbookSummary.starsEarned > 1 ? 's' : ''}!</div>` : '';
     statsEl.innerHTML = `<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}${newSpellHtml}${starHtml}`;
     const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
     this.rewardTrophy.textContent = `${tSign} 🏆 (${results.newTrophies})`; this.rewardGold.textContent = `+${results.goldEarned} 🪙 (${results.newGold})`;

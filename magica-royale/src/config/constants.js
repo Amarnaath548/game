@@ -93,7 +93,7 @@ export const AIM_ASSIST = true;
 
 export const LEVEL_TABLE = [
   { level: 1, xpReq: 0, hpBonus: 0, dmgBonus: 0, rewardType: 'START' },
-  { level: 2, xpReq: 50, hpBonus: 40, dmgBonus: 5, rewardType: 'ELEMENT' },
+  { level: 2, xpReq: 25, hpBonus: 40, dmgBonus: 5, rewardType: 'ELEMENT' },
   { level: 3, xpReq: 120, hpBonus: 40, dmgBonus: 5, rewardType: 'ELEMENT' },
   { level: 4, xpReq: 220, hpBonus: 50, dmgBonus: 8, rewardType: 'ELEMENT' },
   { level: 5, xpReq: 350, hpBonus: 60, dmgBonus: 10, rewardType: 'MASTERY' },

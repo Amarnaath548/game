@@ -132,6 +132,7 @@ export class QuestManager {
         q.progress = Math.min(q.target, q.progress + 1);
         updated = true;
       } else if (event === 'cast' && q.type === 'casts') {
+        if (data === 'fist' || data?.spellId === 'fist') return;
         q.progress = Math.min(q.target, q.progress + 1);
         updated = true;
       } else if (event === 'reachT3' && q.type === 'reachT3') {

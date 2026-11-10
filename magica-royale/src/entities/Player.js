@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Actor } from './Actor.js';
 import { PLAYER_BASE, LEVEL_TABLE, COLORS, ARENA, HEROES } from '../config/constants.js';
 import { SpellSlotController } from './SpellSlotController.js';
-import { getSpell } from '../config/spellRegistry.js';
+import { getSpell, FIST_SPELL } from '../config/spellRegistry.js';
 
 export class Player extends Actor {
   constructor(scene, inputManager, hero = null) {
@@ -20,7 +20,8 @@ export class Player extends Actor {
 
     this.input = inputManager;
     this.isPlayer = true;
-    this.spellSlot = new SpellSlotController('F');
+    this.spellSlot = new SpellSlotController();
+    this.punchTimer = 0;
     this.level = 1;
     this.xp = 0;
     this.kills = 0;
@@ -78,7 +79,7 @@ export class Player extends Actor {
   }
 
   get currentSpell() {
-    return this.spellSlot ? this.spellSlot.currentSpell : getSpell('F');
+    return this.spellSlot ? this.spellSlot.activeSpell : FIST_SPELL;
   }
 
   set currentSpell(val) {
@@ -169,6 +170,13 @@ export class Player extends Actor {
 
     const isMoving = Math.hypot(this.input.moveDir.x, this.input.moveDir.z) > 0.05;
     this.setWobble(isMoving && this.dashTimer <= 0, dt);
+
+    if (this.punchTimer > 0) {
+      this.punchTimer -= dt;
+      if (this.rightArm) this.rightArm.rotation.x = -1.2;
+    } else if (this.rightArm && this.rightArm.rotation.x < -0.1) {
+      this.rightArm.rotation.x = 0;
+    }
 
     const inBush = bushes.some((bush) => bush.checkInside(this.x, this.z));
     const targetOpacity = inBush ? 0.35 : 1.0;
