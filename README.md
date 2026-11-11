@@ -10,7 +10,7 @@ A fast-paced 2.5D battle royale game with 8 elemental spells, distinct blocky wi
 3. Push to `main` branch to trigger the `.github/workflows/deploy.yml` workflow.
 4. Your game will be published at:
    ```
-   https://amarnaath548.github.io/game/
+   https://<username>.github.io/<repository>/
    ```
 
 ### Netlify Alternative
