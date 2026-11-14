@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { CollisionSystem } from '../systems/CollisionSystem.js';
+import { SpellEffects } from '../systems/SpellEffects.js';
 
 export class CombatResolver {
   constructor(deps) {
