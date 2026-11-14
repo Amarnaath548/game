@@ -1,11 +1,10 @@
 import * as THREE from 'three';
-import { CollisionSystem } from '../systems/CollisionSystem.js';
-import { SpellEffects } from '../systems/SpellEffects.js';
 
 export class CombatResolver {
   constructor(deps) {
     Object.assign(this, deps);
-    this.spellEffects = deps.spellEffects || new SpellEffects(deps.sceneManager.scene, deps.particleSys);
+    this.astraVisuals = deps.astraVisuals || null;
+    this.spellEffects = deps.spellEffects || new SpellEffects(deps.sceneManager.scene, deps.particleSys, this.astraVisuals);
     this.delayedStrikes = [];
     this.spellDashes = [];
     const tgGeo = new THREE.RingGeometry(5.0, 5.5, 32);
@@ -16,7 +15,10 @@ export class CombatResolver {
     this.telegraphTimer = 0;
   }
 
-  showTelegraph(x, z, radius = 5.5, duration = 0.4) {
+  showTelegraph(x, z, radius = 5.5, duration = 0.4, spellId = null) {
+    if (spellId === 'F_W_W' && this.astraVisuals) {
+      return this.astraVisuals.spawnVajraTelegraph(x, z, radius, duration);
+    }
     this.telegraphMesh.position.set(x, 0.05, z);
     this.telegraphMesh.scale.setScalar(radius / 5.5);
     this.telegraphMesh.visible = true; this.telegraphTimer = duration;
@@ -33,6 +35,7 @@ export class CombatResolver {
     if (isP && this.player.perks.includes('SNIPER_VELOCITY')) { cfg.speed = (cfg.speed || 28) * 1.35; cfg.range = (cfg.range || 24) * 1.35; }
     if (isP && this.player.perks.includes('GIANT_ARCANA')) { cfg.radius = (cfg.radius || 0.5) * 1.4; if (cfg.aoeRadius) cfg.aoeRadius *= 1.4; }
     const sx = cfg.originX ?? owner.x, sz = cfg.originZ ?? owner.z;
+    if (cfg.tier === 3 && this.astraVisuals) this.astraVisuals.spawnAstraRing(owner.x, owner.z);
 
     if (cfg.trajectory === 'MELEE') return this.executeMelee(cfg, owner);
     if (cfg.trajectory === 'SELF_DASH') {
@@ -47,7 +50,7 @@ export class CombatResolver {
     if (cfg.trajectory === 'INSTANT_STRIKE' || cfg.strikeDelay > 0) {
       const tx = cfg.targetX ?? (sx + (cfg.dirX || 0) * (cfg.range || 20)), tz = cfg.targetZ ?? (sz + (cfg.dirZ || 1) * (cfg.range || 20));
       const delay = cfg.strikeDelay || 0.45;
-      this.showTelegraph(tx, tz, cfg.aoeRadius || 4.0, delay);
+      this.showTelegraph(tx, tz, cfg.aoeRadius || 4.0, delay, cfg.id);
       this.delayedStrikes.push({ ...cfg, targetX: tx, targetZ: tz, timer: delay, owner });
       return;
     }
@@ -75,7 +78,12 @@ export class CombatResolver {
     this.player.spellSlot.startCooldown();
     if (this.player.cooldownMult) this.player.spellSlot.cooldownTimer *= this.player.cooldownMult;
     this.player.shootCooldown = this.player.spellSlot.cooldownTimer;
-    const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, input.aimDir, input.dragRatio || 1.0);
+    const tapasBonus = this.player.consumeTapasBonus ? this.player.consumeTapasBonus() : 0;
+    const dmgMult = 1.0 + tapasBonus;
+    const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, input.aimDir, input.dragRatio || 1.0, dmgMult);
+    if (tapasBonus > 0) {
+      this.particleSys?.spawnBurst(this.player.x, 0.8, this.player.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
+    }
     if (this.questManager && this.player.currentSpell?.id !== 'fist') this.questManager.record('cast', 1);
     this.sound.playCast(this.player.currentSpell.id);
     payloads.forEach((payload) => this.executeCastPayload(payload, this.player));
@@ -132,7 +140,8 @@ export class CombatResolver {
   detonateAoE(x, z, cfg, owner, directTarget = null, targets = []) {
     const aoe = cfg.aoeRadius || 3.5;
     this.sound.playExplosion();
-    this.particleSys.spawnImpact(x, z, cfg.color || 0xff5500, cfg.radius || 0.5, aoe);
+    const sc = cfg.tier === 3 ? 1.4 : 1.0;
+    this.particleSys.spawnImpact(x, z, cfg.color || 0xff5500, (cfg.radius || 0.5) * sc, aoe * sc);
     if (cfg.hazardZone) this.spellEffects.spawnHazardZone(x, z, cfg, owner);
     if (cfg.onImpactSpawn) this.spawnSubMunitions(x, z, cfg, owner);
     targets.forEach((o) => {
@@ -245,5 +254,6 @@ export class CombatResolver {
   reset() {
     this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this.spellDashes = [];
     if (this.spellEffects) this.spellEffects.reset();
+    if (this.astraVisuals) this.astraVisuals.reset();
   }
 }

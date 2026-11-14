@@ -36,7 +36,7 @@ export class UIManager {
 
     this.elementPicker = new ElementPicker(this.perkOverlay);
     this.pendingPicks = 0;
-    this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange && this.onHeroChange(h));
+    this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange?.(h));
     if (this.questManager) {
       this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
     }
@@ -64,7 +64,7 @@ export class UIManager {
 
     const startMatchUI = () => {
       document.body.classList.add('in-match'); this.lobbyScreen.style.display = 'none'; this.hud.style.display = 'block';
-      if (this.onStartMatch) this.onStartMatch();
+      this.onStartMatch?.();
     };
     this.playMatchBtn.addEventListener('click', startMatchUI);
     this.modalPlayAgainBtn.addEventListener('click', () => { this.endModal.style.display = 'none'; startMatchUI(); });
@@ -72,7 +72,7 @@ export class UIManager {
       this.elementPicker.hide(); this.pendingPicks = 0;
       document.body.classList.remove('in-match'); this.endModal.style.display = 'none'; this.hud.style.display = 'none';
       this.lobbyScreen.style.display = 'flex'; this.renderLobby();
-      if (this.onReturnToLobby) this.onReturnToLobby();
+      this.onReturnToLobby?.();
     });
 
     const tabBtns = document.querySelectorAll('.lobby-tab-btn'), tabPanels = document.querySelectorAll('.tab-panel');
@@ -88,10 +88,11 @@ export class UIManager {
   initSpellPanel() {
     const bar = document.getElementById('spell-bar');
     if (!bar) return;
-    bar.innerHTML = `<div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(15,23,42,0.92);border:2px solid #3b4262;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Agni Bana</span><span id="spell-tier-label" style="font-size:10px;font-weight:800;background:#334155;color:#38bdf8;padding:1px 6px;border-radius:999px;">Mantra</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
+    bar.innerHTML = `<div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(15,23,42,0.92);border:2px solid #3b4262;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Agni Bana</span><span id="spell-tier-label" style="font-size:10px;font-weight:800;background:#334155;color:#38bdf8;padding:1px 6px;border-radius:999px;">Mantra</span><span id="tapas-indicator" style="display:none;font-size:9px;font-weight:900;background:#f59e0b;color:#0f172a;padding:1px 5px;border-radius:4px;box-shadow:0 0 8px #f59e0b;">TAPAS +40%</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
     this.spellNameEl = document.getElementById('spell-name-label');
     this.spellTierEl = document.getElementById('spell-tier-label');
     this.spellChipsEl = document.getElementById('spell-chips-box');
+    this.tapasIndicatorEl = document.getElementById('tapas-indicator');
   }
 
   initCastButton() {
@@ -100,7 +101,7 @@ export class UIManager {
     castBtn.id = 'cast-btn';
     castBtn.style.cssText = 'position:absolute;bottom:calc(24px + env(safe-area-inset-bottom,0px));right:calc(116px + env(safe-area-inset-right,0px));width:68px;height:68px;border-radius:50%;background:rgba(15,23,42,0.85);border:2px solid #38bdf8;box-shadow:0 0 16px rgba(0,242,255,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;z-index:25;user-select:none;';
     castBtn.innerHTML = `<svg viewBox="0 0 68 68" style="position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);"><circle cx="34" cy="34" r="30" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4"></circle><circle id="cast-cd-ring" cx="34" cy="34" r="30" fill="none" stroke="#00f2ff" stroke-width="4" stroke-dasharray="188.5" stroke-dashoffset="0"></circle></svg><span style="font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;z-index:2;">CAST</span>`;
-    const trigger = (e) => { e.preventDefault(); e.stopPropagation(); if (this.onCastRequested) this.onCastRequested(); };
+    const trigger = (e) => { e.preventDefault(); e.stopPropagation(); this.onCastRequested?.(); };
     castBtn.addEventListener('pointerdown', trigger);
     castBtn.addEventListener('touchstart', trigger, { passive: false });
     this.hud.appendChild(castBtn);
@@ -191,6 +192,10 @@ export class UIManager {
     this.lvlTextEl.textContent = `Lv ${player.level} ${player.hero?.name || ''}`;
 
     this.updateSpellPanel(player);
+
+    if (this.tapasIndicatorEl) {
+      this.tapasIndicatorEl.style.display = player.tapasActive ? 'inline-block' : 'none';
+    }
 
     if (this.castCdRing) {
       const cd = player.spellSlot ? player.spellSlot.getCooldownProgress() : Math.max(0, (player.shootCooldown || 0) / (player.currentSpell?.cooldown || 1));

@@ -153,5 +153,21 @@ export class SoundManager {
       osc.stop(time + 0.15);
     });
   }
+
+  playTapasReady() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.frequency.setValueAtTime(523.25, now); // C5 to G5 harmonious chime
+    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.22);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  }
 }
 

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Actor } from './Actor.js';
-import { PLAYER_BASE, LEVEL_TABLE, COLORS, ARENA, HEROES } from '../config/constants.js';
+import { PLAYER_BASE, LEVEL_TABLE, COLORS, ARENA, HEROES, TAPAS_DELAY, TAPAS_BONUS } from '../config/constants.js';
 import { SpellSlotController } from './SpellSlotController.js';
 import { getSpell, FIST_SPELL } from '../config/spellRegistry.js';
 
@@ -35,6 +35,25 @@ export class Player extends Actor {
     this.dashCooldownTimer = 0;
     this.dashVec = { x: 0, z: 0 };
     this.shootCooldown = 0;
+
+    // Tapas state (Meditative focus: +40% dmg after 1.2s standing still & not casting)
+    this.tapasTimer = 0;
+    this.tapasActive = false;
+    this.onTapasReadyCallback = null;
+
+    // Tapas Visual Ring
+    const tapasGeo = new THREE.RingGeometry(1.65, 1.85, 32);
+    tapasGeo.rotateX(-Math.PI / 2);
+    this.tapasRingMat = new THREE.MeshBasicMaterial({
+      color: 0xfbbf24,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    this.tapasRing = new THREE.Mesh(tapasGeo, this.tapasRingMat);
+    this.tapasRing.position.y = 0.05;
+    this.group.add(this.tapasRing);
 
     // Aim Indicator
     const aimLineGeo = new THREE.PlaneGeometry(0.35, 9);
@@ -95,6 +114,23 @@ export class Player extends Actor {
     }
   }
 
+  takeDamage(amount) {
+    if (this.tapasActive || this.tapasTimer > 0) this.breakTapas();
+    return super.takeDamage(amount);
+  }
+
+  breakTapas() {
+    this.tapasTimer = 0;
+    this.tapasActive = false;
+    if (this.tapasRingMat) this.tapasRingMat.opacity = 0;
+  }
+
+  consumeTapasBonus() {
+    const bonus = this.tapasActive ? TAPAS_BONUS : 0;
+    this.breakTapas();
+    return bonus;
+  }
+
   addXP(amount, onLevelUp) {
     this.xp += amount;
     while (true) {
@@ -131,15 +167,11 @@ export class Player extends Actor {
 
     if (this.input.dashRequested) {
       this.input.dashRequested = false;
-      const cooldown = this.perks.includes('WINDWALKER')
-        ? Math.max(1.5, PLAYER_BASE.DASH_COOLDOWN - 1.0)
-        : PLAYER_BASE.DASH_COOLDOWN;
-
+      const cooldown = this.perks.includes('WINDWALKER') ? Math.max(1.5, PLAYER_BASE.DASH_COOLDOWN - 1.0) : PLAYER_BASE.DASH_COOLDOWN;
       if (this.dashCooldownTimer <= 0 && this.dashTimer <= 0) {
         this.dashTimer = PLAYER_BASE.DASH_DURATION;
         this.dashCooldownTimer = cooldown;
         this.isInvulnerable = true;
-
         const hasMove = Math.hypot(this.input.moveDir.x, this.input.moveDir.z) > 0.1;
         this.dashVec.x = hasMove ? this.input.moveDir.x : this.input.aimDir.x;
         this.dashVec.z = hasMove ? this.input.moveDir.z : this.input.aimDir.z;
@@ -156,8 +188,7 @@ export class Player extends Actor {
       this.z += this.input.moveDir.z * this.speed * dt;
     }
 
-    const distFromCenter = Math.hypot(this.x, this.z);
-    const maxAllowed = ARENA.RADIUS - this.radius;
+    const distFromCenter = Math.hypot(this.x, this.z), maxAllowed = ARENA.RADIUS - this.radius;
     if (distFromCenter > maxAllowed) {
       this.x = (this.x / distFromCenter) * maxAllowed;
       this.z = (this.z / distFromCenter) * maxAllowed;
@@ -168,8 +199,23 @@ export class Player extends Actor {
     this.aimLine.rotation.y = aimAngle;
     this.aimLine.visible = this.input.isAiming || !this.input.usingTouch;
 
-    const isMoving = Math.hypot(this.input.moveDir.x, this.input.moveDir.z) > 0.05;
+    const isMoving = Math.hypot(this.input.moveDir.x, this.input.moveDir.z) > 0.05 || this.dashTimer > 0;
     this.setWobble(isMoving && this.dashTimer <= 0, dt);
+
+    if (isMoving || this.shootCooldown > 0) {
+      this.breakTapas();
+    } else {
+      this.tapasTimer += dt;
+      const progress = Math.min(1.0, this.tapasTimer / TAPAS_DELAY);
+      this.tapasRingMat.opacity = progress * 0.85;
+      const sc = 0.8 + progress * 0.2;
+      this.tapasRing.scale.set(sc, 1, sc);
+      if (progress >= 1.0 && !this.tapasActive) {
+        this.tapasActive = true;
+        this.tapasRingMat.color.setHex(0xfacc15);
+        if (this.onTapasReadyCallback) this.onTapasReadyCallback();
+      }
+    }
 
     if (this.punchTimer > 0) {
       this.punchTimer -= dt;

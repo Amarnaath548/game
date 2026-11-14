@@ -104,6 +104,9 @@ export const LEVEL_TABLE = [
   { level: 8, xpReq: 950, hpBonus: 80, dmgBonus: 12, rewardType: 'STAT_BOOST' }
 ];
 
+export const TAPAS_DELAY = 1.2;
+export const TAPAS_BONUS = 0.4;
+
 export const STORM_PHASES = [
   { duration: 25, startRadius: 120, endRadius: 120, tickDamage: 0 },
   { duration: 30, startRadius: 120, endRadius: 75, tickDamage: 10 },

@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 
 export class SpellEffects {
-  constructor(scene, particleSys) {
+  constructor(scene, particleSys, astraVisuals = null) {
     this.scene = scene;
     this.particleSys = particleSys;
+    this.astraVisuals = astraVisuals;
 
-    // 1. Pooled Radial Rings (Supernova, Hurricane)
+    // 1. Radials
     this.maxRadials = 4;
     this.radials = [];
     const radGeo = new THREE.RingGeometry(0.85, 1.0, 32);
@@ -13,26 +14,24 @@ export class SpellEffects {
     for (let i = 0; i < this.maxRadials; i++) {
       const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false });
       const mesh = new THREE.Mesh(radGeo, mat);
-      mesh.position.y = 0.08;
-      mesh.visible = false;
+      mesh.position.y = 0.08; mesh.visible = false;
       this.scene.add(mesh);
       this.radials.push({ mesh, mat, active: false, x: 0, z: 0, curRadius: 0, maxRadius: 6, duration: 0.4, elapsed: 0, config: null, owner: null, hitTargets: new Set() });
     }
 
-    // 2. Pooled Waves (Tsunami, Avalanche)
+    // 2. Waves
     this.maxWaves = 4;
     this.waves = [];
     const waveGeo = new THREE.BoxGeometry(1, 0.8, 1);
     for (let i = 0; i < this.maxWaves; i++) {
       const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.75, depthWrite: false });
       const mesh = new THREE.Mesh(waveGeo, mat);
-      mesh.position.y = 0.45;
-      mesh.visible = false;
+      mesh.position.y = 0.45; mesh.visible = false;
       this.scene.add(mesh);
       this.waves.push({ mesh, mat, active: false, x: 0, z: 0, dirX: 0, dirZ: 1, angle: 0, speed: 20, distanceTraveled: 0, maxRange: 24, width: 8, depth: 2, config: null, owner: null, hitTargets: new Set() });
     }
 
-    // 3. Pooled Hazard Zones (Eruption, Storm Front, Halahala)
+    // 3. Hazard Zones
     this.maxHazards = 6;
     this.hazards = [];
     const hazGeo = new THREE.RingGeometry(0.05, 1.0, 32);
@@ -40,21 +39,19 @@ export class SpellEffects {
     for (let i = 0; i < this.maxHazards; i++) {
       const mat = new THREE.MeshBasicMaterial({ color: 0xff5500, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false });
       const mesh = new THREE.Mesh(hazGeo, mat);
-      mesh.position.y = 0.03;
-      mesh.visible = false;
+      mesh.position.y = 0.03; mesh.visible = false;
       this.scene.add(mesh);
-      this.hazards.push({ mesh, mat, active: false, x: 0, z: 0, radius: 5, dps: 20, duration: 3.5, elapsed: 0, config: null, owner: null, tickTimer: 0, isPoison: false });
+      this.hazards.push({ mesh, mat, active: false, x: 0, z: 0, radius: 5, dps: 20, duration: 3.5, elapsed: 0, config: null, owner: null, tickTimer: 0, isPoison: false, bubbleTimer: 0 });
     }
 
-    // 4. Pooled Lightning Beams (Thunderbolt)
+    // 4. Beams
     this.maxBeams = 4;
     this.beams = [];
     const beamGeo = new THREE.CylinderGeometry(0.25, 0.5, 24, 6);
     for (let i = 0; i < this.maxBeams; i++) {
       const mat = new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.95 });
       const mesh = new THREE.Mesh(beamGeo, mat);
-      mesh.position.y = 12;
-      mesh.visible = false;
+      mesh.position.y = 12; mesh.visible = false;
       this.scene.add(mesh);
       this.beams.push({ mesh, mat, active: false, elapsed: 0, duration: 0.18 });
     }
@@ -63,62 +60,39 @@ export class SpellEffects {
   spawnRadial(x, z, config, owner) {
     const r = this.radials.find((item) => !item.active);
     if (!r) return;
-    r.active = true;
-    r.x = x;
-    r.z = z;
-    r.maxRadius = config.radius || 6.0;
-    r.duration = 0.42;
-    r.elapsed = 0;
-    r.config = config;
-    r.owner = owner;
-    r.hitTargets.clear();
-    r.mat.color.setHex(config.color || 0xffffff);
-    r.mesh.position.set(x, 0.08, z);
-    r.mesh.scale.set(0.1, 1, 0.1);
-    r.mesh.visible = true;
+    r.active = true; r.x = x; r.z = z; r.maxRadius = config.radius || 6.0;
+    r.duration = 0.42; r.elapsed = 0; r.config = config; r.owner = owner;
+    r.hitTargets.clear(); r.mat.color.setHex(config.color || 0xffffff);
+    r.mesh.position.set(x, 0.08, z); r.mesh.scale.set(0.1, 1, 0.1); r.mesh.visible = true;
+    if (config.id === 'E_F_W' && this.astraVisuals) this.astraVisuals.spawnSpiral(x, z);
     if (this.particleSys) this.particleSys.spawnBurst(x, 0.5, z, config.color, 12, 6);
   }
 
   spawnWave(x, z, dirX, dirZ, config, owner) {
     const w = this.waves.find((item) => !item.active);
     if (!w) return;
-    w.active = true;
-    w.x = x;
-    w.z = z;
+    w.active = true; w.x = x; w.z = z;
     const len = Math.hypot(dirX, dirZ) || 1;
-    w.dirX = dirX / len;
-    w.dirZ = dirZ / len;
+    w.dirX = dirX / len; w.dirZ = dirZ / len;
     w.angle = Math.atan2(w.dirX, w.dirZ);
-    w.speed = config.speed || 20;
-    w.distanceTraveled = 0;
-    w.maxRange = config.range || 24;
-    w.width = config.width || 8.0;
-    w.depth = config.depth || 2.0;
-    w.config = config;
-    w.owner = owner;
-    w.hitTargets.clear();
+    w.speed = config.speed || 20; w.distanceTraveled = 0;
+    w.maxRange = config.range || 24; w.width = config.width || 8.0; w.depth = config.depth || 2.0;
+    w.config = config; w.owner = owner; w.hitTargets.clear();
     w.mat.color.setHex(config.color || 0x0ea5e9);
     w.mesh.scale.set(w.width, 0.8, w.depth);
-    w.mesh.rotation.y = w.angle;
-    w.mesh.position.set(x, 0.45, z);
-    w.mesh.visible = true;
+    w.mesh.rotation.y = w.angle; w.mesh.position.set(x, 0.45, z); w.mesh.visible = true;
   }
 
   spawnHazardZone(x, z, config, owner) {
     const hz = this.hazards.find((item) => !item.active);
     if (!hz) return;
     const cfg = config.hazardZone || {};
-    hz.active = true;
-    hz.x = x;
-    hz.z = z;
+    hz.active = true; hz.x = x; hz.z = z;
     hz.radius = cfg.radius || config.aoeRadius || 5.0;
-    hz.dps = cfg.dps || 22;
-    hz.duration = cfg.duration || 3.5;
-    hz.elapsed = 0;
-    hz.tickTimer = 0;
-    hz.config = config;
-    hz.owner = owner;
-    hz.isPoison = !!(config.hazardZone?.poison || config.id === 'F_W');
+    hz.dps = cfg.dps || 22; hz.duration = cfg.duration || 3.5;
+    hz.elapsed = 0; hz.tickTimer = 0; hz.bubbleTimer = 0;
+    hz.config = config; hz.owner = owner;
+    hz.isPoison = !!(cfg.poison || config.id === 'F_W');
     hz.mat.color.setHex(config.color || 0xca8a04);
     hz.mesh.position.set(x, 0.03, z);
     hz.mesh.scale.set(hz.radius, 1, hz.radius);
@@ -129,17 +103,13 @@ export class SpellEffects {
   spawnLightningBeam(x, z, colorHex = 0xfef08a) {
     const b = this.beams.find((item) => !item.active);
     if (!b) return;
-    b.active = true;
-    b.elapsed = 0;
-    b.mat.color.setHex(colorHex);
-    b.mat.opacity = 0.95;
-    b.mesh.position.set(x, 12, z);
-    b.mesh.visible = true;
+    b.active = true; b.elapsed = 0;
+    b.mat.color.setHex(colorHex); b.mat.opacity = 0.95;
+    b.mesh.position.set(x, 12, z); b.mesh.visible = true;
     if (this.particleSys) this.particleSys.spawnBurst(x, 1.0, z, colorHex, 20, 10);
   }
 
   update(dt, targets = [], onHitCallback = null) {
-    // 1. Radials
     this.radials.forEach((r) => {
       if (!r.active) return;
       r.elapsed += dt;
@@ -148,7 +118,6 @@ export class SpellEffects {
       r.curRadius = THREE.MathUtils.lerp(0.5, r.maxRadius, Math.sqrt(progress));
       r.mesh.scale.set(r.curRadius, 1, r.curRadius);
       r.mat.opacity = 0.85 * (1.0 - progress);
-
       targets.forEach((t) => {
         if (t.isDead || t === r.owner || r.hitTargets.has(t)) return;
         const d = Math.hypot(t.x - r.x, t.z - r.z);
@@ -159,18 +128,13 @@ export class SpellEffects {
       });
     });
 
-    // 2. Waves
     this.waves.forEach((w) => {
       if (!w.active) return;
       const dist = w.speed * dt;
-      w.x += w.dirX * dist;
-      w.z += w.dirZ * dist;
-      w.distanceTraveled += dist;
+      w.x += w.dirX * dist; w.z += w.dirZ * dist; w.distanceTraveled += dist;
       w.mesh.position.set(w.x, 0.45, w.z);
-
       const cos = Math.cos(-w.angle), sin = Math.sin(-w.angle);
       const halfW = w.width * 0.5, halfD = w.depth * 0.5;
-
       targets.forEach((t) => {
         if (t.isDead || t === w.owner || w.hitTargets.has(t)) return;
         const dx = t.x - w.x, dz = t.z - w.z;
@@ -180,17 +144,23 @@ export class SpellEffects {
           if (onHitCallback) onHitCallback(t, w.config, w.owner, w.x, w.z, w.dirX, w.dirZ);
         }
       });
-
       if (w.distanceTraveled >= w.maxRange) { w.active = false; w.mesh.visible = false; }
     });
 
-    // 3. Hazard Zones
     this.hazards.forEach((hz) => {
       if (!hz.active) return;
-      hz.elapsed += dt;
-      hz.tickTimer += dt;
+      hz.elapsed += dt; hz.tickTimer += dt;
       const pulse = 1.0 + Math.sin(hz.elapsed * 6) * 0.05;
       hz.mesh.scale.set(hz.radius * pulse, 1, hz.radius * pulse);
+
+      if (hz.isPoison) {
+        hz.bubbleTimer += dt;
+        if (hz.bubbleTimer >= 0.18 && this.particleSys) {
+          hz.bubbleTimer = 0;
+          const ba = Math.random() * Math.PI * 2, br = Math.random() * hz.radius * 0.85;
+          this.particleSys.spawnBurst(hz.x + Math.cos(ba) * br, 0.2, hz.z + Math.sin(ba) * br, 0x10b981, 2, 2, 0.7, 'DROPLET');
+        }
+      }
 
       if (hz.tickTimer >= 0.25) {
         hz.tickTimer = 0;
@@ -203,11 +173,9 @@ export class SpellEffects {
           }
         });
       }
-
       if (hz.elapsed >= hz.duration) { hz.active = false; hz.mesh.visible = false; }
     });
 
-    // 4. Lightning Beams
     this.beams.forEach((b) => {
       if (!b.active) return;
       b.elapsed += dt;
@@ -223,4 +191,3 @@ export class SpellEffects {
     });
   }
 }
-

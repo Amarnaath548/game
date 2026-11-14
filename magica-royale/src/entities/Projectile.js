@@ -107,6 +107,19 @@ export class Projectile {
     this.coreMat.color.setHex(0xffffff);
     this.shellMat.color.setHex(col);
 
+    // Glow follows element mix
+    const elems = spellConfig.elements || [];
+    if (elems.length > 0) {
+      let r = 0, g = 0, b = 0;
+      const elCols = { E: [0.54, 0.35, 0.17], F: [0.94, 0.27, 0.27], W: [0.02, 0.71, 0.83] };
+      elems.forEach((e) => {
+        const rgb = elCols[e] || [1, 1, 1];
+        r += rgb[0]; g += rgb[1]; b += rgb[2];
+      });
+      const len = elems.length;
+      this.shellMat.color.setRGB(r / len, g / len, b / len);
+    }
+
     const baseScale = Math.max(0.7, (this.radius / 0.5) * 1.15);
     this.mesh.scale.setScalar(baseScale);
     this.mesh.position.set(this.x, this.y, this.z);

@@ -26,7 +26,8 @@ export class ParticleSystem {
         scale: 1,
         life: 0,
         maxLife: 0.5,
-        color: new THREE.Color(1, 1, 1)
+        color: new THREE.Color(1, 1, 1),
+        type: 'EMBER' // 'EMBER' (Agni rises), 'DROPLET' (Jala ripples), 'SHARD' (Prithvi stone)
       });
     }
     this.dummy = new THREE.Object3D();
@@ -62,25 +63,43 @@ export class ParticleSystem {
     }
   }
 
-  spawnBurst(x, y, z, colorHex = 0xff5500, amount = 12, speed = 8, scale = 1.0) {
+  spawnBurst(x, y, z, colorHex = 0xff5500, amount = 12, speed = 8, scale = 1.0, elemType = null) {
     const col = new THREE.Color(colorHex);
-    let spawned = 0;
+    let detectedType = elemType;
+    if (!detectedType) {
+      if (colorHex === 0x8b5a2b || colorHex === 0x785535 || colorHex === 0x854d0e) detectedType = 'SHARD';
+      else if (colorHex === 0x06b6d4 || colorHex === 0x0284c7 || colorHex === 0x0ea5e9 || colorHex === 0x38bdf8 || colorHex === 0x10b981) detectedType = 'DROPLET';
+      else detectedType = 'EMBER';
+    }
 
+    let spawned = 0;
     for (let i = 0; i < this.maxParticles && spawned < amount; i++) {
       const p = this.particles[i];
       if (!p.active) {
         p.active = true;
-        p.x = x;
-        p.y = y;
-        p.z = z;
+        p.x = x; p.y = y; p.z = z;
+        p.type = detectedType;
 
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.random() * Math.PI;
         const mag = (0.5 + Math.random() * 0.5) * speed;
 
-        p.vx = Math.sin(phi) * Math.cos(theta) * mag;
-        p.vy = Math.abs(Math.cos(phi)) * mag + 2;
-        p.vz = Math.sin(phi) * Math.sin(theta) * mag;
+        if (detectedType === 'EMBER') {
+          // Agni: rising embers with drifting horizontal velocity
+          p.vx = Math.cos(theta) * mag * 0.45;
+          p.vy = (0.8 + Math.random() * 0.8) * speed + 2.5;
+          p.vz = Math.sin(theta) * mag * 0.45;
+        } else if (detectedType === 'DROPLET') {
+          // Jala: radial ripple splash and droplets
+          p.vx = Math.cos(theta) * mag * 1.1;
+          p.vy = Math.sin(phi) * mag * 0.5 + 1.2;
+          p.vz = Math.sin(theta) * mag * 1.1;
+        } else {
+          // Prithvi: heavy tumbled stone shards
+          p.vx = Math.cos(theta) * mag * 0.7;
+          p.vy = Math.abs(Math.sin(phi)) * mag * 0.7 + 1.5;
+          p.vz = Math.sin(theta) * mag * 0.7;
+        }
 
         p.scale = (0.6 + Math.random() * 0.6) * scale;
         p.life = 0;
@@ -141,14 +160,21 @@ export class ParticleSystem {
         continue;
       }
 
-      p.vy -= 18 * dt;
+      if (p.type === 'EMBER') {
+        p.vy += 3 * dt; // buoyant upward ember draft
+        p.vx += Math.sin(p.life * 12) * 2 * dt;
+      } else if (p.type === 'DROPLET') {
+        p.vy -= 22 * dt;
+      } else {
+        p.vy -= 28 * dt; // heavier stone shard gravity
+      }
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.z += p.vz * dt;
 
       if (p.y < 0.1) {
         p.y = 0.1;
-        p.vy = -p.vy * 0.4;
+        p.vy = p.type === 'EMBER' ? 1.5 : -p.vy * 0.35;
         p.vx *= 0.7;
         p.vz *= 0.7;
       }

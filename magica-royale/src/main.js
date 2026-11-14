@@ -18,6 +18,7 @@ import { CombatResolver } from './core/CombatResolver.js';
 import { MatchManager } from './core/MatchManager.js';
 import { QuestManager } from './core/QuestManager.js';
 import { SpellbookManager } from './core/SpellbookManager.js';
+import { AstraVisuals } from './systems/AstraVisuals.js';
 
 // Core Systems
 const sceneManager = new SceneManager();
@@ -31,9 +32,13 @@ const floatingBars = new FloatingBarSystem(sceneManager.camera);
 const damageNumbers = new DamageNumbers(sceneManager.camera);
 const killFeed = new KillFeed();
 const banners = new BannerManager();
+const astraVisuals = new AstraVisuals(sceneManager.scene);
 
 // Player Entity
 const player = new Player(sceneManager.scene, input);
+player.onTapasReadyCallback = () => {
+  sound.playTapasReady();
+};
 
 // Pools
 const projPool = new ObjectPool(() => {
@@ -64,7 +69,7 @@ const healthOrbs = orbPool.pool.map((mesh) => new HealthOrb(mesh, orbPool));
 // Managers
 const spawnManager = new SpawnManager(sceneManager.scene, gems, healthOrbs);
 const combatResolver = new CombatResolver({
-  sceneManager, sound, particleSys, damageNumbers, killFeed, banners, spawnManager, player, projectiles, questManager, meta, spellbookManager
+  sceneManager, sound, particleSys, damageNumbers, killFeed, banners, spawnManager, player, projectiles, questManager, meta, spellbookManager, astraVisuals
 });
 const matchManager = new MatchManager({
   sceneManager, sound, meta, ui: null, banners, floatingBars, damageNumbers, killFeed,
@@ -161,6 +166,7 @@ function animate() {
     });
 
     combatResolver.update(dt, allActors, spawnManager.chests, spawnManager.crystals, spawnManager.bots);
+    if (astraVisuals) astraVisuals.update(dt);
     spawnManager.updateProps(dt);
     matchManager.update(dt);
     sceneManager.updateCamera(player.group.position, input.aimDir, dt);

@@ -194,6 +194,7 @@ export const SPELLS_T1_T2 = {
     elements: ['F', 'W'],
     trajectory: 'LOBBED',
     color: 0x10b981,
+    glowColor: 0x14b8a6,
     damage: 30,
     speed: 22,
     range: 24,

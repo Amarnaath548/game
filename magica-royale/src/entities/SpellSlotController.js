@@ -48,7 +48,7 @@ export class SpellSlotController {
     }
   }
 
-  buildCastPayloads(originX, originZ, aimDir, dragRatio = 1.0) {
+  buildCastPayloads(originX, originZ, aimDir, dragRatio = 1.0, damageMultiplier = 1.0) {
     const spell = this.activeSpell;
     if (!spell) return [];
 
@@ -61,6 +61,7 @@ export class SpellSlotController {
 
     const basePayload = {
       ...spell,
+      damage: Math.round(spell.damage * damageMultiplier),
       originX,
       originZ,
       dragRatio: clampedDrag,
