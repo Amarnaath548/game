@@ -60,12 +60,12 @@ export class CombatResolver {
     this.particleSys.spawnBurst(owner.x + cfg.dirX * 1.1, 1.0, owner.z + cfg.dirZ * 1.1, 0xffaa44, 8, 4);
     if (this.sound) this.sound.playHit();
     const halfCos = Math.cos((cfg.arc || 1.75) / 2), range = cfg.range || 2.2;
-    const tgts = (owner === this.player || !!owner?.isPlayer) ? this.spawnManager.bots : [this.player, ...this.spawnManager.bots.filter((b) => b !== owner)];
+    const tgts = ((owner === this.player || !!owner?.isPlayer) ? this.spawnManager.bots : [this.player, ...this.spawnManager.bots]).filter((b) => b !== owner);
     const inCone = (t) => {
       const dx = t.x - owner.x, dz = t.z - owner.z, d = Math.hypot(dx, dz);
       return d <= range + (t.radius || 0.8) && (cfg.dirX * dx + cfg.dirZ * dz) / (d || 1) >= halfCos;
     };
-    tgts.forEach((t) => { if (!t.isDead && inCone(t)) this.applySpellHit(t, cfg, owner, owner.x, owner.z, cfg.dirX, cfg.dirZ); });
+    tgts.forEach((t) => { if (!t.isDead && inCone(t)) this.applySpellHit(t, cfg, owner, t.x, t.z, cfg.dirX, cfg.dirZ); });
     this.spawnManager.chests?.forEach((c) => { if (!c.isDead && inCone(c) && c.takeDamage(cfg.damage)) this.spawnManager.dropLoot(c.x, c.z, c.isMythic ? 8 : 3, c.isMythic ? 1.0 : 0.35); });
     this.spawnManager.crystals?.forEach((c) => { if (!c.isDead && inCone(c) && c.takeDamage(cfg.damage)) this.triggerCrystalExplosion(c, tgts, this.spawnManager.chests); });
   }
@@ -123,7 +123,8 @@ export class CombatResolver {
     this.sound.playHit();
     const kx = dirX !== null ? dirX : target.x - hitX, kz = dirZ !== null ? dirZ : target.z - hitZ;
     target.applyKnockback(kx, kz, cfg.knockback || 2.5);
-    this.damageNumbers.spawn(target.x, target.z, dealt, cfg.color || 0xff5500);
+    const tx = (target && target.x !== undefined) ? target.x : (hitX ?? 0), tz = (target && target.z !== undefined) ? target.z : (hitZ ?? 0);
+    this.damageNumbers.spawn(tx, tz, dealt, cfg.color || 0xff5500);
     this.applyStatuses(target, cfg);
     if (target.isDead) this.handleKill(owner, target, cfg.id);
   }
@@ -242,8 +243,7 @@ export class CombatResolver {
   }
 
   reset() {
-    this.telegraphMesh.visible = false; this.telegraphTimer = 0;
-    this.delayedStrikes = []; this.spellDashes = [];
+    this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this.spellDashes = [];
     if (this.spellEffects) this.spellEffects.reset();
   }
 }

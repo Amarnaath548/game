@@ -22,6 +22,10 @@ export class ElementPicker {
   }
 
   show(player, onPick) {
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
     this.onPickCallback = onPick;
     this.active = true;
     this.timeLeft = 5.0;
@@ -74,10 +78,15 @@ export class ElementPicker {
 
     const timerText = document.getElementById('picker-timer-text');
     this.interval = setInterval(() => {
+      if (!this.active) {
+        if (this.interval) { clearInterval(this.interval); this.interval = null; }
+        return;
+      }
       this.timeLeft -= 0.1;
       if (timerText) timerText.textContent = `${Math.max(0, Math.ceil(this.timeLeft))}s`;
       if (this.timeLeft <= 0) {
-        clearInterval(this.interval);
+        if (this.interval) { clearInterval(this.interval); this.interval = null; }
+        if (!this.active) return;
         const randomElem = elements[Math.floor(Math.random() * elements.length)];
         this.choose(randomElem);
       }
@@ -87,17 +96,18 @@ export class ElementPicker {
   choose(element) {
     if (!this.active) return;
     this.active = false;
-    if (this.interval) clearInterval(this.interval);
+    if (this.interval) { clearInterval(this.interval); this.interval = null; }
     this.container.style.display = 'none';
     this.container.innerHTML = '';
-    if (this.onPickCallback) {
-      this.onPickCallback(element);
-    }
+    const cb = this.onPickCallback;
+    this.onPickCallback = null;
+    if (cb) cb(element);
   }
 
   hide() {
     this.active = false;
-    if (this.interval) clearInterval(this.interval);
+    if (this.interval) { clearInterval(this.interval); this.interval = null; }
+    this.onPickCallback = null;
     this.container.style.display = 'none';
     this.container.innerHTML = '';
   }

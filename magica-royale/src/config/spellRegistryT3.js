@@ -22,6 +22,8 @@ export const SPELLS_T3 = {
     trajectory: 'RADIAL',
     color: 0xff2200,
     damage: 85,
+    speed: 0,
+    range: 7.5,
     radius: 7.5,
     knockback: 4.0,
     burnDuration: 3.0,
@@ -151,6 +153,8 @@ export const SPELLS_T3 = {
     trajectory: 'RADIAL',
     color: 0x99f6e4,
     damage: 45,
+    speed: 0,
+    range: 5.5,
     radius: 5.5,
     knockback: 7.0,
     cooldown: 2.0

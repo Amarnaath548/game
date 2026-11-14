@@ -35,6 +35,7 @@ export class UIManager {
     this.modalLobbyBtn = get('modal-lobby-btn'); this.modalPlayAgainBtn = get('modal-play-again-btn');
 
     this.elementPicker = new ElementPicker(this.perkOverlay);
+    this.pendingPicks = 0;
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange && this.onHeroChange(h));
     if (this.questManager) {
       this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
@@ -64,6 +65,7 @@ export class UIManager {
     this.playMatchBtn.addEventListener('click', startMatchUI);
     this.modalPlayAgainBtn.addEventListener('click', () => { this.endModal.style.display = 'none'; startMatchUI(); });
     this.modalLobbyBtn.addEventListener('click', () => {
+      this.elementPicker.hide(); this.pendingPicks = 0;
       document.body.classList.remove('in-match'); this.endModal.style.display = 'none'; this.hud.style.display = 'none';
       this.lobbyScreen.style.display = 'flex'; this.renderLobby();
       if (this.onReturnToLobby) this.onReturnToLobby();
@@ -126,39 +128,23 @@ export class UIManager {
 
     this.stavesContainer.innerHTML = '';
     STAVES.forEach((staff) => {
-      const isUnlocked = this.meta.data.unlockedStaves.includes(staff.id);
-      const isSelected = this.meta.data.selectedStaffId === staff.id;
-      const card = document.createElement('div');
-      card.className = `staff-card ${isSelected ? 'selected' : ''}`;
-      const btnHtml = isSelected
-        ? `<button class="staff-action-btn btn-equipped">EQUIPPED</button>`
-        : isUnlocked
-          ? `<button class="staff-action-btn btn-select">EQUIP</button>`
-          : `<button class="staff-action-btn btn-unlock" ${this.meta.data.gold >= staff.cost ? '' : 'disabled'}>UNLOCK (${staff.cost} 🪙)</button>`;
-
+      const isUnlocked = this.meta.data.unlockedStaves.includes(staff.id), isSelected = this.meta.data.selectedStaffId === staff.id;
+      const card = document.createElement('div'); card.className = `staff-card ${isSelected ? 'selected' : ''}`;
+      const btnHtml = isSelected ? `<button class="staff-action-btn btn-equipped">EQUIPPED</button>` : isUnlocked ? `<button class="staff-action-btn btn-select">EQUIP</button>` : `<button class="staff-action-btn btn-unlock" ${this.meta.data.gold >= staff.cost ? '' : 'disabled'}>UNLOCK (${staff.cost} 🪙)</button>`;
       card.innerHTML = `<div><div class="staff-name" style="color: #${staff.colorHex.toString(16).padStart(6, '0')}">${staff.name}</div><div class="staff-desc">${staff.perkDesc}</div></div>${btnHtml}`;
       card.querySelector('button').addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (isSelected) return;
-        if (isUnlocked) { this.meta.selectStaff(staff.id); this.renderLobby(); }
-        else if (this.meta.unlockStaff(staff.id)) { this.renderLobby(); }
+        e.stopPropagation(); if (isSelected) return;
+        if (isUnlocked) { this.meta.selectStaff(staff.id); this.renderLobby(); } else if (this.meta.unlockStaff(staff.id)) { this.renderLobby(); }
       });
       this.stavesContainer.appendChild(card);
     });
 
     this.upgradesContainer.innerHTML = '';
     UPGRADES.forEach((upg) => {
-      const currentLevel = this.meta.data.upgradeLevels[upg.id] || 0;
-      const cost = this.meta.getUpgradeCost(upg.id);
-      const isMax = currentLevel >= upg.maxLevel;
-      const row = document.createElement('div');
-      row.className = 'upgrade-row';
+      const currentLevel = this.meta.data.upgradeLevels[upg.id] || 0, cost = this.meta.getUpgradeCost(upg.id), isMax = currentLevel >= upg.maxLevel;
+      const row = document.createElement('div'); row.className = 'upgrade-row';
       row.innerHTML = `<div class="upg-info"><div class="upg-name">${upg.name} (Lv ${currentLevel}/${upg.maxLevel})</div><div class="upg-desc">${upg.desc}</div></div><button class="upg-btn" ${(!isMax && this.meta.data.gold >= cost) ? '' : 'disabled'}>${isMax ? 'MAX' : `${cost} 🪙`}</button>`;
-      if (!isMax) {
-        row.querySelector('.upg-btn').addEventListener('click', () => {
-          if (this.meta.buyUpgrade(upg.id)) this.renderLobby();
-        });
-      }
+      if (!isMax) row.querySelector('.upg-btn').addEventListener('click', () => { if (this.meta.buyUpgrade(upg.id)) this.renderLobby(); });
       this.upgradesContainer.appendChild(row);
     });
   }
@@ -209,17 +195,29 @@ export class UIManager {
   }
 
   showLevelUp(player, level) {
-    if (player.spellSlot && player.spellSlot.elements.length < 3) {
-      this.elementPicker.show(player, (element) => {
-        player.spellSlot.addElement(element);
-        player.setSpell(player.spellSlot.currentSpell.id);
-        this.updateSpellPanel(player);
-        if (this.spellbookManager) this.spellbookManager.recordSpellReached(player.currentSpell.id, this.meta);
-        if (player.currentSpell.tier === 3 && this.questManager) this.questManager.record('reachT3', 1);
-      });
+    if (player.spellSlot && (player.spellSlot.elements.length + this.pendingPicks) < 3) {
+      this.pendingPicks++;
+      if (!this.elementPicker.active) this.openNextElementPick(player);
     } else {
       this.showPerkCards(level);
     }
+  }
+
+  openNextElementPick(player) {
+    if (this.pendingPicks <= 0 || !player.spellSlot || player.spellSlot.elements.length >= 3) {
+      this.pendingPicks = 0;
+      return;
+    }
+    this.elementPicker.show(player, (element) => {
+      this.pendingPicks = Math.max(0, this.pendingPicks - 1);
+      player.spellSlot.addElement(element);
+      player.setSpell(player.spellSlot.currentSpell.id);
+      this.updateSpellPanel(player);
+      if (this.spellbookManager) this.spellbookManager.recordSpellReached(player.currentSpell.id, this.meta);
+      if (player.currentSpell.tier === 3 && this.questManager) this.questManager.record('reachT3', 1);
+      if (this.pendingPicks > 0 && player.spellSlot.elements.length < 3) this.openNextElementPick(player);
+      else this.pendingPicks = 0;
+    });
   }
 
   showPerkCards() {
@@ -227,6 +225,8 @@ export class UIManager {
   }
 
   showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null) {
+    this.elementPicker.hide();
+    this.pendingPicks = 0;
     const results = this.meta.applyMatchResults(place);
     this.endModal.style.display = 'flex';
     const heroName = player?.hero?.name || 'Archmage', kills = player?.kills || 0;
@@ -234,11 +234,7 @@ export class UIManager {
     this.endSubtitle.textContent = isVictory ? `Glory to ${heroName}! Sanctum Champion.` : `${heroName} eliminated at rank #${place}.`;
 
     let statsEl = document.getElementById('match-hero-stats');
-    if (!statsEl) {
-      statsEl = document.createElement('div');
-      statsEl.id = 'match-hero-stats';
-      this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box'));
-    }
+    if (!statsEl) { statsEl = document.createElement('div'); statsEl.id = 'match-hero-stats'; this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box')); }
     const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
     const newSpellHtml = spellbookSummary?.newSpells?.length ? `<div class="quest-done-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New spell: ${spellbookSummary.newSpells.join(', ')}!</div>` : '';
     const starHtml = spellbookSummary?.starsEarned ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ ${spellbookSummary.starsEarned} Star${spellbookSummary.starsEarned > 1 ? 's' : ''}!</div>` : '';

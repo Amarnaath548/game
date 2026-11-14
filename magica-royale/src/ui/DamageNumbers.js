@@ -43,7 +43,7 @@ export class DamageNumbers {
   }
 
   spawn(worldX, worldZ, amount, color = 0xffffff) {
-    if (amount <= 0) return;
+    if (amount <= 0 || worldX === undefined || worldZ === undefined || Number.isNaN(worldX)) return;
     let item = this.pool.find((p) => !p.active);
     if (!item) {
       item = this.pool.reduce((oldest, cur) => (cur.timer > oldest.timer ? cur : oldest), this.pool[0]);
@@ -59,6 +59,18 @@ export class DamageNumbers {
     item.el.textContent = Math.round(amount);
     item.el.style.color = hex;
     item.el.style.opacity = '1';
+
+    if (this.camera) {
+      this.projVec.set(item.x, item.y, item.z);
+      this.projVec.project(this.camera);
+      if (this.projVec.z <= 1.0) {
+        const sx = this.projVec.x * (window.innerWidth / 2) + (window.innerWidth / 2);
+        const sy = -this.projVec.y * (window.innerHeight / 2) + (window.innerHeight / 2);
+        item.el.style.left = `${sx}px`;
+        item.el.style.top = `${sy}px`;
+        item.el.style.transform = 'translate(-50%, -50%) scale(1.25)';
+      }
+    }
     item.el.style.display = 'block';
   }
 

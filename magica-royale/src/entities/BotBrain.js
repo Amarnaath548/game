@@ -95,6 +95,7 @@ export class BotBrain {
         let idealDist = 12;
         if (traj === 'SELF_DASH') idealDist = 7;
         else if (traj === 'LOBBED') idealDist = 14;
+        else if (traj === 'RADIAL') idealDist = (spell.radius || 6.0) * 0.7;
 
         const distBias = edist > idealDist ? 0.75 : (edist < idealDist - 3 ? -0.7 : 0.1);
         moveX = perpX * 0.65 + (edx / edist) * distBias;
@@ -102,7 +103,10 @@ export class BotBrain {
       }
 
       // Shooting condition per trajectory
-      const inRange = traj === 'MELEE' ? (edist <= 1.8) : (edist <= (spell.range || 22));
+      let checkRange = spell.range || 22;
+      if (traj === 'MELEE') checkRange = 1.8;
+      else if (traj === 'RADIAL') checkRange = (spell.radius || 6.0) * 0.8;
+      const inRange = edist <= checkRange;
       const dashReady = traj !== 'SELF_DASH' || (edist <= 12 && edist >= 2.0);
 
       if (bot.shootCooldown <= 0 && onShoot && inRange && dashReady) {
