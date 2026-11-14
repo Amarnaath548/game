@@ -4,28 +4,21 @@ const GEO_SPHERE = new THREE.SphereGeometry(0.5, 8, 8);
 const GEO_OCTA = new THREE.OctahedronGeometry(0.5);
 const GEO_TETRA = new THREE.TetrahedronGeometry(0.55);
 const GEO_TRAIL = new THREE.BoxGeometry(0.32, 0.32, 0.32);
+const ELEM_TO_STYLE = { F: 'EMBER', W: 'DROPLET', E: 'SHARD' };
 
 export class Projectile {
   constructor(mesh, pool) {
     this.mesh = mesh;
     this.pool = pool;
     this.active = false;
-    this.x = 0;
-    this.y = 1.2;
-    this.z = 0;
-    this.vx = 0;
-    this.vz = 0;
-    this.radius = 0.5;
-    this.damage = 50;
-    this.distanceTraveled = 0;
-    this.maxRange = 24;
-    this.spellConfig = null;
-    this.lobHeight = 0;
-    this.owner = null;
+    this.x = 0; this.y = 1.2; this.z = 0;
+    this.vx = 0; this.vz = 0;
+    this.radius = 0.5; this.damage = 50;
+    this.distanceTraveled = 0; this.maxRange = 24;
+    this.spellConfig = null; this.elements = []; this.particleStyles = [];
+    this.lobHeight = 0; this.owner = null;
     this.hitTargets = new Set();
-    this.animTime = 0;
-    this.reachedMaxRange = false;
-
+    this.animTime = 0; this.reachedMaxRange = false;
     this.buildMeshes();
   }
 
@@ -36,26 +29,16 @@ export class Projectile {
     this.mesh.add(this.coreMesh);
 
     this.shellMat = new THREE.MeshBasicMaterial({
-      color: 0xff5500,
-      transparent: true,
-      opacity: 0.45,
-      depthWrite: false
+      color: 0xff5500, transparent: true, opacity: 0.45, depthWrite: false
     });
     this.shellMesh = new THREE.Mesh(GEO_SPHERE, this.shellMat);
     this.shellMesh.scale.setScalar(1.2);
     this.mesh.add(this.shellMesh);
 
     this.trailCount = 8;
-    this.trailNodes = [];
-    this.trailHistory = [];
-
+    this.trailNodes = []; this.trailHistory = [];
     for (let i = 0; i < this.trailCount; i++) {
-      const trailMat = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.5,
-        depthWrite: false
-      });
+      const trailMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, depthWrite: false });
       const trailMesh = new THREE.Mesh(GEO_TRAIL, trailMat);
       trailMesh.visible = false;
       this.mesh.parent ? this.mesh.parent.add(trailMesh) : null;
@@ -67,15 +50,13 @@ export class Projectile {
   spawn(originX, originZ, dirX, dirZ, spellConfig, owner = 'player') {
     this.active = true;
     this.reachedMaxRange = false;
-    this.x = originX;
-    this.z = originZ;
+    this.x = originX; this.z = originZ;
     this.spellConfig = spellConfig;
     this.owner = owner;
     this.hitTargets.clear();
 
     const speed = spellConfig.speed || 28;
-    this.vx = dirX * speed;
-    this.vz = dirZ * speed;
+    this.vx = dirX * speed; this.vz = dirZ * speed;
     this.radius = spellConfig.radius || 0.5;
     this.damage = spellConfig.damage || 50;
     this.maxRange = spellConfig.range || 24;
@@ -85,7 +66,7 @@ export class Projectile {
     this.animTime = Math.random() * 10;
 
     if (this.mesh.parent) {
-      this.trailNodes.forEach(t => { if (!t.mesh.parent) this.mesh.parent.add(t.mesh); });
+      this.trailNodes.forEach((t) => { if (!t.mesh.parent) this.mesh.parent.add(t.mesh); });
     }
 
     const sid = spellConfig.id || '';
@@ -93,30 +74,28 @@ export class Projectile {
     const isLightning = sid.includes('F_W') || sid === 'ELECTRO';
 
     if (isWater) {
-      this.coreMesh.geometry = GEO_OCTA;
-      this.shellMesh.geometry = GEO_OCTA;
+      this.coreMesh.geometry = GEO_OCTA; this.shellMesh.geometry = GEO_OCTA;
     } else if (isLightning) {
-      this.coreMesh.geometry = GEO_TETRA;
-      this.shellMesh.geometry = GEO_TETRA;
+      this.coreMesh.geometry = GEO_TETRA; this.shellMesh.geometry = GEO_TETRA;
     } else {
-      this.coreMesh.geometry = GEO_SPHERE;
-      this.shellMesh.geometry = GEO_SPHERE;
+      this.coreMesh.geometry = GEO_SPHERE; this.shellMesh.geometry = GEO_SPHERE;
     }
 
     const col = spellConfig.color !== undefined ? spellConfig.color : 0xff5500;
     this.coreMat.color.setHex(0xffffff);
     this.shellMat.color.setHex(col);
 
-    // Glow follows element mix
-    const elems = spellConfig.elements || [];
-    if (elems.length > 0) {
+    // Glow and particle styles follow element mix
+    this.elements = spellConfig.elements || [];
+    this.particleStyles = this.elements.map((e) => ELEM_TO_STYLE[e] || e).filter((s) => s === 'EMBER' || s === 'DROPLET' || s === 'SHARD');
+    if (this.elements.length > 0) {
       let r = 0, g = 0, b = 0;
       const elCols = { E: [0.54, 0.35, 0.17], F: [0.94, 0.27, 0.27], W: [0.02, 0.71, 0.83] };
-      elems.forEach((e) => {
+      this.elements.forEach((e) => {
         const rgb = elCols[e] || [1, 1, 1];
         r += rgb[0]; g += rgb[1]; b += rgb[2];
       });
-      const len = elems.length;
+      const len = this.elements.length;
       this.shellMat.color.setRGB(r / len, g / len, b / len);
     }
 
@@ -126,9 +105,7 @@ export class Projectile {
     this.mesh.visible = true;
 
     for (let i = 0; i < this.trailCount; i++) {
-      this.trailHistory[i].x = this.x;
-      this.trailHistory[i].y = this.y;
-      this.trailHistory[i].z = this.z;
+      this.trailHistory[i].x = this.x; this.trailHistory[i].y = this.y; this.trailHistory[i].z = this.z;
       const t = this.trailNodes[i];
       t.mat.color.setHex(col);
       t.mesh.position.set(this.x, this.y, this.z);
@@ -163,8 +140,7 @@ export class Projectile {
     }
 
     const dx = this.vx * dt, dz = this.vz * dt;
-    this.x += dx;
-    this.z += dz;
+    this.x += dx; this.z += dz;
     this.distanceTraveled += Math.hypot(dx, dz);
 
     if (this.lobHeight > 0) {
@@ -209,7 +185,7 @@ export class Projectile {
     if (!this.active) return;
     this.active = false;
     this.mesh.visible = false;
-    this.trailNodes.forEach(t => { t.mesh.visible = false; });
+    this.trailNodes.forEach((t) => { t.mesh.visible = false; });
     if (this.pool) this.pool.release(this.mesh);
   }
 }

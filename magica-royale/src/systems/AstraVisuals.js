@@ -1,24 +1,27 @@
 import * as THREE from 'three';
 
+function createAstraRingGroup() {
+  const g = new THREE.Group();
+  const r1 = new THREE.Mesh(new THREE.RingGeometry(1.6, 1.72, 32), new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
+  r1.rotateX(-Math.PI / 2); g.add(r1);
+  const r2 = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 32), new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
+  r2.rotateX(-Math.PI / 2); g.add(r2);
+  const l1 = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 3.4), new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
+  l1.rotateX(-Math.PI / 2); g.add(l1);
+  const l2 = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.08), new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
+  l2.rotateX(-Math.PI / 2); g.add(l2);
+  return g;
+}
+
 export class AstraVisuals {
   constructor(scene) {
     this.scene = scene;
 
-    // 1. Pooled Astra Geometric Cast Rings (Tier 3: concentric circles + straight lines, rot 0.5s)
+    // 1. Pooled Astra Geometric Cast Rings (Tier 3: unique materials per ring)
     this.maxAstraRings = 4;
     this.astraRings = [];
-    const baseGroup = new THREE.Group();
-    const r1 = new THREE.Mesh(new THREE.RingGeometry(1.6, 1.72, 32), new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
-    r1.rotateX(-Math.PI / 2); baseGroup.add(r1);
-    const r2 = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 32), new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
-    r2.rotateX(-Math.PI / 2); baseGroup.add(r2);
-    const l1 = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 3.4), new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
-    l1.rotateX(-Math.PI / 2); baseGroup.add(l1);
-    const l2 = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.08), new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
-    l2.rotateX(-Math.PI / 2); baseGroup.add(l2);
-
     for (let i = 0; i < this.maxAstraRings; i++) {
-      const g = baseGroup.clone();
+      const g = createAstraRingGroup();
       g.position.y = 0.05; g.visible = false;
       this.scene.add(g);
       this.astraRings.push({ group: g, active: false, elapsed: 0, duration: 0.5 });
@@ -39,16 +42,26 @@ export class AstraVisuals {
       this.vajras.push({ group: g, m1, m2, active: false, x: 0, z: 0, maxRadius: 4.0, duration: 0.45, elapsed: 0 });
     }
 
-    // 3. Samudra Manthan Swirling Spiral
+    // 3. Samudra Manthan Swirling Spiral (4 curved arms with thetaLength ~1.6 rad)
     this.maxSpirals = 3;
     this.spirals = [];
-    const sg = new THREE.RingGeometry(0.3, 5.5, 32); sg.rotateX(-Math.PI / 2);
+    const armConfigs = [
+      { inner: 0.6, outer: 1.1, start: 0 },
+      { inner: 1.4, outer: 2.0, start: Math.PI * 0.5 },
+      { inner: 2.3, outer: 3.0, start: Math.PI },
+      { inner: 3.3, outer: 4.1, start: Math.PI * 1.5 }
+    ];
     for (let i = 0; i < this.maxSpirals; i++) {
+      const group = new THREE.Group();
       const mat = new THREE.MeshBasicMaterial({ color: 0x99f6e4, transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false });
-      const m = new THREE.Mesh(sg, mat);
-      m.position.y = 0.07; m.visible = false;
-      this.scene.add(m);
-      this.spirals.push({ mesh: m, mat, active: false, x: 0, z: 0, elapsed: 0, duration: 0.55 });
+      armConfigs.forEach((cfg) => {
+        const geo = new THREE.RingGeometry(cfg.inner, cfg.outer, 24, 1, cfg.start, 1.6);
+        geo.rotateX(-Math.PI / 2);
+        group.add(new THREE.Mesh(geo, mat));
+      });
+      group.position.y = 0.07; group.visible = false;
+      this.scene.add(group);
+      this.spirals.push({ mesh: group, mat, active: false, x: 0, z: 0, elapsed: 0, duration: 0.55 });
     }
   }
 
@@ -72,7 +85,7 @@ export class AstraVisuals {
     const s = this.spirals.find((item) => !item.active);
     if (!s) return;
     s.active = true; s.x = x; s.z = z; s.elapsed = 0;
-    s.mesh.position.set(x, 0.07, z); s.mesh.visible = true;
+    s.mesh.position.set(x, 0.07, z); s.mesh.rotation.y = 0; s.mesh.visible = true;
   }
 
   update(dt) {

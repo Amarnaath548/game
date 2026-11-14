@@ -8,6 +8,7 @@ export class ElementPicker {
     this.timeLeft = 5;
     this.onPickCallback = null;
     this.active = false;
+    this.pendingPicks = 0;
 
     this.initKeyboard();
   }
@@ -41,7 +42,8 @@ export class ElementPicker {
 
     const header = document.createElement('div');
     header.style.cssText = 'color:#f8fafc;font-size:14px;font-weight:900;text-shadow:0 2px 4px #000;letter-spacing:1px;text-transform:uppercase;';
-    header.innerHTML = `SANKALPA - CHOOSE YOUR ELEMENT &bull; <span id="picker-timer-text" style="color:#fbbf24;">5s</span>`;
+    const queueNotice = this.pendingPicks > 1 ? ` &bull; <span style="color:#38bdf8;">(+${this.pendingPicks - 1} QUEUED)</span>` : '';
+    header.innerHTML = `SANKALPA - CHOOSE YOUR ELEMENT${queueNotice} &bull; <span id="picker-timer-text" style="color:#fbbf24;">5s</span>`;
     pickerWrapper.appendChild(header);
 
     const cardsRow = document.createElement('div');
@@ -106,10 +108,10 @@ export class ElementPicker {
 
   hide() {
     this.active = false;
+    this.pendingPicks = 0;
     if (this.interval) { clearInterval(this.interval); this.interval = null; }
     this.onPickCallback = null;
     this.container.style.display = 'none';
     this.container.innerHTML = '';
   }
 }
-

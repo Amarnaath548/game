@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+const ELEM_TO_STYLE = { F: 'EMBER', W: 'DROPLET', E: 'SHARD' };
+
 export class ParticleSystem {
   constructor(scene, maxParticles = 250) {
     this.scene = scene;
@@ -16,17 +18,8 @@ export class ParticleSystem {
     this.particles = [];
     for (let i = 0; i < maxParticles; i++) {
       this.particles.push({
-        active: false,
-        x: 0,
-        y: 0,
-        z: 0,
-        vx: 0,
-        vy: 0,
-        vz: 0,
-        scale: 1,
-        life: 0,
-        maxLife: 0.5,
-        color: new THREE.Color(1, 1, 1),
+        active: false, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0,
+        scale: 1, life: 0, maxLife: 0.5, color: new THREE.Color(1, 1, 1),
         type: 'EMBER' // 'EMBER' (Agni rises), 'DROPLET' (Jala ripples), 'SHARD' (Prithvi stone)
       });
     }
@@ -40,36 +33,29 @@ export class ParticleSystem {
 
     for (let i = 0; i < this.maxRings; i++) {
       const ringMat = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.85,
-        depthWrite: false,
-        side: THREE.DoubleSide
+        color: 0xffffff, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide
       });
       const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-      ringMesh.position.y = 0.04;
-      ringMesh.visible = false;
+      ringMesh.position.y = 0.04; ringMesh.visible = false;
       this.scene.add(ringMesh);
-
-      this.rings.push({
-        mesh: ringMesh,
-        active: false,
-        x: 0,
-        z: 0,
-        maxRadius: 3.0,
-        elapsed: 0,
-        duration: 0.4
-      });
+      this.rings.push({ mesh: ringMesh, active: false, x: 0, z: 0, maxRadius: 3.0, elapsed: 0, duration: 0.4 });
     }
   }
 
-  spawnBurst(x, y, z, colorHex = 0xff5500, amount = 12, speed = 8, scale = 1.0, elemType = null) {
+  spawnBurst(x, y, z, colorHex = 0xff5500, amount = 12, speed = 8, scale = 1.0, elementsOrStyle = null) {
     const col = new THREE.Color(colorHex);
-    let detectedType = elemType;
-    if (!detectedType) {
-      if (colorHex === 0x8b5a2b || colorHex === 0x785535 || colorHex === 0x854d0e) detectedType = 'SHARD';
-      else if (colorHex === 0x06b6d4 || colorHex === 0x0284c7 || colorHex === 0x0ea5e9 || colorHex === 0x38bdf8 || colorHex === 0x10b981) detectedType = 'DROPLET';
-      else detectedType = 'EMBER';
+    let styles = [];
+    if (Array.isArray(elementsOrStyle)) {
+      styles = elementsOrStyle.map((e) => ELEM_TO_STYLE[e] || e).filter((s) => s === 'EMBER' || s === 'DROPLET' || s === 'SHARD');
+    } else if (typeof elementsOrStyle === 'string') {
+      const s = ELEM_TO_STYLE[elementsOrStyle] || elementsOrStyle;
+      if (s === 'EMBER' || s === 'DROPLET' || s === 'SHARD') styles = [s];
+    }
+
+    if (styles.length === 0) {
+      if (colorHex === 0x8b5a2b || colorHex === 0x785535 || colorHex === 0x854d0e || colorHex === 0x888899) styles = ['SHARD'];
+      else if (colorHex === 0x06b6d4 || colorHex === 0x0284c7 || colorHex === 0x0ea5e9 || colorHex === 0x38bdf8 || colorHex === 0x10b981) styles = ['DROPLET'];
+      else styles = ['EMBER'];
     }
 
     let spawned = 0;
@@ -78,24 +64,20 @@ export class ParticleSystem {
       if (!p.active) {
         p.active = true;
         p.x = x; p.y = y; p.z = z;
-        p.type = detectedType;
+        p.type = styles[spawned % styles.length];
 
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.random() * Math.PI;
+        const theta = Math.random() * Math.PI * 2, phi = Math.random() * Math.PI;
         const mag = (0.5 + Math.random() * 0.5) * speed;
 
-        if (detectedType === 'EMBER') {
-          // Agni: rising embers with drifting horizontal velocity
+        if (p.type === 'EMBER') {
           p.vx = Math.cos(theta) * mag * 0.45;
           p.vy = (0.8 + Math.random() * 0.8) * speed + 2.5;
           p.vz = Math.sin(theta) * mag * 0.45;
-        } else if (detectedType === 'DROPLET') {
-          // Jala: radial ripple splash and droplets
+        } else if (p.type === 'DROPLET') {
           p.vx = Math.cos(theta) * mag * 1.1;
           p.vy = Math.sin(phi) * mag * 0.5 + 1.2;
           p.vz = Math.sin(theta) * mag * 1.1;
         } else {
-          // Prithvi: heavy tumbled stone shards
           p.vx = Math.cos(theta) * mag * 0.7;
           p.vy = Math.abs(Math.sin(phi)) * mag * 0.7 + 1.5;
           p.vz = Math.sin(theta) * mag * 0.7;
@@ -105,22 +87,17 @@ export class ParticleSystem {
         p.life = 0;
         p.maxLife = 0.35 + Math.random() * 0.35;
         p.color.copy(col);
-
         this.mesh.setColorAt(i, p.color);
         spawned++;
       }
     }
-    if (spawned > 0 && this.mesh.instanceColor) {
-      this.mesh.instanceColor.needsUpdate = true;
-    }
+    if (spawned > 0 && this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
   }
 
-  spawnImpact(x, z, colorHex, radius = 2.5, aoeRadius = 0) {
+  spawnImpact(x, z, colorHex, radius = 2.5, aoeRadius = 0, elementsOrStyle = null) {
     const targetRadius = aoeRadius > 0 ? aoeRadius : Math.max(1.8, radius * 3.0);
-    const particleCount = aoeRadius > 0 ? 24 : 12;
-    const speed = aoeRadius > 0 ? 12 : 8;
-
-    this.spawnBurst(x, 0.8, z, colorHex, particleCount, speed, aoeRadius > 0 ? 1.4 : 1.0);
+    const particleCount = aoeRadius > 0 ? 24 : 12, speed = aoeRadius > 0 ? 12 : 8;
+    this.spawnBurst(x, 0.8, z, colorHex, particleCount, speed, aoeRadius > 0 ? 1.4 : 1.0, elementsOrStyle);
     this.spawnRing(x, z, colorHex, targetRadius, 0.4);
   }
 
@@ -128,13 +105,7 @@ export class ParticleSystem {
     for (let i = 0; i < this.maxRings; i++) {
       const r = this.rings[i];
       if (!r.active) {
-        r.active = true;
-        r.x = x;
-        r.z = z;
-        r.maxRadius = maxRadius;
-        r.elapsed = 0;
-        r.duration = duration;
-
+        r.active = true; r.x = x; r.z = z; r.maxRadius = maxRadius; r.elapsed = 0; r.duration = duration;
         r.mesh.position.set(x, 0.04, z);
         r.mesh.material.color.setHex(colorHex);
         r.mesh.material.opacity = 0.9;
@@ -161,27 +132,23 @@ export class ParticleSystem {
       }
 
       if (p.type === 'EMBER') {
-        p.vy += 3 * dt; // buoyant upward ember draft
+        p.vy += 3 * dt;
         p.vx += Math.sin(p.life * 12) * 2 * dt;
       } else if (p.type === 'DROPLET') {
         p.vy -= 22 * dt;
       } else {
-        p.vy -= 28 * dt; // heavier stone shard gravity
+        p.vy -= 28 * dt;
       }
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.z += p.vz * dt;
+      p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
 
       if (p.y < 0.1) {
         p.y = 0.1;
         p.vy = p.type === 'EMBER' ? 1.5 : -p.vy * 0.35;
-        p.vx *= 0.7;
-        p.vz *= 0.7;
+        p.vx *= 0.7; p.vz *= 0.7;
       }
 
       const progress = p.life / p.maxLife;
       const currentScale = p.scale * (1 - progress);
-
       this.dummy.position.set(p.x, p.y, p.z);
       this.dummy.scale.setScalar(Math.max(0.01, currentScale));
       this.dummy.rotation.x += p.vx * dt * 2;
@@ -196,7 +163,6 @@ export class ParticleSystem {
     for (let i = 0; i < this.maxRings; i++) {
       const r = this.rings[i];
       if (!r.active) continue;
-
       r.elapsed += dt;
       const progress = r.elapsed / r.duration;
       if (progress >= 1.0) {
@@ -204,7 +170,6 @@ export class ParticleSystem {
         r.mesh.visible = false;
         continue;
       }
-
       const scale = THREE.MathUtils.lerp(0.2, r.maxRadius, Math.sqrt(progress));
       r.mesh.scale.set(scale, 1, scale);
       r.mesh.material.opacity = 0.9 * (1.0 - progress);

@@ -9,8 +9,7 @@ export class CombatResolver {
     this.spellEffects = deps.spellEffects || new SpellEffects(deps.sceneManager.scene, deps.particleSys, this.astraVisuals);
     this.delayedStrikes = [];
     this.spellDashes = [];
-    const tgGeo = new THREE.RingGeometry(5.0, 5.5, 32);
-    tgGeo.rotateX(-Math.PI / 2);
+    const tgGeo = new THREE.RingGeometry(5.0, 5.5, 32); tgGeo.rotateX(-Math.PI / 2);
     this.telegraphMesh = new THREE.Mesh(tgGeo, new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
     this.telegraphMesh.position.y = 0.05; this.telegraphMesh.visible = false;
     this.sceneManager.scene.add(this.telegraphMesh);
@@ -18,9 +17,7 @@ export class CombatResolver {
   }
 
   showTelegraph(x, z, radius = 5.5, duration = 0.4, spellId = null) {
-    if (spellId === 'F_W_W' && this.astraVisuals) {
-      return this.astraVisuals.spawnVajraTelegraph(x, z, radius, duration);
-    }
+    if (spellId === 'F_W_W' && this.astraVisuals) return this.astraVisuals.spawnVajraTelegraph(x, z, radius, duration);
     this.telegraphMesh.position.set(x, 0.05, z);
     this.telegraphMesh.scale.setScalar(radius / 5.5);
     this.telegraphMesh.visible = true; this.telegraphTimer = duration;
@@ -37,7 +34,6 @@ export class CombatResolver {
     if (isP && this.player.perks.includes('SNIPER_VELOCITY')) { cfg.speed = (cfg.speed || 28) * 1.35; cfg.range = (cfg.range || 24) * 1.35; }
     if (isP && this.player.perks.includes('GIANT_ARCANA')) { cfg.radius = (cfg.radius || 0.5) * 1.4; if (cfg.aoeRadius) cfg.aoeRadius *= 1.4; }
     const sx = cfg.originX ?? owner.x, sz = cfg.originZ ?? owner.z;
-    if (cfg.tier === 3 && this.astraVisuals) this.astraVisuals.spawnAstraRing(owner.x, owner.z);
 
     if (cfg.trajectory === 'MELEE') return this.executeMelee(cfg, owner);
     if (cfg.trajectory === 'SELF_DASH') {
@@ -62,7 +58,7 @@ export class CombatResolver {
 
   executeMelee(cfg, owner) {
     if (owner.punchTimer !== undefined) owner.punchTimer = 0.15;
-    this.particleSys.spawnBurst(owner.x + cfg.dirX * 1.1, 1.0, owner.z + cfg.dirZ * 1.1, 0xffaa44, 8, 4);
+    this.particleSys.spawnBurst(owner.x + cfg.dirX * 1.1, 1.0, owner.z + cfg.dirZ * 1.1, 0xffaa44, 8, 4, 1.0, cfg.elements);
     if (this.sound) this.sound.playHit();
     const halfCos = Math.cos((cfg.arc || 1.75) / 2), range = cfg.range || 2.2;
     const tgts = ((owner === this.player || !!owner?.isPlayer) ? this.spawnManager.bots : [this.player, ...this.spawnManager.bots]).filter((b) => b !== owner);
@@ -81,13 +77,11 @@ export class CombatResolver {
     if (this.player.cooldownMult) this.player.spellSlot.cooldownTimer *= this.player.cooldownMult;
     this.player.shootCooldown = this.player.spellSlot.cooldownTimer;
     const tapasBonus = this.player.consumeTapasBonus ? this.player.consumeTapasBonus() : 0;
-    const dmgMult = 1.0 + tapasBonus;
-    const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, input.aimDir, input.dragRatio || 1.0, dmgMult);
-    if (tapasBonus > 0) {
-      this.particleSys?.spawnBurst(this.player.x, 0.8, this.player.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
-    }
+    const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, input.aimDir, input.dragRatio || 1.0, 1.0 + tapasBonus);
+    if (tapasBonus > 0) this.particleSys?.spawnBurst(this.player.x, 0.8, this.player.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
     if (this.questManager && this.player.currentSpell?.id !== 'fist') this.questManager.record('cast', 1);
     this.sound.playCast(this.player.currentSpell.id);
+    if (this.astraVisuals && payloads[0]?.tier === 3) this.astraVisuals.spawnAstraRing(this.player.x, this.player.z);
     payloads.forEach((payload) => this.executeCastPayload(payload, this.player));
   }
 
@@ -96,6 +90,9 @@ export class CombatResolver {
     bot.spellSlot.startCooldown();
     bot.shootCooldown = bot.spellSlot.cooldownTimer;
     const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, { x: aimX, z: aimZ }, 1.0);
+    if (this.astraVisuals && payloads[0]?.tier === 3) {
+      if (Math.hypot(bot.x - this.player.x, bot.z - this.player.z) <= 30) this.astraVisuals.spawnAstraRing(bot.x, bot.z);
+    }
     payloads.forEach((payload) => this.executeCastPayload(payload, bot));
   }
 
@@ -120,7 +117,7 @@ export class CombatResolver {
       const p = this.projectiles.find((proj) => !proj.active);
       if (!p) break;
       const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-      p.spawn(x, z, Math.sin(angle), Math.cos(angle), { id: cfg.id || 'E_F_F', color: cfg.color || 0xf43f5e, damage: Math.round((cfg.damage || 50) * 0.45), speed: 18, range: 4.5 + Math.random() * 2.0, radius: 0.35, aoeRadius: 2.2, lobArcHeight: 1.8, burnDuration: 1.5, burnDps: 6 }, owner);
+      p.spawn(x, z, Math.sin(angle), Math.cos(angle), { id: cfg.id || 'E_F_F', color: cfg.color || 0xf43f5e, damage: Math.round((cfg.damage || 50) * 0.45), speed: 18, range: 4.5 + Math.random() * 2.0, radius: 0.35, aoeRadius: 2.2, lobArcHeight: 1.8, burnDuration: 1.5, burnDps: 6, elements: cfg.elements }, owner);
     }
   }
 
@@ -143,7 +140,7 @@ export class CombatResolver {
     const aoe = cfg.aoeRadius || 3.5;
     this.sound.playExplosion();
     const sc = cfg.tier === 3 ? 1.4 : 1.0;
-    this.particleSys.spawnImpact(x, z, cfg.color || 0xff5500, (cfg.radius || 0.5) * sc, aoe * sc);
+    this.particleSys.spawnImpact(x, z, cfg.color || 0xff5500, (cfg.radius || 0.5) * sc, aoe * sc, cfg.elements);
     if (cfg.hazardZone) this.spellEffects.spawnHazardZone(x, z, cfg, owner);
     if (cfg.onImpactSpawn) this.spawnSubMunitions(x, z, cfg, owner);
     targets.forEach((o) => {
@@ -217,7 +214,7 @@ export class CombatResolver {
     for (let i = this.spellDashes.length - 1; i >= 0; i--) {
       const d = this.spellDashes[i];
       d.elapsed += dt; d.owner.x += d.dirX * d.speed * dt; d.owner.z += d.dirZ * d.speed * dt;
-      this.particleSys.spawnBurst(d.owner.x, 0.4, d.owner.z, d.config.color || 0x854d0e, 2, 4);
+      this.particleSys.spawnBurst(d.owner.x, 0.4, d.owner.z, d.config.color || 0x854d0e, 2, 4, 1.0, d.config.elements);
       const tgts = d.owner?.isPlayer ? bots : [this.player, ...bots.filter((b) => b !== d.owner)];
       tgts.forEach((t) => {
         if (!t.isDead && !d.hitTargets.has(t) && CollisionSystem.checkCircle(d.owner.x, d.owner.z, d.owner.radius + 0.5, t.x, t.z, t.radius)) {

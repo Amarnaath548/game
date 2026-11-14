@@ -37,12 +37,8 @@ export class UIManager {
     this.elementPicker = new ElementPicker(this.perkOverlay);
     this.pendingPicks = 0;
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange?.(h));
-    if (this.questManager) {
-      this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
-    }
-    if (this.spellbookContainer && this.spellbookManager) {
-      this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
-    }
+    if (this.questManager) this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
+    if (this.spellbookContainer && this.spellbookManager) this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
 
     const logoEl = document.querySelector('.game-logo');
     if (logoEl) logoEl.textContent = GAME_TITLE;
@@ -192,10 +188,7 @@ export class UIManager {
     this.lvlTextEl.textContent = `Lv ${player.level} ${player.hero?.name || ''}`;
 
     this.updateSpellPanel(player);
-
-    if (this.tapasIndicatorEl) {
-      this.tapasIndicatorEl.style.display = player.tapasActive ? 'inline-block' : 'none';
-    }
+    if (this.tapasIndicatorEl) this.tapasIndicatorEl.style.display = player.tapasActive ? 'inline-block' : 'none';
 
     if (this.castCdRing) {
       const cd = player.spellSlot ? player.spellSlot.getCooldownProgress() : Math.max(0, (player.shootCooldown || 0) / (player.currentSpell?.cooldown || 1));
@@ -207,6 +200,7 @@ export class UIManager {
   showLevelUp(player, level) {
     if (player.spellSlot && (player.spellSlot.elements.length + this.pendingPicks) < 3) {
       this.pendingPicks++;
+      this.elementPicker.pendingPicks = this.pendingPicks;
       if (!this.elementPicker.active) this.openNextElementPick(player);
     } else {
       this.showPerkCards(level);
@@ -216,17 +210,19 @@ export class UIManager {
   openNextElementPick(player) {
     if (this.pendingPicks <= 0 || !player.spellSlot || player.spellSlot.elements.length >= 3) {
       this.pendingPicks = 0;
+      this.elementPicker.pendingPicks = 0;
       return;
     }
     this.elementPicker.show(player, (element) => {
       this.pendingPicks = Math.max(0, this.pendingPicks - 1);
+      this.elementPicker.pendingPicks = this.pendingPicks;
       player.spellSlot.addElement(element);
       player.setSpell(player.spellSlot.currentSpell.id);
       this.updateSpellPanel(player);
       if (this.spellbookManager) this.spellbookManager.recordSpellReached(player.currentSpell.id, this.meta);
       if (player.currentSpell.tier === 3 && this.questManager) this.questManager.record('reachT3', 1);
       if (this.pendingPicks > 0 && player.spellSlot.elements.length < 3) this.openNextElementPick(player);
-      else this.pendingPicks = 0;
+      else { this.pendingPicks = 0; this.elementPicker.pendingPicks = 0; }
     });
   }
 
@@ -235,8 +231,7 @@ export class UIManager {
   }
 
   showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null) {
-    this.elementPicker.hide();
-    this.pendingPicks = 0;
+    this.elementPicker.hide(); this.pendingPicks = 0;
     const results = this.meta.applyMatchResults(place);
     this.endModal.style.display = 'flex';
     const heroName = player?.hero?.name || 'Archmage', kills = player?.kills || 0;
@@ -246,10 +241,8 @@ export class UIManager {
     let statsEl = document.getElementById('match-hero-stats');
     if (!statsEl) { statsEl = document.createElement('div'); statsEl.id = 'match-hero-stats'; this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box')); }
     const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
-    const newAstraCount = spellbookSummary?.newSpells?.length || 0;
-    const newSpellHtml = newAstraCount ? `<div class="quest-done-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New astra unlocked! (${spellbookSummary.newSpells.join(', ')})</div>` : '';
-    const starCount = spellbookSummary?.starsEarned || 0;
-    const starHtml = starCount ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ Siddhi earned! (+${starCount})</div>` : '';
+    const newSpellHtml = spellbookSummary?.newSpells?.length ? `<div class="quest-done-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New astra unlocked! (${spellbookSummary.newSpells.join(', ')})</div>` : '';
+    const starHtml = spellbookSummary?.starsEarned ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ Siddhi earned! (+${spellbookSummary.starsEarned})</div>` : '';
     statsEl.innerHTML = `<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}${newSpellHtml}${starHtml}`;
     const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
     this.rewardTrophy.textContent = `${tSign} 🏆 (${results.newTrophies})`; this.rewardGold.textContent = `+${results.goldEarned} 🪙 (${results.newGold})`;
