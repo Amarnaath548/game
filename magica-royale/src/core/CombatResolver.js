@@ -146,7 +146,7 @@ export class CombatResolver {
     if (cfg.freezeDuration || cfg.stunDuration) target.applyChill(1.0, cfg.freezeDuration || cfg.stunDuration);
     else if (cfg.slowFactor) target.applyChill(cfg.slowFactor, cfg.slowDuration || 1.5);
     if (cfg.burnDuration) target.applyBurn(cfg.burnDps || 8, cfg.burnDuration);
-    if (cfg.id === 'VENOM') target.applyPoison(cfg.dps || 8, cfg.duration || 4.0);
+    if (cfg.id === 'VENOM' || cfg.id === 'F_W' || cfg.poison) target.applyPoison(cfg.dps || 10, cfg.duration || 3.5);
   }
 
   handleKill(killer, victim, sourceSpellId = null) {

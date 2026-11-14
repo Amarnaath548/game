@@ -41,7 +41,7 @@ export class ElementPicker {
 
     const header = document.createElement('div');
     header.style.cssText = 'color:#f8fafc;font-size:14px;font-weight:900;text-shadow:0 2px 4px #000;letter-spacing:1px;text-transform:uppercase;';
-    header.innerHTML = `EVOLVE SPELL &bull; <span id="picker-timer-text" style="color:#fbbf24;">5s</span>`;
+    header.innerHTML = `SANKALPA - CHOOSE YOUR ELEMENT &bull; <span id="picker-timer-text" style="color:#fbbf24;">5s</span>`;
     pickerWrapper.appendChild(header);
 
     const cardsRow = document.createElement('div');

@@ -11,34 +11,34 @@ export const RANKS = [
 export const STAVES = [
   {
     id: 'PYRO_STAFF',
-    name: 'Infernal Staff',
+    name: 'Agni Danda',
     elementBonus: 'F',
     cost: 0,
-    perkDesc: '+12% Damage for Fire spells',
+    perkDesc: '+12% Damage for Agni spells',
     colorHex: 0xff5500,
     robeColor: 0xd92638
   },
   {
     id: 'CRYO_STAFF',
-    name: 'Glacial Scepter',
+    name: 'Jala Danda',
     elementBonus: 'W',
     cost: 150,
-    perkDesc: '+12% Damage for Water spells',
+    perkDesc: '+12% Damage for Jala spells',
     colorHex: 0x00f2ff,
     robeColor: 0x0284c7
   },
   {
     id: 'ELECTRO_STAFF',
-    name: 'Storm Rod',
+    name: 'Prithvi Danda',
     elementBonus: 'E',
     cost: 300,
-    perkDesc: '+12% Damage for Earth spells',
-    colorHex: 0xffe600,
+    perkDesc: '+12% Damage for Prithvi spells',
+    colorHex: 0x8b5a2b,
     robeColor: 0xf59e0b
   },
   {
     id: 'VENOM_STAFF',
-    name: 'Vile Spire',
+    name: 'Naga Danda',
     cooldownReduction: 0.15,
     cost: 500,
     perkDesc: '-15% Spell Cooldown',
@@ -47,7 +47,7 @@ export const STAVES = [
   },
   {
     id: 'PIERCE_STAFF',
-    name: 'Prismatic Lance',
+    name: 'Vayu Danda',
     speedBonus: 0.10,
     cost: 400,
     perkDesc: '+10% Movement Speed',
@@ -56,7 +56,7 @@ export const STAVES = [
   },
   {
     id: 'BLAST_STAFF',
-    name: 'Solar Cannon',
+    name: 'Surya Danda',
     hpBonus: 60,
     cost: 550,
     perkDesc: '+60 Max HP',
@@ -65,7 +65,7 @@ export const STAVES = [
   },
   {
     id: 'HOMING_STAFF',
-    name: 'Aether Seeker',
+    name: 'Akasha Danda',
     pickupRadiusBonus: 3.0,
     cost: 700,
     perkDesc: '+3.0m Pickup Magnet Radius',
@@ -74,7 +74,7 @@ export const STAVES = [
   },
   {
     id: 'SHIELD_STAFF',
-    name: 'Aegis Staff',
+    name: 'Kavacha Danda',
     hpBonus: 40,
     cooldownReduction: 0.10,
     cost: 850,

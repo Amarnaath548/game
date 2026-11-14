@@ -2,7 +2,8 @@ export const SPELLS_T3 = {
   E_E_E: {
     id: 'E_E_E',
     tier: 3,
-    name: 'Stone Ram',
+    name: 'Airavata',
+    lore: 'Mighty celestial pachyderm charge that flattens adversaries',
     elements: ['E', 'E', 'E'],
     trajectory: 'SELF_DASH',
     color: 0x854d0e,
@@ -17,7 +18,8 @@ export const SPELLS_T3 = {
   F_F_F: {
     id: 'F_F_F',
     tier: 3,
-    name: 'Supernova',
+    name: 'Agneyastra',
+    lore: 'Invincible thermonuclear firestorm consuming everything nearby',
     elements: ['F', 'F', 'F'],
     trajectory: 'RADIAL',
     color: 0xff2200,
@@ -33,7 +35,8 @@ export const SPELLS_T3 = {
   W_W_W: {
     id: 'W_W_W',
     tier: 3,
-    name: 'Tsunami',
+    name: 'Varunastra',
+    lore: 'Vast tidal wall sweeping away all resistance',
     elements: ['W', 'W', 'W'],
     trajectory: 'WAVE',
     color: 0x0ea5e9,
@@ -51,7 +54,8 @@ export const SPELLS_T3 = {
   E_E_F: {
     id: 'E_E_F',
     tier: 3,
-    name: 'Eruption',
+    name: 'Lanka Dahan',
+    lore: 'Conflagration erupting from earth and scorching soil',
     elements: ['E', 'E', 'F'],
     trajectory: 'LOBBED',
     color: 0xca8a04,
@@ -67,7 +71,8 @@ export const SPELLS_T3 = {
   E_F_F: {
     id: 'E_F_F',
     tier: 3,
-    name: 'Cluster Bomb',
+    name: 'Shataghni',
+    lore: 'Centuple flame cannon scattering clusters of explosive munitions',
     elements: ['E', 'F', 'F'],
     trajectory: 'LOBBED',
     color: 0xf43f5e,
@@ -83,7 +88,8 @@ export const SPELLS_T3 = {
   E_E_W: {
     id: 'E_E_W',
     tier: 3,
-    name: 'Ice Crystal',
+    name: 'Nagapasha',
+    lore: 'Piercing serpentine frost binding targets in solid ice',
     elements: ['E', 'E', 'W'],
     trajectory: 'LINEAR',
     color: 0x7dd3fc,
@@ -100,7 +106,8 @@ export const SPELLS_T3 = {
   E_W_W: {
     id: 'E_W_W',
     tier: 3,
-    name: 'Avalanche',
+    name: 'Ganga Pravaha',
+    lore: 'Sacred cascading flood purging foes in freezing wake',
     elements: ['E', 'W', 'W'],
     trajectory: 'WAVE',
     color: 0xa5f3fc,
@@ -117,7 +124,8 @@ export const SPELLS_T3 = {
   F_F_W: {
     id: 'F_F_W',
     tier: 3,
-    name: 'Storm Front',
+    name: 'Meghanada',
+    lore: 'Roaring tempest cloud delivering relentless storm strikes',
     elements: ['F', 'F', 'W'],
     trajectory: 'LOBBED',
     color: 0xfacc15,
@@ -133,7 +141,8 @@ export const SPELLS_T3 = {
   F_W_W: {
     id: 'F_W_W',
     tier: 3,
-    name: 'Thunderbolt',
+    name: 'Vajra',
+    lore: 'Diamond thunderbolt descending to strike and chain foes',
     elements: ['F', 'W', 'W'],
     trajectory: 'INSTANT_STRIKE',
     color: 0xfef08a,
@@ -148,7 +157,8 @@ export const SPELLS_T3 = {
   E_F_W: {
     id: 'E_F_W',
     tier: 3,
-    name: 'Hurricane',
+    name: 'Samudra Manthan',
+    lore: 'Cosmic ocean churning vortex tossing all surrounding forces',
     elements: ['E', 'F', 'W'],
     trajectory: 'RADIAL',
     color: 0x99f6e4,

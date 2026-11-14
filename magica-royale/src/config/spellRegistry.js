@@ -7,15 +7,15 @@ export const ELEMENTS = {
 };
 
 export const ELEMENT_NAMES = {
-  E: 'Earth',
-  F: 'Fire',
-  W: 'Water'
+  E: 'Prithvi',
+  F: 'Agni',
+  W: 'Jala'
 };
 
 export const ELEMENT_COLORS = {
-  E: 0x8b5a2b,
-  F: 0xef4444,
-  W: 0x06b6d4
+  E: 0x8b5a2b, // gold-brown
+  F: 0xef4444, // orange-red
+  W: 0x06b6d4  // teal-blue
 };
 
 export const TRAJECTORY = {
@@ -31,7 +31,8 @@ export const TRAJECTORY = {
 
 export const FIST_SPELL = {
   id: 'fist',
-  name: 'Fist',
+  name: 'Mushti',
+  lore: 'Barehanded martial strike with innate spiritual force',
   tier: 0,
   elements: [],
   trajectory: TRAJECTORY.MELEE,
@@ -44,11 +45,12 @@ export const FIST_SPELL = {
 };
 
 export const SPELLS_T1_T2 = {
-  // Tier 1 (1 Element)
+  // Tier 1 (1 Element) - Mantra
   E: {
     id: 'E',
     tier: 1,
-    name: 'Lump of Dirt',
+    name: 'Shila Bana',
+    lore: 'Hardened earthen projectile hurled with piercing momentum',
     elements: ['E'],
     trajectory: 'LINEAR',
     color: 0x8b5a2b,
@@ -62,7 +64,8 @@ export const SPELLS_T1_T2 = {
   F: {
     id: 'F',
     tier: 1,
-    name: 'Fire Ball',
+    name: 'Agni Bana',
+    lore: 'Blazing arrow of consecrated fire that incinerates targets',
     elements: ['F'],
     trajectory: 'LINEAR',
     color: 0xff5500,
@@ -78,7 +81,8 @@ export const SPELLS_T1_T2 = {
   W: {
     id: 'W',
     tier: 1,
-    name: 'Blob of Water',
+    name: 'Jala Bana',
+    lore: 'Swift torrent dart that slows foes and revitalizes',
     elements: ['W'],
     trajectory: 'LINEAR',
     color: 0x06b6d4,
@@ -92,11 +96,12 @@ export const SPELLS_T1_T2 = {
     cooldown: 0.6
   },
 
-  // Tier 2 (2 Elements)
+  // Tier 2 (2 Elements) - Shastra
   E_E: {
     id: 'E_E',
     tier: 2,
-    name: 'Boulder',
+    name: 'Gada',
+    lore: 'Heavy primordial mace crushing enemies with thunderous impact',
     elements: ['E', 'E'],
     trajectory: 'LINEAR',
     color: 0x785535,
@@ -111,7 +116,8 @@ export const SPELLS_T1_T2 = {
   F_F: {
     id: 'F_F',
     tier: 2,
-    name: 'Explosive Salvo',
+    name: 'Agni Varsha',
+    lore: 'Scattering shower of burning sparks engulfing the battlefield',
     elements: ['F', 'F'],
     trajectory: 'SPREAD',
     color: 0xf97316,
@@ -129,7 +135,8 @@ export const SPELLS_T1_T2 = {
   W_W: {
     id: 'W_W',
     tier: 2,
-    name: 'Spray',
+    name: 'Jala Dhara',
+    lore: 'Continuous cascade of pressurized water restoring vitality',
     elements: ['W', 'W'],
     trajectory: 'SPREAD',
     color: 0x0284c7,
@@ -147,7 +154,8 @@ export const SPELLS_T1_T2 = {
   E_F: {
     id: 'E_F',
     tier: 2,
-    name: 'Meteor',
+    name: 'Dronagiri',
+    lore: 'Cataclysmic molten peak lobbed from high above',
     elements: ['E', 'F'],
     trajectory: 'LOBBED',
     color: 0xd946ef,
@@ -164,7 +172,8 @@ export const SPELLS_T1_T2 = {
   E_W: {
     id: 'E_W',
     tier: 2,
-    name: 'Ice Lance',
+    name: 'Varuna Pasha',
+    lore: 'Ensnaring aquatic noose piercing and slowing all victims',
     elements: ['E', 'W'],
     trajectory: 'LINEAR',
     color: 0x38bdf8,
@@ -180,17 +189,19 @@ export const SPELLS_T1_T2 = {
   F_W: {
     id: 'F_W',
     tier: 2,
-    name: 'Lightning Ball',
+    name: 'Halahala',
+    lore: 'Lethal cosmic venom blanketing ground in caustic fumes',
     elements: ['F', 'W'],
-    trajectory: 'LINEAR',
-    color: 0xffe600,
-    damage: 48,
-    speed: 38,
-    range: 26,
-    radius: 0.5,
-    chainTargets: 2,
-    chainRange: 6.5,
-    cooldown: 0.75
+    trajectory: 'LOBBED',
+    color: 0x10b981,
+    damage: 30,
+    speed: 22,
+    range: 24,
+    radius: 0.6,
+    aoeRadius: 1.8,
+    lobArcHeight: 3.8,
+    hazardZone: { dps: 14, duration: 3.5, radius: 2.6, poison: true },
+    cooldown: 1.5
   }
 };
 

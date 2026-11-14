@@ -10,6 +10,7 @@ export class SpellbookView {
     if (!this.container) return;
     this.container.innerHTML = '';
     const tiers = this.spellbook.getAllSpellsByTier();
+    const tierLabels = { 1: 'MANTRA', 2: 'SHASTRA', 3: 'ASTRA' };
     const icons = { E: '🪨', F: '🔥', W: '💧' };
 
     [1, 2, 3].forEach((tierNum) => {
@@ -20,7 +21,7 @@ export class SpellbookView {
 
       const heading = document.createElement('div');
       heading.style.cssText = 'font-size:13px;font-weight:900;color:#38bdf8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px;';
-      heading.innerHTML = `<span>TIER ${tierNum}</span> <span style="font-size:11px;color:#94a3b8;font-weight:700;">(${tierSpells.length} Spells)</span>`;
+      heading.innerHTML = `<span>${tierLabels[tierNum]} (TIER ${tierNum})</span> <span style="font-size:11px;color:#94a3b8;font-weight:700;">(${tierSpells.length} Spells)</span>`;
       section.appendChild(heading);
 
       const grid = document.createElement('div');
@@ -55,12 +56,14 @@ export class SpellbookView {
           const nextMs = this.spellbook.getNextMilestone(entry.kills);
           const progressText = nextMs ? `${entry.kills} / ${nextMs} kills` : `${entry.kills} kills (MAX)`;
           const dmgBonus = starCount * 5;
+          const loreHtml = spell.lore ? `<div style="font-size:9px;color:#94a3b8;font-style:italic;line-height:1.2;margin:1px 0;">${spell.lore}</div>` : '';
 
           card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <span style="font-size:12px;font-weight:900;color:#fff;">${spell.name}</span>
-              <span style="font-size:11px;font-weight:800;color:#fbbf24;">${starsStr}</span>
+              <span style="font-size:11px;font-weight:800;color:#fbbf24;" title="${starCount} Siddhi">${starsStr}</span>
             </div>
+            ${loreHtml}
             <div style="display:flex;gap:3px;margin:1px 0;">${chipsHtml}</div>
             <div style="display:flex;justify-content:space-between;font-size:10px;color:#cbd5e1;font-weight:700;">
               <span style="color:#10b981;">+${dmgBonus}% DMG</span>

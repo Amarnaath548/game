@@ -1,4 +1,4 @@
-import { LEVEL_TABLE } from '../config/constants.js';
+import { LEVEL_TABLE, GAME_TITLE } from '../config/constants.js';
 import { STAVES, UPGRADES } from '../core/MetaProgression.js';
 import { HeroSelectView } from './HeroSelectView.js';
 import { QuestView } from './QuestView.js';
@@ -44,6 +44,10 @@ export class UIManager {
       this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
     }
 
+    const logoEl = document.querySelector('.game-logo');
+    if (logoEl) logoEl.textContent = GAME_TITLE;
+    document.title = GAME_TITLE;
+
     this.initLobbyEvents();
     this.initSpellPanel();
     this.initCastButton();
@@ -84,7 +88,7 @@ export class UIManager {
   initSpellPanel() {
     const bar = document.getElementById('spell-bar');
     if (!bar) return;
-    bar.innerHTML = `<div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(15,23,42,0.92);border:2px solid #3b4262;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Fire Ball</span><span id="spell-tier-label" style="font-size:10px;font-weight:800;background:#334155;color:#38bdf8;padding:1px 6px;border-radius:999px;">Tier 1</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
+    bar.innerHTML = `<div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(15,23,42,0.92);border:2px solid #3b4262;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Agni Bana</span><span id="spell-tier-label" style="font-size:10px;font-weight:800;background:#334155;color:#38bdf8;padding:1px 6px;border-radius:999px;">Mantra</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
     this.spellNameEl = document.getElementById('spell-name-label');
     this.spellTierEl = document.getElementById('spell-tier-label');
     this.spellChipsEl = document.getElementById('spell-chips-box');
@@ -153,8 +157,9 @@ export class UIManager {
     if (!this.spellNameEl) return;
     const spell = player.currentSpell;
     const elements = player.spellSlot ? player.spellSlot.elements : (spell.elements || []);
-    this.spellNameEl.textContent = spell.name || (spell.id === 'fist' ? 'Fist' : 'Fire Ball');
-    this.spellTierEl.textContent = spell.id === 'fist' ? 'Tier 0' : `Tier ${spell.tier || 1}`;
+    const tierNames = { 0: 'Mushti', 1: 'Mantra', 2: 'Shastra', 3: 'Astra' };
+    this.spellNameEl.textContent = spell.name || (spell.id === 'fist' ? 'Mushti' : 'Agni Bana');
+    this.spellTierEl.textContent = tierNames[spell.tier] || (spell.id === 'fist' ? 'Mushti' : `Tier ${spell.tier || 1}`);
     this.spellTierEl.style.color = `#${(spell.color || 0x38bdf8).toString(16).padStart(6, '0')}`;
 
     if (!elements || elements.length === 0) {
@@ -236,8 +241,10 @@ export class UIManager {
     let statsEl = document.getElementById('match-hero-stats');
     if (!statsEl) { statsEl = document.createElement('div'); statsEl.id = 'match-hero-stats'; this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box')); }
     const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
-    const newSpellHtml = spellbookSummary?.newSpells?.length ? `<div class="quest-done-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New spell: ${spellbookSummary.newSpells.join(', ')}!</div>` : '';
-    const starHtml = spellbookSummary?.starsEarned ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ ${spellbookSummary.starsEarned} Star${spellbookSummary.starsEarned > 1 ? 's' : ''}!</div>` : '';
+    const newAstraCount = spellbookSummary?.newSpells?.length || 0;
+    const newSpellHtml = newAstraCount ? `<div class="quest-done-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New astra unlocked! (${spellbookSummary.newSpells.join(', ')})</div>` : '';
+    const starCount = spellbookSummary?.starsEarned || 0;
+    const starHtml = starCount ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ Siddhi earned! (+${starCount})</div>` : '';
     statsEl.innerHTML = `<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}${newSpellHtml}${starHtml}`;
     const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
     this.rewardTrophy.textContent = `${tSign} 🏆 (${results.newTrophies})`; this.rewardGold.textContent = `+${results.goldEarned} 🪙 (${results.newGold})`;

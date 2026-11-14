@@ -32,7 +32,7 @@ export class SpellEffects {
       this.waves.push({ mesh, mat, active: false, x: 0, z: 0, dirX: 0, dirZ: 1, angle: 0, speed: 20, distanceTraveled: 0, maxRange: 24, width: 8, depth: 2, config: null, owner: null, hitTargets: new Set() });
     }
 
-    // 3. Pooled Hazard Zones (Eruption, Storm Front)
+    // 3. Pooled Hazard Zones (Eruption, Storm Front, Halahala)
     this.maxHazards = 6;
     this.hazards = [];
     const hazGeo = new THREE.RingGeometry(0.05, 1.0, 32);
@@ -43,7 +43,7 @@ export class SpellEffects {
       mesh.position.y = 0.03;
       mesh.visible = false;
       this.scene.add(mesh);
-      this.hazards.push({ mesh, mat, active: false, x: 0, z: 0, radius: 5, dps: 20, duration: 3.5, elapsed: 0, config: null, owner: null, tickTimer: 0 });
+      this.hazards.push({ mesh, mat, active: false, x: 0, z: 0, radius: 5, dps: 20, duration: 3.5, elapsed: 0, config: null, owner: null, tickTimer: 0, isPoison: false });
     }
 
     // 4. Pooled Lightning Beams (Thunderbolt)
@@ -118,6 +118,7 @@ export class SpellEffects {
     hz.tickTimer = 0;
     hz.config = config;
     hz.owner = owner;
+    hz.isPoison = !!(config.hazardZone?.poison || config.id === 'F_W');
     hz.mat.color.setHex(config.color || 0xca8a04);
     hz.mesh.position.set(x, 0.03, z);
     hz.mesh.scale.set(hz.radius, 1, hz.radius);
@@ -197,6 +198,7 @@ export class SpellEffects {
         targets.forEach((t) => {
           if (t.isDead || t === hz.owner) return;
           if (Math.hypot(t.x - hz.x, t.z - hz.z) <= hz.radius) {
+            if (hz.isPoison && t.applyPoison) t.applyPoison(hz.dps, 1.5);
             if (onHitCallback) onHitCallback(t, { ...hz.config, damage: tickDmg, isDoT: true }, hz.owner, hz.x, hz.z);
           }
         });

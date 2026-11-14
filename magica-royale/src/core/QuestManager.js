@@ -49,7 +49,7 @@ function generateDailyQuests(dateStr) {
     },
     () => {
       const target = Math.floor(rng() * 3) + 1;
-      return { type: 'reachT3', text: `Reach a Tier 3 spell ${target} time${target > 1 ? 's' : ''}`, target, goldReward: 40 + target * 20 };
+      return { type: 'reachT3', text: `Reach an Astra ${target} time${target > 1 ? 's' : ''}`, target, goldReward: 40 + target * 20 };
     }
   ];
 

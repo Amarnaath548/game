@@ -1,3 +1,5 @@
+export const GAME_TITLE = 'Magica Royale';
+
 export const COLORS = {
   BG_VOID: 0x0d0e15,
   FLOOR_SLATE: 0x1a1c29,
