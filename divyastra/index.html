@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Divyastra</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="stylesheet" href="./src/style.css" />
+  <link rel="stylesheet" href="./src/hud.css" />
+</head>
+<body>
+  <!-- LOBBY SCREEN -->
+  <div id="lobby-screen">
+    <div class="lobby-header">
+      <div class="game-logo">DIVYASTRA</div>
+      <div class="header-right">
+        <button id="zoom-toggle-btn" class="fs-btn" style="width:auto;padding:0 8px;font-size:11px;font-weight:700;" title="View: Close / Normal">View: Close / Normal</button>
+        <button id="fullscreen-btn" class="fs-btn" title="Toggle Fullscreen">⛶</button>
+        <button id="mute-btn" class="fs-btn" title="Toggle Sound">🔊</button>
+        <div class="currency-display">
+          <div class="cur-pill">🏆 <span id="lobby-trophies" class="trophy-val">0</span> Trophies</div>
+          <div class="cur-pill">🪙 <span id="lobby-gold" class="gold-val">100</span> Gold</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOBBY TABS -->
+    <div class="lobby-tabs">
+      <button class="lobby-tab-btn active" data-tab="heroes">HEROES</button>
+      <button class="lobby-tab-btn" data-tab="spellbook">GRANTH</button>
+      <button class="lobby-tab-btn" data-tab="staves">STAVES</button>
+      <button class="lobby-tab-btn" data-tab="upgrades">UPGRADES</button>
+      <button class="lobby-tab-btn" data-tab="quests" id="quests-tab-btn">QUESTS<span id="quests-badge" class="tab-badge"></span></button>
+    </div>
+
+    <!-- TAB PANELS -->
+    <div class="lobby-tab-content">
+      <div id="tab-heroes" class="tab-panel active">
+        <div id="heroes-container" class="heroes-grid"></div>
+      </div>
+      <div id="tab-spellbook" class="tab-panel">
+        <div id="spellbook-container" class="spellbook-list" style="overflow-y: auto; max-height: 100%; padding: 4px 6px;"></div>
+      </div>
+      <div id="tab-staves" class="tab-panel">
+        <div id="staves-container" class="staves-grid"></div>
+      </div>
+      <div id="tab-upgrades" class="tab-panel">
+        <div id="upgrades-container" class="upgrade-list"></div>
+      </div>
+      <div id="tab-quests" class="tab-panel">
+        <div id="quests-container" class="quests-list"></div>
+      </div>
+    </div>
+
+    <!-- PINNED LOBBY FOOTER -->
+    <div class="lobby-footer">
+      <div class="rank-info">
+        <span class="rank-label">CURRENT RANK</span>
+        <span id="lobby-rank-title" class="rank-title" style="color: #94a3b8;">Apprentice Mage</span>
+        <span id="lobby-arena-label" class="arena-label">ARENA: Grass Plains</span>
+      </div>
+      <button id="play-match-btn">ENTER ARENA</button>
+    </div>
+  </div>
+
+  <!-- IN-GAME HUD -->
+  <div id="hud">
+    <!-- TOP-LEFT LEADERBOARD -->
+    <div id="leaderboard">
+      <div class="leaderboard-header">
+        <span class="leaderboard-title">👑 LEADERS</span>
+        <span class="leaderboard-alive">👥 <span id="alive-count">12</span></span>
+      </div>
+      <div id="leaderboard-rows" class="leaderboard-rows"></div>
+    </div>
+
+    <!-- TOP-RIGHT CHUNKY COUNTERS -->
+    <div id="top-right-hud">
+      <div class="top-counters">
+        <div class="top-counter-pill" id="counter-gems">
+          <span class="counter-icon">💎</span>
+          <span id="match-gems-count" class="counter-num">0</span>
+        </div>
+        <div class="top-counter-pill" id="counter-kills">
+          <span class="counter-icon">💀</span>
+          <span id="match-kills-count" class="counter-num">0</span>
+        </div>
+      </div>
+      <div class="top-subrow">
+        <div class="badge badge-zone" id="zone-badge">ZONE: <span id="zone-status">Safe</span></div>
+        <button id="hud-mute-btn" class="fs-btn hud-mute-btn" title="Toggle Sound">🔊</button>
+      </div>
+    </div>
+
+    <!-- PRESERVED HIDDEN TOP-BAR FALLBACK -->
+    <div id="top-bar" style="display:none;"></div>
+
+    <!-- BOTTOM-LEFT KILL FEED -->
+    <div id="kill-feed"></div>
+
+    <!-- BOTTOM-CENTER PLAYER STATUS (CHUNKY BARS) -->
+    <div id="player-status">
+      <div class="status-labels">
+        <span id="player-lvl-text">Lv 1 Pyromancer</span>
+        <span id="player-hp-text">300 / 300</span>
+      </div>
+      <div class="bar-container">
+        <div id="hp-fill"></div>
+      </div>
+      <div class="bar-container bar-xp">
+        <div id="xp-fill"></div>
+        <span class="xp-bar-label">XP</span>
+      </div>
+    </div>
+
+    <!-- BOTTOM-CENTER SPELL STATUS PANEL -->
+    <div id="spell-bar"></div>
+
+    <!-- BOTTOM-RIGHT ROUND SPELL INDICATOR (64px) -->
+    <div id="spell-indicator">
+      <div id="spell-ind-cd" class="spell-ind-cd">
+        <div id="spell-ind-orb" class="spell-ind-orb">
+          <span id="spell-ind-icon">✨</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="perk-overlay"></div>
+
+    <div id="left-zone" class="touch-zone"></div>
+    <div id="right-zone" class="touch-zone"></div>
+
+    <div id="left-base" class="joystick-base">
+      <div id="left-knob" class="joystick-knob"></div>
+    </div>
+    <div id="right-base" class="joystick-base">
+      <div id="right-knob" class="joystick-knob"></div>
+    </div>
+
+    <div id="dash-btn">DASH</div>
+  </div>
+
+  <!-- MATCH END MODAL -->
+  <div id="end-modal">
+    <div id="end-title">#1 VICTORY ROYALE</div>
+    <div id="end-subtitle">You are the last Archmage standing!</div>
+
+    <div class="match-rewards-box">
+      <div id="reward-trophy" class="reward-pill trophy-val">+30 Trophies</div>
+      <div id="reward-gold" class="reward-pill gold-val">+150 Gold</div>
+    </div>
+
+    <div class="modal-actions">
+      <button id="modal-lobby-btn" class="modal-btn">Return to Lobby</button>
+      <button id="modal-play-again-btn" class="modal-btn">Play Again</button>
+    </div>
+  </div>
+
+  <!-- DEBUG & ROTATE OVERLAYS -->
+  <div id="debug-overlay"></div>
+  <div id="rotate-device-overlay">
+    <div class="rotate-card">
+      <div class="rotate-icon">📱 ↷</div>
+      <div class="rotate-title">Rotate Your Phone</div>
+      <div class="rotate-sub">Divyastra plays in landscape mode</div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
