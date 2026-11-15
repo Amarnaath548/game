@@ -111,7 +111,6 @@ export class CombatResolver {
       p.spawn(x, z, Math.sin(angle), Math.cos(angle), { id: cfg.id || 'E_F_F', color: cfg.color || 0xf43f5e, damage: Math.round((cfg.damage || 50) * 0.45), speed: 18, range: 4.5 + Math.random() * 2.0, radius: 0.35, aoeRadius: 2.2, lobArcHeight: 1.8, burnDuration: 1.5, burnDps: 6, elements: cfg.elements }, owner);
     }
   }
-  }
 
   applySpellHit(target, cfg, owner, hitX, hitZ, dirX = null, dirZ = null) {
     let dmg = cfg.damage;
