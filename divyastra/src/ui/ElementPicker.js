@@ -22,7 +22,15 @@ export class ElementPicker {
     });
   }
 
+  clearDelay() {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+  }
+
   show(player, onPick) {
+    this.clearDelay();
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;
@@ -97,6 +105,7 @@ export class ElementPicker {
     if (!this.active) return;
     this.active = false;
     if (this.interval) { clearInterval(this.interval); this.interval = null; }
+    this.clearDelay();
     this.container.style.display = 'none';
     this.container.innerHTML = '';
     const cb = this.onPickCallback;
@@ -108,8 +117,13 @@ export class ElementPicker {
     this.active = false;
     this.pendingPicks = 0;
     if (this.interval) { clearInterval(this.interval); this.interval = null; }
+    this.clearDelay();
     this.onPickCallback = null;
     this.container.style.display = 'none';
     this.container.innerHTML = '';
+  }
+
+  reset() {
+    this.hide();
   }
 }

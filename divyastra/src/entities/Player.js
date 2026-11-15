@@ -131,17 +131,15 @@ export class Player extends Actor {
 
   addXP(amount, onLevelUp) {
     this.xp += amount;
-    while (true) {
-      const nextConfig = LEVEL_TABLE.find((lvl) => lvl.level === this.level + 1);
-      if (nextConfig && this.xp >= nextConfig.xpReq) {
-        this.level += 1;
-        this.maxHp += nextConfig.hpBonus;
-        this.hp = Math.min(this.maxHp, this.hp + nextConfig.hpBonus);
-        this.dmgBonus += nextConfig.dmgBonus;
-        if (onLevelUp) onLevelUp(this.level, nextConfig.rewardType);
-      } else {
-        break;
-      }
+    const nextConfig = LEVEL_TABLE.find((lvl) => lvl.level === this.level + 1);
+    if (nextConfig && this.xp >= nextConfig.xpReq) {
+      this.level += 1;
+      this.maxHp += nextConfig.hpBonus;
+      this.hp = Math.min(this.maxHp, this.hp + nextConfig.hpBonus);
+      this.dmgBonus += nextConfig.dmgBonus;
+      if (onLevelUp) onLevelUp(this.level, nextConfig.rewardType);
+      const afterConfig = LEVEL_TABLE.find((lvl) => lvl.level === this.level + 1);
+      if (afterConfig && this.xp >= afterConfig.xpReq) this.xp = afterConfig.xpReq - 1;
     }
   }
 

@@ -13,30 +13,19 @@ import { SpellIndicator } from './SpellIndicator.js';
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
     this.meta = metaProgression;
-    this.questManager = callbacks.questManager; this.spellbookManager = callbacks.spellbookManager;
-    this.sceneManager = callbacks.sceneManager; this.banners = callbacks.banners;
-    this.onHeroChange = callbacks.onHeroChange; this.onPerkSelected = callbacks.onPerkSelected;
-    this.onStartMatch = callbacks.onStartMatch; this.onReturnToLobby = callbacks.onReturnToLobby;
+    this.questManager = callbacks.questManager; this.spellbookManager = callbacks.spellbookManager; this.sceneManager = callbacks.sceneManager; this.banners = callbacks.banners;
+    this.onHeroChange = callbacks.onHeroChange; this.onPerkSelected = callbacks.onPerkSelected; this.onStartMatch = callbacks.onStartMatch; this.onReturnToLobby = callbacks.onReturnToLobby;
     this.onCastRequested = callbacks.onCastRequested; this.onElementPicked = callbacks.onElementPicked;
 
     const get = (id) => document.getElementById(id);
-    this.lobbyScreen = get('lobby-screen'); this.lobbyTrophies = get('lobby-trophies'); this.lobbyGold = get('lobby-gold');
-    this.lobbyRankTitle = get('lobby-rank-title'); this.lobbyArenaLabel = get('lobby-arena-label');
-    this.stavesContainer = get('staves-container'); this.upgradesContainer = get('upgrades-container');
-    this.heroesContainer = get('heroes-container'); this.questsContainer = get('quests-container');
-    this.spellbookContainer = get('spellbook-container'); this.questsBadgeEl = get('quests-badge');
-    this.playMatchBtn = get('play-match-btn'); this.hud = get('hud');
-    this.aliveCountEl = get('alive-count'); this.zoneStatusEl = get('zone-status');
-    this.hpFillEl = get('hp-fill'); this.xpFillEl = get('xp-fill');
-    this.lvlTextEl = get('player-lvl-text'); this.hpTextEl = get('player-hp-text');
-    this.perkOverlay = get('perk-overlay'); this.endModal = get('end-modal');
-    this.endTitle = get('end-title'); this.endSubtitle = get('end-subtitle'); this.rewardTrophy = get('reward-trophy');
-    this.rewardGold = get('reward-gold'); this.modalLobbyBtn = get('modal-lobby-btn'); this.modalPlayAgainBtn = get('modal-play-again-btn');
+    this.lobbyScreen = get('lobby-screen'); this.lobbyTrophies = get('lobby-trophies'); this.lobbyGold = get('lobby-gold'); this.lobbyRankTitle = get('lobby-rank-title'); this.lobbyArenaLabel = get('lobby-arena-label');
+    this.stavesContainer = get('staves-container'); this.upgradesContainer = get('upgrades-container'); this.heroesContainer = get('heroes-container'); this.questsContainer = get('quests-container');
+    this.spellbookContainer = get('spellbook-container'); this.questsBadgeEl = get('quests-badge'); this.playMatchBtn = get('play-match-btn'); this.hud = get('hud');
+    this.aliveCountEl = get('alive-count'); this.zoneStatusEl = get('zone-status'); this.hpFillEl = get('hp-fill'); this.xpFillEl = get('xp-fill'); this.lvlTextEl = get('player-lvl-text'); this.hpTextEl = get('player-hp-text');
+    this.perkOverlay = get('perk-overlay'); this.endModal = get('end-modal'); this.endTitle = get('end-title'); this.endSubtitle = get('end-subtitle'); this.rewardTrophy = get('reward-trophy'); this.rewardGold = get('reward-gold'); this.modalLobbyBtn = get('modal-lobby-btn'); this.modalPlayAgainBtn = get('modal-play-again-btn');
 
-    this.elementPicker = new ElementPicker(this.perkOverlay);
-    this.pendingPicks = 0;
-    this.leaderboard = new Leaderboard(get('leaderboard'));
-    this.topRightHUD = new TopRightHUD(get('top-right-hud'));
+    this.elementPicker = new ElementPicker(this.perkOverlay); this.pendingPicks = 0;
+    this.leaderboard = new Leaderboard(get('leaderboard')); this.topRightHUD = new TopRightHUD(get('top-right-hud'));
     this.spellIndicator = new SpellIndicator(get('spell-indicator'));
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange?.(h));
     if (this.questManager) this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
@@ -46,11 +35,7 @@ export class UIManager {
     if (logoEl) logoEl.textContent = GAME_TITLE;
     document.title = GAME_TITLE;
 
-    this.initLobbyEvents();
-    this.initSpellPanel();
-    this.initCastButton();
-    this.initKeyboardShortcuts();
-    this.renderLobby();
+    this.initLobbyEvents(); this.initSpellPanel(); this.initCastButton(); this.initKeyboardShortcuts(); this.renderLobby();
   }
 
   initLobbyEvents() {
@@ -202,7 +187,7 @@ export class UIManager {
     if (this.banners) this.banners.showLevelUp(level);
     if (player.spellSlot && (player.spellSlot.elements.length + this.pendingPicks) < 3) {
       this.pendingPicks++; this.elementPicker.pendingPicks = this.pendingPicks;
-      if (!this.elementPicker.active) this.openNextElementPick(player);
+      if (!this.elementPicker.active && !this.elementPicker.timer) this.openNextElementPick(player);
     } else { this.showPerkCards(level); }
   }
 
@@ -221,9 +206,24 @@ export class UIManager {
       this.updateSpellPanel(player);
       if (this.spellbookManager) this.spellbookManager.recordSpellReached(player.currentSpell.id, this.meta);
       if (player.currentSpell.tier === 3 && this.questManager) this.questManager.record('reachT3', 1);
-      if (this.pendingPicks > 0 && player.spellSlot.elements.length < 3) this.openNextElementPick(player);
-      else { this.pendingPicks = 0; this.elementPicker.pendingPicks = 0; }
+      if (this.pendingPicks > 0 && player.spellSlot.elements.length < 3) {
+        this.elementPicker.clearDelay();
+        this.elementPicker.timer = setTimeout(() => {
+          this.elementPicker.timer = null;
+          if (this.pendingPicks > 0 && player.spellSlot?.elements.length < 3) {
+            this.openNextElementPick(player);
+          }
+        }, 1500);
+      } else {
+        this.pendingPicks = 0;
+        this.elementPicker.pendingPicks = 0;
+      }
     });
+  }
+
+  reset() {
+    this.elementPicker?.hide();
+    this.pendingPicks = 0;
   }
 
   showPerkCards() {
@@ -232,12 +232,10 @@ export class UIManager {
 
   showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null) {
     this.elementPicker.hide(); this.pendingPicks = 0;
-    const results = this.meta.applyMatchResults(place);
-    this.endModal.style.display = 'flex';
+    const results = this.meta.applyMatchResults(place); this.endModal.style.display = 'flex';
     const heroName = player?.hero?.name || 'Archmage', kills = player?.kills || 0;
     this.endTitle.innerHTML = isVictory ? `<span class="title-win">#1 VICTORY ROYALE!</span>` : `<span class="title-loss">DEFEAT - #${place} of 12</span>`;
     this.endSubtitle.textContent = isVictory ? `Glory to ${heroName}! Sanctum Champion.` : `${heroName} eliminated at rank #${place}.`;
-
     let statsEl = document.getElementById('match-hero-stats');
     if (!statsEl) { statsEl = document.createElement('div'); statsEl.id = 'match-hero-stats'; this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box')); }
     const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';

@@ -111,17 +111,19 @@ export const PLAYER_BASE = {
 };
 
 export const AIM_ASSIST = true;
+export const KILL_XP = 35;
+export const KILL_GEM_DROP = 3;
 
-// Lv2 (25 XP = 1 gem) tunes first level-up to 20-30s; Lv3 (75 XP = 3 gems/1 chest) yields first element evolution in the first min.
+// Target pacing: first pick ~20s, second ~60-90s, third ~3-4 min.
 export const LEVEL_TABLE = [
   { level: 1, xpReq: 0, hpBonus: 0, dmgBonus: 0, rewardType: 'START' },
   { level: 2, xpReq: 25, hpBonus: 40, dmgBonus: 5, rewardType: 'ELEMENT' },
-  { level: 3, xpReq: 75, hpBonus: 40, dmgBonus: 5, rewardType: 'ELEMENT' },
-  { level: 4, xpReq: 220, hpBonus: 50, dmgBonus: 8, rewardType: 'ELEMENT' },
-  { level: 5, xpReq: 350, hpBonus: 60, dmgBonus: 10, rewardType: 'MASTERY' },
-  { level: 6, xpReq: 550, hpBonus: 80, dmgBonus: 12, rewardType: 'STAT_BOOST' },
-  { level: 7, xpReq: 750, hpBonus: 80, dmgBonus: 12, rewardType: 'STAT_BOOST' },
-  { level: 8, xpReq: 950, hpBonus: 80, dmgBonus: 12, rewardType: 'STAT_BOOST' }
+  { level: 3, xpReq: 120, hpBonus: 40, dmgBonus: 5, rewardType: 'ELEMENT' },
+  { level: 4, xpReq: 280, hpBonus: 50, dmgBonus: 8, rewardType: 'ELEMENT' },
+  { level: 5, xpReq: 480, hpBonus: 60, dmgBonus: 10, rewardType: 'MASTERY' },
+  { level: 6, xpReq: 730, hpBonus: 80, dmgBonus: 12, rewardType: 'STAT_BOOST' },
+  { level: 7, xpReq: 1030, hpBonus: 80, dmgBonus: 12, rewardType: 'STAT_BOOST' },
+  { level: 8, xpReq: 1380, hpBonus: 80, dmgBonus: 12, rewardType: 'STAT_BOOST' }
 ];
 
 export const TAPAS_DELAY = 1.2;

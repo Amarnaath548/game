@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { CollisionSystem } from '../systems/CollisionSystem.js';
-import { SpellEffects } from '../systems/SpellEffects.js';
+import { KILL_XP, KILL_GEM_DROP } from '../config/constants.js';
+import { CollisionSystem } from '../systems/CollisionSystem.js'; import { SpellEffects } from '../systems/SpellEffects.js';
 import { HitFeedback } from '../systems/HitFeedback.js';
 
 export class CombatResolver {
@@ -153,12 +153,12 @@ export class CombatResolver {
     if (Math.hypot(victim.x - this.player.x, victim.z - this.player.z) <= 30) {
       this.particleSys.spawnBurst(victim.x, 0.8, victim.z, victim.hero?.bodyColor || 0xff0055, 14, 6, 1.2, victim.currentSpell?.elements || null);
     }
-    this.spawnManager.dropLoot(victim.x, victim.z, 5, 0.6);
+    this.spawnManager.dropLoot(victim.x, victim.z, KILL_GEM_DROP, 0.6);
     if (!killer) return;
     killer.kills = (killer.kills || 0) + 1;
     if (killer.isPlayer && this.questManager) this.questManager.record('kill', 1);
     if (killer.isPlayer && this.spellbookManager && sourceSpellId) this.spellbookManager.recordKill(sourceSpellId, this.meta);
-    if (killer.addXP) killer.addXP(60);
+    if (killer.addXP) killer.addXP(KILL_XP);
     const kName = killer.isPlayer ? 'Player' : (killer.name || 'Bot'), vName = victim.isPlayer ? 'Player' : (victim.name || 'Bot');
     this.killFeed.addKill(kName, vName, killer.isPlayer, victim.isPlayer);
     this.banners.onKill(kName, killer.isPlayer);
