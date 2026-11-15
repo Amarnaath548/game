@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { COLORS, ARENA, CAMERA_CONFIG, BIOMES, QUALITY } from '../config/constants.js';
+import { CameraZoom } from './CameraZoom.js';
 
 export class SceneManager {
   constructor() {
@@ -16,10 +17,8 @@ export class SceneManager {
     this.cameraTarget = new THREE.Vector3();
     this.cameraDesiredPos = new THREE.Vector3();
     this.cameraLookPos = new THREE.Vector3();
-    this.hitShakeTimer = 0;
-    this.hitShakeDuration = 0.15;
-    this.hitShakeAmp = 0.12;
-    this.trauma = 0;
+    this.hitShakeTimer = 0; this.hitShakeDuration = 0.15; this.hitShakeAmp = 0.12; this.trauma = 0;
+    this.zoom = new CameraZoom();
     this.obelisks = [];
     this.obeliskMeshes = [];
     this.biomeHistory = this.loadBiomeHistory();
@@ -221,10 +220,11 @@ export class SceneManager {
       this.hitShakeTimer = Math.max(0, this.hitShakeTimer - dt);
     }
 
+    const zoomMult = this.zoom.update();
     const pitchBias = CAMERA_CONFIG.PITCH_BIAS || 1.0;
     const desiredX = playerPos.x + lookAheadX + shakeX;
-    const desiredY = CAMERA_CONFIG.OFFSET_Y * pitchBias;
-    const desiredZ = playerPos.z + (CAMERA_CONFIG.OFFSET_Z * pitchBias) + lookAheadZ + shakeZ;
+    const desiredY = CAMERA_CONFIG.OFFSET_Y * pitchBias * zoomMult;
+    const desiredZ = playerPos.z + (CAMERA_CONFIG.OFFSET_Z * pitchBias * zoomMult) + lookAheadZ + shakeZ;
 
     this.cameraDesiredPos.set(desiredX, desiredY, desiredZ);
     this.camera.position.lerp(this.cameraDesiredPos, CAMERA_CONFIG.LERP_SPEED);
