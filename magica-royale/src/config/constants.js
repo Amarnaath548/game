@@ -1,4 +1,4 @@
-export const GAME_TITLE = 'Magica Royale';
+export const GAME_TITLE = 'Divyastra';
 
 export const COLORS = {
   BG_VOID: 0x0d0e15,

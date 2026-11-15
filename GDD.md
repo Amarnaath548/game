@@ -1,4 +1,4 @@
-Here is the complete **Game Design Document (GDD)** tailored for a *Magica.io*-style 2.5D top-down battle royale. It is structured so you can feed specific sections directly into your AI coding assistant as you build each feature.
+Here is the complete **Game Design Document (GDD)** tailored for Divyastra, a 2.5D top-down battle royale. It is structured so you can feed specific sections directly into your AI coding assistant as you build each feature.
 
 ---
 
@@ -148,7 +148,7 @@ To make the game addictive on Android, matches feed into a simple `localStorage`
 
 ---
 
-Would you like me to generate the **`constants.js` configuration file** containing all these exact numbers (spells, levels, upgrades, and arena rings) alongside the **Phase 1 playable prototype**?Here is the complete **Game Design Document (GDD)** tailored for a *Magica.io*-style 2.5D top-down battle royale. It is structured so you can feed specific sections directly into your AI coding assistant as you build each feature.
+Would you like me to generate the **`constants.js` configuration file** containing all these exact numbers (spells, levels, upgrades, and arena rings) alongside the **Phase 1 playable prototype**?Here is the complete **Game Design Document (GDD)** tailored for Divyastra, a 2.5D top-down battle royale. It is structured so you can feed specific sections directly into your AI coding assistant as you build each feature.
 
 ---
 

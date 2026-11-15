@@ -1,5 +1,6 @@
 {
-  "name": "magica-royale",
+  "name": "divyastra",
+  "description": "Divyastra - Fast-paced 2.5D mythological battle royale",
   "version": "0.0.0",
   "private": true,
   "type": "module",

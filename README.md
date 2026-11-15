@@ -1,4 +1,4 @@
-# Magica Royale
+# Divyastra
 
 A fast-paced 2.5D battle royale game with 8 elemental spells, distinct blocky wizards, dynamic shrinking storm zones, and procedural biomes.
 
