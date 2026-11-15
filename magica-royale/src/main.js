@@ -110,11 +110,13 @@ const ui = new UIManager(meta, {
   onReturnToLobby: () => {
     matchManager.resetToLobby();
     tutorialHints.onMatchEnd();
+  },
+  onElementPicked: () => {
+    tutorialHints.onElementPicked();
   }
 });
 matchManager.ui = ui;
 combatResolver.ui = ui;
-sound.initMuteUI();
 
 const origShowLevelUp = ui.showLevelUp.bind(ui);
 ui.showLevelUp = (p, lvl) => {
@@ -126,7 +128,6 @@ ui.showEndGame = (...args) => {
   tutorialHints.onMatchEnd();
   origShowEndGame(...args);
 };
-document.getElementById('perk-overlay')?.addEventListener('click', () => tutorialHints.onElementPicked());
 
 // Debug Overlay (?debug=1)
 const isDebug = new URLSearchParams(window.location.search).get('debug') === '1';

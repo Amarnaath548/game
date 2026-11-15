@@ -17,8 +17,7 @@ export class UIManager {
     this.onHeroChange = callbacks.onHeroChange;
     this.onPerkSelected = callbacks.onPerkSelected;
     this.onStartMatch = callbacks.onStartMatch;
-    this.onReturnToLobby = callbacks.onReturnToLobby;
-    this.onCastRequested = callbacks.onCastRequested;
+    this.onReturnToLobby = callbacks.onReturnToLobby; this.onCastRequested = callbacks.onCastRequested; this.onElementPicked = callbacks.onElementPicked;
 
     const get = (id) => document.getElementById(id);
     this.lobbyScreen = get('lobby-screen'); this.lobbyTrophies = get('lobby-trophies'); this.lobbyGold = get('lobby-gold');
@@ -213,6 +212,7 @@ export class UIManager {
       return;
     }
     this.elementPicker.show(player, (element) => {
+      this.onElementPicked?.(element);
       this.pendingPicks = Math.max(0, this.pendingPicks - 1);
       this.elementPicker.pendingPicks = this.pendingPicks;
       player.spellSlot.addElement(element);

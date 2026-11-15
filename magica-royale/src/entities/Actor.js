@@ -116,7 +116,7 @@ export class Actor {
     if (this.dashTimer > 0 || this.isInvulnerable || this.isDead) return;
     const len = Math.hypot(dirX, dirZ) || 1;
     this.kbDuration = 0.12; this.kbTimer = 0.12;
-    this.kbVx = (dirX / len) * (0.22 / 0.12) * 2; this.kbVz = (dirZ / len) * (0.22 / 0.12) * 2;
+    this.kbVx = (dirX / len) * (distance / 0.12) * 2; this.kbVz = (dirZ / len) * (distance / 0.12) * 2;
   }
 
   update(dt) {
@@ -217,6 +217,10 @@ export class Actor {
   }
 
   destroyVisuals() {
+    if (this.isPlayer) {
+      this.group.visible = false;
+      return;
+    }
     this.scene.remove(this.group);
     if (this.bodyMat) this.bodyMat.dispose();
     if (this.accentMat) this.accentMat.dispose();

@@ -14,6 +14,8 @@ export class TutorialHints {
     this.skipped = false;
     this.currentHint = null;
     this.timer = null;
+    this.dashHintTimer = null;
+    this.hasDashed = false;
     this.onDismiss = null;
     this.shown = {};
 
@@ -39,8 +41,16 @@ export class TutorialHints {
     if (getMatchCount() >= 2) return;
     incMatchCount();
     this.active = true;
+    this.hasDashed = false;
     this.showHint('move', 'Drag the left stick to move', () => {
       this.showHint('cast', 'Drag the right side to aim and release to cast your Mushti');
+      if (this.dashHintTimer) clearTimeout(this.dashHintTimer);
+      this.dashHintTimer = setTimeout(() => {
+        this.dashHintTimer = null;
+        if (!this.hasDashed && !this.shown.dash && this.active && !this.skipped) {
+          this.showHint('dash', 'Tap Dash to dodge');
+        }
+      }, 15000);
     });
   }
 
@@ -80,9 +90,7 @@ export class TutorialHints {
 
   onLevelUp() {
     if (!this.active || this.skipped || this.shown.levelUp) return;
-    this.showHint('levelUp', 'Pick an element. Combine them to unlock new spells', () => {
-      if (!this.shown.dash) this.showHint('dash', 'Tap Dash to dodge');
-    });
+    this.showHint('levelUp', 'Pick an element. Combine them to unlock new spells');
   }
 
   onElementPicked() {
@@ -90,6 +98,8 @@ export class TutorialHints {
   }
 
   onDash() {
+    this.hasDashed = true;
+    if (this.dashHintTimer) { clearTimeout(this.dashHintTimer); this.dashHintTimer = null; }
     if (this.currentHint === 'dash') this.dismiss('dash');
   }
 
@@ -101,6 +111,7 @@ export class TutorialHints {
 
   reset() {
     if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+    if (this.dashHintTimer) { clearTimeout(this.dashHintTimer); this.dashHintTimer = null; }
     this.currentHint = null;
     this.onDismiss = null;
     this.container.style.display = 'none';

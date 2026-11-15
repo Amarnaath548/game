@@ -120,6 +120,7 @@ export class CombatResolver {
     if (cfg.lifesteal && dealt > 0 && owner?.heal) owner.heal(dealt * cfg.lifesteal);
     this.sound.playHit();
     const kx = dirX !== null ? dirX : target.x - hitX, kz = dirZ !== null ? dirZ : target.z - hitZ;
+    target.applyKnockback(kx, kz, cfg.knockback || 2.5);
     this.hitFeedback.apply(target, dealt, owner, kx, kz);
     const tx = (target && target.x !== undefined) ? target.x : (hitX ?? 0), tz = (target && target.z !== undefined) ? target.z : (hitZ ?? 0);
     this.damageNumbers.spawn(tx, tz, dealt, cfg.color || 0xff5500);
@@ -243,7 +244,6 @@ export class CombatResolver {
 
   reset() {
     this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this.spellDashes = [];
-    if (this.spellEffects) this.spellEffects.reset();
-    if (this.astraVisuals) this.astraVisuals.reset();
+    if (this.spellEffects) this.spellEffects.reset(); if (this.astraVisuals) this.astraVisuals.reset();
   }
 }

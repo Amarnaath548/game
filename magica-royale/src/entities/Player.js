@@ -157,7 +157,9 @@ export class Player extends Actor {
 
   update(dt, bushes = []) {
     if (this.isDead) {
-      super.update(dt);
+      if (this.isDying) {
+        super.update(dt);
+      }
       return;
     }
 
@@ -238,5 +240,9 @@ export class Player extends Actor {
     this.markerArrow.rotation.y += dt * 1.5;
 
     super.update(dt);
+  }
+
+  destroyVisuals() {
+    this.group.visible = false;
   }
 }

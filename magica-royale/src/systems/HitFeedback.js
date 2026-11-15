@@ -38,19 +38,7 @@ export class HitFeedback {
       if (target.accentMat?.emissive) target.accentMat.emissive.setHex(0xffffff);
     }
 
-    // 2. Knockback: tiny push 0.15-0.3 units decaying over 0.12s. Skip if dashing.
-    if (!target.isDead && (!target.dashTimer || target.dashTimer <= 0) && !target.isInvulnerable) {
-      const kx = dirX !== null ? dirX : (target.x - (owner?.x ?? target.x));
-      const kz = dirZ !== null ? dirZ : (target.z - (owner?.z ?? target.z));
-      const len = Math.hypot(kx, kz) || 1;
-      const pushDist = 0.22;
-      target.kbDuration = 0.12;
-      target.kbTimer = 0.12;
-      target.kbVx = (kx / len) * (pushDist / 0.12) * 2;
-      target.kbVz = (kz / len) * (pushDist / 0.12) * 2;
-    }
-
-    // 3. Camera Shake: only when PLAYER takes damage, or lands a hit above threshold
+    // 2. Camera Shake: only when PLAYER takes damage, or lands a hit above threshold
     if (HitFeedback.isShakeEnabled() && this.sceneManager) {
       const shakeThresh = CAMERA_CONFIG.SHAKE_DMG_THRESHOLD || 25;
       const playerHurt = isTargetPlayer && damage > 0;

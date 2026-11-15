@@ -1,5 +1,5 @@
 import { ZoneSystem } from '../systems/ZoneSystem.js';
-import { PLAYER_BASE, HEROES } from '../config/constants.js';
+import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE } from '../config/constants.js';
 
 export class MatchManager {
   constructor(deps) {
@@ -61,6 +61,13 @@ export class MatchManager {
     this.player.kills = 0;
     this.player.perks = [];
     this.player.isDead = false;
+    this.player.isDying = false;
+    this.player.deathTimer = 0;
+    this.player.group.visible = true;
+    if (this.player.visualMesh) this.player.visualMesh.scale.set(HERO_VISUAL_SCALE, HERO_VISUAL_SCALE, HERO_VISUAL_SCALE);
+    if (this.player.bodyMat) { this.player.bodyMat.opacity = 1.0; this.player.bodyMat.transparent = false; }
+    if (this.player.accentMat) { this.player.accentMat.opacity = 1.0; this.player.accentMat.transparent = false; }
+    if (this.player.staffOrbMat) { this.player.staffOrbMat.opacity = 1.0; this.player.staffOrbMat.transparent = false; }
     this.player.group.position.set(0, 0, 0);
     this.player.x = 0;
     this.player.z = 0;
@@ -175,7 +182,7 @@ export class MatchManager {
     this.banners.checkZoneStatus(isSafe);
 
     if (!this.isGameOver) {
-      if (this.player.isDead) {
+      if (this.player.isDead && !this.player.isDying) {
         this.isGameOver = true;
         this.matchActive = false;
         const place = aliveActors.length + 1;
