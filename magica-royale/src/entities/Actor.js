@@ -24,6 +24,7 @@ export class Actor {
     this.lastZ = this.z;
     this.vx = 0;
     this.vz = 0;
+    this.spellDash = false;
 
     // Status effects
     this.status = {

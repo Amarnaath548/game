@@ -33,7 +33,7 @@ export class CombatResolver {
 
     if (cfg.trajectory === 'MELEE') return this.executeMelee(cfg, owner);
     if (cfg.trajectory === 'SELF_DASH') {
-      const spd = cfg.speed || 42, rng = cfg.range || 14; owner.isInvulnerable = true;
+      const spd = cfg.speed || 42, rng = cfg.range || 14; owner.isInvulnerable = true; owner.spellDash = true;
       this.spellDashes.push({ owner, dirX: cfg.dirX, dirZ: cfg.dirZ, speed: spd, duration: rng / spd, elapsed: 0, config: cfg, hitTargets: new Set() });
       if (this.sound) this.sound.playDash();
       return;
@@ -214,7 +214,7 @@ export class CombatResolver {
           d.hitTargets.add(t); this.applySpellHit(t, d.config, d.owner, d.owner.x, d.owner.z, d.dirX, d.dirZ);
         }
       });
-      if (d.elapsed >= d.duration) { d.owner.isInvulnerable = false; this.spellDashes.splice(i, 1); }
+      if (d.elapsed >= d.duration) { d.owner.isInvulnerable = false; d.owner.spellDash = false; this.spellDashes.splice(i, 1); }
     }
     for (let i = this.delayedStrikes.length - 1; i >= 0; i--) {
       const s = this.delayedStrikes[i];
@@ -243,7 +243,7 @@ export class CombatResolver {
   }
 
   reset() {
-    this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this.spellDashes = [];
+    this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this.spellDashes.forEach((d) => { if (d.owner) { d.owner.isInvulnerable = false; d.owner.spellDash = false; } }); this.spellDashes = [];
     if (this.spellEffects) this.spellEffects.reset(); if (this.astraVisuals) this.astraVisuals.reset();
   }
 }

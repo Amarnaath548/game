@@ -88,8 +88,11 @@ export class BotBrain {
 
       // Positioning per trajectory
       if (traj === 'MELEE') {
-        moveX = edx / (edist || 1);
-        moveZ = edz / (edist || 1);
+        const perpX = -Math.cos(baseAngle) * bot.strafeDir, perpZ = Math.sin(baseAngle) * bot.strafeDir;
+        const distBias = edist > 1.6 ? 1.0 : (edist < 1.1 ? -0.5 : 0.0);
+        const strafeSpd = edist > 1.6 ? 0.0 : 0.4;
+        moveX = perpX * strafeSpd + (edx / (edist || 1)) * distBias;
+        moveZ = perpZ * strafeSpd + (edz / (edist || 1)) * distBias;
       } else {
         const perpX = -Math.cos(baseAngle) * bot.strafeDir, perpZ = Math.sin(baseAngle) * bot.strafeDir;
         let idealDist = 12;

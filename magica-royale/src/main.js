@@ -20,6 +20,7 @@ import { QuestManager } from './core/QuestManager.js';
 import { SpellbookManager } from './core/SpellbookManager.js';
 import { AstraVisuals } from './systems/AstraVisuals.js';
 import { TutorialHints } from './ui/TutorialHints.js';
+import { separateActors } from './systems/ActorSeparation.js';
 
 // Core Systems
 const sceneManager = new SceneManager();
@@ -177,7 +178,6 @@ function animate() {
     }
 
     player.update(dt, spawnManager.bushes);
-    combatResolver.resolveObeliskCollisions(player);
 
     const allActors = matchManager.getAllAliveActors();
     spawnManager.bots.forEach((bot) => {
@@ -192,8 +192,11 @@ function animate() {
         projectiles,
         (b, ax, az) => combatResolver.botShoot(b, ax, az)
       );
-      combatResolver.resolveObeliskCollisions(bot);
     });
+
+    separateActors(matchManager.getAllAliveActors());
+    combatResolver.resolveObeliskCollisions(player);
+    spawnManager.bots.forEach((bot) => combatResolver.resolveObeliskCollisions(bot));
 
     combatResolver.update(dt, allActors, spawnManager.chests, spawnManager.crystals, spawnManager.bots);
     if (astraVisuals) astraVisuals.update(dt);
