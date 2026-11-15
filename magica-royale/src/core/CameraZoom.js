@@ -2,9 +2,9 @@ import { CAMERA_CONFIG } from '../config/constants.js';
 
 export class CameraZoom {
   constructor() {
-    this.levels = CAMERA_CONFIG.ZOOM_LEVELS || { NORMAL: 1.0, CLOSE: 0.82 };
+    this.levels = CAMERA_CONFIG.ZOOM_LEVELS || { NORMAL: 1.22, CLOSE: 1.0 };
     this.mode = this.resolveInitialMode();
-    this.targetZoom = this.levels[this.mode] ?? 0.82;
+    this.targetZoom = this.levels[this.mode] ?? 1.0;
     this.currentZoom = this.targetZoom;
     this.setupControls();
   }
@@ -41,7 +41,7 @@ export class CameraZoom {
 
   setMode(newMode) {
     this.mode = newMode.toUpperCase() === 'NORMAL' ? 'NORMAL' : 'CLOSE';
-    this.targetZoom = this.levels[this.mode] ?? (this.mode === 'NORMAL' ? 1.0 : 0.82);
+    this.targetZoom = this.levels[this.mode] ?? (this.mode === 'NORMAL' ? 1.22 : 1.0);
     try {
       localStorage.setItem('magica_zoom', this.mode.toLowerCase());
     } catch (e) {}
