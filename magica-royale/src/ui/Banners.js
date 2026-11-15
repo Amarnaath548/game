@@ -48,6 +48,20 @@ export class BannerManager {
     }, 1800);
   }
 
+  showLevelUp(level) {
+    const el = document.createElement('div');
+    el.className = 'level-up-banner';
+    el.innerHTML = `
+      <div class="banner-title" style="font-size:24px;font-weight:900;color:#00f2ff;text-shadow:0 0 16px rgba(0,242,255,0.7);">LEVEL UP!</div>
+      <div class="banner-sub" style="font-size:12px;font-weight:800;color:#f8fafc;">Reached Level ${level}</div>
+    `;
+    this.container.appendChild(el);
+    setTimeout(() => {
+      el.classList.add('banner-fade');
+      setTimeout(() => el.remove(), 400);
+    }, 1500);
+  }
+
   checkZoneStatus(isSafe) {
     if (this.lastZoneSafe === null) {
       this.lastZoneSafe = isSafe;

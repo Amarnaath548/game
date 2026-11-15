@@ -24,6 +24,9 @@ export class ParticleSystem {
       });
     }
     this.dummy = new THREE.Object3D();
+    this.tempColor = new THREE.Color();
+    this.maxActiveBursts = 6;
+    this.activeBursts = [];
 
     // Pooled Impact Ring Decals (high-contrast border for Grass and Snow biomes)
     this.maxRings = 12;
@@ -43,7 +46,7 @@ export class ParticleSystem {
   }
 
   spawnBurst(x, y, z, colorHex = 0xff5500, amount = 12, speed = 8, scale = 1.0, elementsOrStyle = null) {
-    const col = new THREE.Color(colorHex);
+    this.tempColor.setHex(colorHex);
     let styles = [];
     if (Array.isArray(elementsOrStyle)) {
       styles = elementsOrStyle.map((e) => ELEM_TO_STYLE[e] || e).filter((s) => s === 'EMBER' || s === 'DROPLET' || s === 'SHARD');
@@ -58,6 +61,22 @@ export class ParticleSystem {
       else styles = ['EMBER'];
     }
 
+    if (this.activeBursts.length >= this.maxActiveBursts) {
+      const oldest = this.activeBursts.shift();
+      if (oldest) {
+        for (let b = 0; b < oldest.indices.length; b++) {
+          const idx = oldest.indices[b], p = this.particles[idx];
+          if (p && p.active) {
+            p.active = false;
+            this.dummy.position.set(0, -999, 0);
+            this.dummy.scale.set(0, 0, 0);
+            this.dummy.updateMatrix();
+            this.mesh.setMatrixAt(idx, this.dummy.matrix);
+          }
+        }
+      }
+    }
+    const currentBurst = { indices: [], maxLife: 0 };
     let spawned = 0;
     for (let i = 0; i < this.maxParticles && spawned < amount; i++) {
       const p = this.particles[i];
@@ -86,12 +105,17 @@ export class ParticleSystem {
         p.scale = (0.6 + Math.random() * 0.6) * scale;
         p.life = 0;
         p.maxLife = 0.35 + Math.random() * 0.35;
-        p.color.copy(col);
+        p.color.copy(this.tempColor);
         this.mesh.setColorAt(i, p.color);
+        currentBurst.indices.push(i);
+        if (p.maxLife > currentBurst.maxLife) currentBurst.maxLife = p.maxLife;
         spawned++;
       }
     }
-    if (spawned > 0 && this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+    if (spawned > 0) {
+      this.activeBursts.push(currentBurst);
+      if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+    }
   }
 
   spawnImpact(x, z, colorHex, radius = 2.5, aoeRadius = 0, elementsOrStyle = null) {
@@ -159,6 +183,11 @@ export class ParticleSystem {
 
     this.mesh.count = this.maxParticles;
     this.mesh.instanceMatrix.needsUpdate = true;
+
+    for (let b = this.activeBursts.length - 1; b >= 0; b--) {
+      this.activeBursts[b].maxLife -= dt;
+      if (this.activeBursts[b].maxLife <= 0) this.activeBursts.splice(b, 1);
+    }
 
     for (let i = 0; i < this.maxRings; i++) {
       const r = this.rings[i];

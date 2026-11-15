@@ -156,7 +156,10 @@ export class Player extends Actor {
   }
 
   update(dt, bushes = []) {
-    if (this.isDead) return;
+    if (this.isDead) {
+      super.update(dt);
+      return;
+    }
 
     if (this.spellSlot) {
       this.spellSlot.update(dt);
@@ -202,7 +205,7 @@ export class Player extends Actor {
     this.aimLine.visible = this.input.isAiming || !this.input.usingTouch;
 
     const isMoving = Math.hypot(this.input.moveDir.x, this.input.moveDir.z) > 0.05 || this.dashTimer > 0;
-    this.setWobble(isMoving && this.dashTimer <= 0, dt);
+    this.setWobble(isMoving && this.dashTimer <= 0, dt, this.input.moveDir.x, this.input.moveDir.z, this.dashTimer > 0);
 
     if (isMoving || this.shootCooldown > 0) {
       this.breakTapas();
@@ -217,13 +220,6 @@ export class Player extends Actor {
         this.tapasRingMat.color.setHex(0xfacc15);
         if (this.onTapasReadyCallback) this.onTapasReadyCallback();
       }
-    }
-
-    if (this.punchTimer > 0) {
-      this.punchTimer -= dt;
-      if (this.rightArm) this.rightArm.rotation.x = -1.2;
-    } else if (this.rightArm && this.rightArm.rotation.x < -0.1) {
-      this.rightArm.rotation.x = 0;
     }
 
     const inBush = bushes.some((bush) => bush.checkInside(this.x, this.z));

@@ -55,6 +55,16 @@ export class Actor {
 
     this.hitTimer = 0;
     this.walkTime = 0;
+    this.wobbleZ = 0;
+    this.leanX = 0;
+    this.leanZ = 0;
+    this.punchTimer = 0;
+    this.castTimer = 0;
+    this.orbTimer = 0;
+    this.isDying = false;
+    this.deathTimer = 0;
+    this.rightArm = this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.56) < 0.05 && Math.abs(c.position.y - 0.7) < 0.05);
+    this.staffShaft = this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.68) < 0.05 && Math.abs(c.position.y - 1.0) < 0.05);
   }
 
   applyShield(amount = 80, duration = 3.0) {
@@ -95,101 +105,124 @@ export class Actor {
     return amount;
   }
 
-  applyChill(factor = 0.3, duration = 1.5) {
-    this.status.chillTimer = duration;
-    this.status.chillFactor = 1.0 - factor;
-  }
+  applyChill(factor = 0.3, duration = 1.5) { this.status.chillTimer = duration; this.status.chillFactor = 1.0 - factor; }
+  applyBurn(dps = 10, duration = 2.0) { this.status.burnTimer = duration; this.status.burnDps = dps; }
+  applyPoison(dps = 8, duration = 4.0) { this.status.poisonTimer = duration; this.status.poisonDps = dps; }
+  heal(amount) { if (!this.isDead) this.hp = Math.min(this.maxHp, this.hp + amount); }
 
-  applyBurn(dps = 10, duration = 2.0) {
-    this.status.burnTimer = duration;
-    this.status.burnDps = dps;
-  }
-
-  applyPoison(dps = 8, duration = 4.0) {
-    this.status.poisonTimer = duration;
-    this.status.poisonDps = dps;
-  }
+  triggerCastAnim() { this.castTimer = 0.23; this.orbTimer = 0.2; }
 
   applyKnockback(dirX, dirZ, distance = 2.5) {
     if (this.dashTimer > 0 || this.isInvulnerable || this.isDead) return;
     const len = Math.hypot(dirX, dirZ) || 1;
-    this.kbVx = (dirX / len) * (distance / 0.15) * 2;
-    this.kbVz = (dirZ / len) * (distance / 0.15) * 2;
-    this.kbTimer = 0.15;
-  }
-
-  heal(amount) {
-    if (this.isDead) return;
-    this.hp = Math.min(this.maxHp, this.hp + amount);
+    this.kbDuration = 0.12; this.kbTimer = 0.12;
+    this.kbVx = (dirX / len) * (0.22 / 0.12) * 2; this.kbVz = (dirZ / len) * (0.22 / 0.12) * 2;
   }
 
   update(dt) {
-    if (this.isDead) return;
+    if (this.isDead) {
+      if (this.isDying) {
+        this.deathTimer -= dt;
+        const progress = Math.max(0, this.deathTimer / 0.35), sc = progress * HERO_VISUAL_SCALE;
+        this.visualMesh.scale.set(sc, sc, sc);
+        if (this.bodyMat) this.bodyMat.opacity = progress;
+        if (this.accentMat) this.accentMat.opacity = progress;
+        if (this.staffOrbMat) this.staffOrbMat.opacity = progress;
+        if (this.deathTimer <= 0) { this.isDying = false; this.destroyVisuals(); }
+      }
+      return;
+    }
 
-    if (this.hitTimer > 0) {
-      this.hitTimer -= dt;
-      if (this.hitTimer <= 0) {
-        this.bodyMat.emissive.setHex(0x000000);
-        this.accentMat.emissive.setHex(0x000000);
+    if (this.hitTimer > 0 && (this.hitTimer -= dt) <= 0) {
+      if (this.bodyMat?.emissive) this.bodyMat.emissive.setHex(0x000000);
+      if (this.accentMat?.emissive) this.accentMat.emissive.setHex(0x000000);
+    }
+
+    if (this.punchTimer > 0) {
+      this.punchTimer -= dt;
+      if (this.rightArm) this.rightArm.rotation.x = -1.2;
+      if (this.staffShaft) this.staffShaft.rotation.x = -1.2;
+    } else if (this.castTimer > 0) {
+      this.castTimer -= dt;
+      const rotX = this.castTimer > 0.15 ? 0.25 : 0.25 * (this.castTimer / 0.15);
+      if (this.rightArm) this.rightArm.rotation.x = rotX;
+      if (this.staffShaft) this.staffShaft.rotation.x = rotX;
+    } else {
+      if (this.rightArm && this.rightArm.rotation.x !== 0) this.rightArm.rotation.x = 0;
+      if (this.staffShaft && this.staffShaft.rotation.x !== 0) this.staffShaft.rotation.x = 0;
+    }
+
+    if (this.orbTimer > 0) {
+      this.orbTimer -= dt;
+      if (this.staffOrb) {
+        const p = 1.0 - (this.orbTimer / 0.2);
+        const sc = this.orbTimer > 0 ? (1.0 + 0.4 * Math.sin(Math.max(0, Math.min(1, p)) * Math.PI)) : 1.0;
+        this.staffOrb.scale.set(sc, sc, sc);
       }
     }
 
     if (this.kbTimer > 0) {
-      const decay = this.kbTimer / 0.15;
-      this.x += this.kbVx * decay * dt;
-      this.z += this.kbVz * decay * dt;
+      const decay = this.kbTimer / (this.kbDuration || 0.12);
+      this.x += this.kbVx * decay * dt; this.z += this.kbVz * decay * dt;
       this.kbTimer -= dt;
     }
 
-    if (this.shieldTimer > 0) {
-      this.shieldTimer -= dt;
-      if (this.shieldTimer <= 0) {
-        this.shieldActive = false;
-        this.shieldHp = 0;
-        if (this.shieldMesh) this.shieldMesh.visible = false;
-      }
+    if (this.shieldTimer > 0 && (this.shieldTimer -= dt) <= 0) {
+      this.shieldActive = false; this.shieldHp = 0;
+      if (this.shieldMesh) this.shieldMesh.visible = false;
     }
 
     if (this.status.chillTimer > 0) {
       this.status.chillTimer -= dt;
       this.speed = this.baseSpeed * this.status.chillFactor;
-    } else {
-      this.speed = this.baseSpeed;
-    }
+    } else { this.speed = this.baseSpeed; }
 
-    if (this.status.burnTimer > 0) {
-      this.status.burnTimer -= dt;
-      this.takeDamage(this.status.burnDps * dt);
-    }
+    if (this.status.burnTimer > 0) { this.status.burnTimer -= dt; this.takeDamage(this.status.burnDps * dt); }
+    if (this.status.poisonTimer > 0) { this.status.poisonTimer -= dt; this.takeDamage(this.status.poisonDps * dt); }
 
-    if (this.status.poisonTimer > 0) {
-      this.status.poisonTimer -= dt;
-      this.takeDamage(this.status.poisonDps * dt);
-    }
-
-    if (dt > 0.001) {
-      this.vx = (this.x - this.lastX) / dt;
-      this.vz = (this.z - this.lastZ) / dt;
-    }
-    this.lastX = this.x;
-    this.lastZ = this.z;
-
+    if (dt > 0.001) { this.vx = (this.x - this.lastX) / dt; this.vz = (this.z - this.lastZ) / dt; }
+    this.lastX = this.x; this.lastZ = this.z;
     this.group.position.set(this.x, 0, this.z);
   }
 
-  setWobble(isMoving, dt) {
-    if (isMoving) {
+  setWobble(isMoving, dt, moveX = 0, moveZ = 0, isDashing = false) {
+    let targetLeanX = 0, targetLeanZ = 0;
+    if (isMoving && !isDashing) {
       this.walkTime += dt * 14;
       this.visualMesh.position.y = Math.abs(Math.sin(this.walkTime)) * 0.28;
-      this.visualMesh.rotation.z = Math.sin(this.walkTime) * 0.08;
+      this.wobbleZ = Math.sin(this.walkTime) * 0.08;
+      const len = Math.hypot(moveX, moveZ);
+      if (len > 0.01) {
+        const nx = moveX / len, nz = moveZ / len, ang = this.visualMesh.rotation.y;
+        targetLeanX = (nx * Math.sin(ang) + nz * Math.cos(ang)) * 0.12;
+        targetLeanZ = -(nx * Math.cos(ang) - nz * Math.sin(ang)) * 0.12;
+      }
     } else {
       this.visualMesh.position.y = THREE.MathUtils.lerp(this.visualMesh.position.y, 0, 0.2);
-      this.visualMesh.rotation.z = THREE.MathUtils.lerp(this.visualMesh.rotation.z, 0, 0.2);
+      this.wobbleZ = THREE.MathUtils.lerp(this.wobbleZ || 0, 0, 0.2);
     }
+    this.leanX = THREE.MathUtils.lerp(this.leanX || 0, targetLeanX, 0.15);
+    this.leanZ = THREE.MathUtils.lerp(this.leanZ || 0, targetLeanZ, 0.15);
+    this.visualMesh.rotation.x = this.leanX;
+    this.visualMesh.rotation.z = (this.wobbleZ || 0) + this.leanZ;
   }
 
   die() {
-    this.isDead = true;
-    this.scene.remove(this.group);
+    if (this.isDead) return;
+    this.isDead = true; this.isDying = true; this.deathTimer = 0.35;
+    if (this.shieldMesh) this.shieldMesh.visible = false;
+    if (this.bodyMat) this.bodyMat.transparent = true;
+    if (this.accentMat) this.accentMat.transparent = true;
+    if (this.staffOrbMat) this.staffOrbMat.transparent = true;
   }
+
+  destroyVisuals() {
+    this.scene.remove(this.group);
+    if (this.bodyMat) this.bodyMat.dispose();
+    if (this.accentMat) this.accentMat.dispose();
+    if (this.staffOrbMat) this.staffOrbMat.dispose();
+    if (this.shieldMesh?.material) this.shieldMesh.material.dispose();
+  }
+
+  destroy() { this.isDead = true; this.isDying = false; this.destroyVisuals(); }
 }

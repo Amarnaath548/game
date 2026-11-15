@@ -13,6 +13,7 @@ export class UIManager {
     this.questManager = callbacks.questManager;
     this.spellbookManager = callbacks.spellbookManager;
     this.sceneManager = callbacks.sceneManager;
+    this.banners = callbacks.banners;
     this.onHeroChange = callbacks.onHeroChange;
     this.onPerkSelected = callbacks.onPerkSelected;
     this.onStartMatch = callbacks.onStartMatch;
@@ -198,13 +199,11 @@ export class UIManager {
   }
 
   showLevelUp(player, level) {
+    if (this.banners) this.banners.showLevelUp(level);
     if (player.spellSlot && (player.spellSlot.elements.length + this.pendingPicks) < 3) {
-      this.pendingPicks++;
-      this.elementPicker.pendingPicks = this.pendingPicks;
+      this.pendingPicks++; this.elementPicker.pendingPicks = this.pendingPicks;
       if (!this.elementPicker.active) this.openNextElementPick(player);
-    } else {
-      this.showPerkCards(level);
-    }
+    } else { this.showPerkCards(level); }
   }
 
   openNextElementPick(player) {
@@ -241,7 +240,7 @@ export class UIManager {
     let statsEl = document.getElementById('match-hero-stats');
     if (!statsEl) { statsEl = document.createElement('div'); statsEl.id = 'match-hero-stats'; this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box')); }
     const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
-    const newSpellHtml = spellbookSummary?.newSpells?.length ? `<div class="quest-done-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New astra unlocked! (${spellbookSummary.newSpells.join(', ')})</div>` : '';
+    const newSpellHtml = spellbookSummary?.newSpells?.length ? `<div class="quest-done-pill new-astra-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New astra unlocked! (${spellbookSummary.newSpells.join(', ')})</div>` : '';
     const starHtml = spellbookSummary?.starsEarned ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ Siddhi earned! (+${spellbookSummary.starsEarned})</div>` : '';
     statsEl.innerHTML = `<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}${newSpellHtml}${starHtml}`;
     const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;

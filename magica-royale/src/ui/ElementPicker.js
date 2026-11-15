@@ -65,8 +65,6 @@ export class ElementPicker {
         <div style="font-size:10px;font-weight:700;color:#cbd5e1;line-height:1.2;">&rarr; <b>${spellName}</b></div>
       `;
 
-      card.addEventListener('mouseenter', () => card.style.transform = 'translateY(-4px) scale(1.04)');
-      card.addEventListener('mouseleave', () => card.style.transform = 'none');
       card.addEventListener('click', (e) => {
         e.stopPropagation();
         this.choose(elem);

@@ -87,6 +87,7 @@ const ui = new UIManager(meta, {
   questManager,
   spellbookManager,
   sceneManager,
+  banners,
   onSpellChange: (spellKey) => player.setSpell(spellKey),
   onCastRequested: () => {
     input.fireReleased = true;

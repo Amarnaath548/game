@@ -14,6 +14,11 @@ export class SceneManager {
     document.body.appendChild(this.renderer.domElement);
 
     this.cameraTarget = new THREE.Vector3();
+    this.cameraDesiredPos = new THREE.Vector3();
+    this.cameraLookPos = new THREE.Vector3();
+    this.hitShakeTimer = 0;
+    this.hitShakeDuration = 0.15;
+    this.hitShakeAmp = 0.12;
     this.trauma = 0;
     this.obelisks = [];
     this.obeliskMeshes = [];
@@ -94,9 +99,8 @@ export class SceneManager {
     return biomeKey;
   }
 
-  addTrauma(amount = 0.4) {
-    this.trauma = Math.min(1.0, this.trauma + amount);
-  }
+  addTrauma(amount = 0.4) { this.trauma = Math.min(1.0, this.trauma + amount); }
+  triggerHitShake(amp = 0.12, dur = 0.15) { this.hitShakeAmp = amp; this.hitShakeDuration = dur; this.hitShakeTimer = dur; }
 
   initLights() {
     this.ambientLight = new THREE.AmbientLight(0xfff3db, 1.0);
@@ -210,17 +214,22 @@ export class SceneManager {
       shakeZ = (Math.random() - 0.5) * shakePower;
       this.trauma = Math.max(0, this.trauma - dt * 2.5);
     }
+    if (this.hitShakeTimer > 0) {
+      const decay = this.hitShakeTimer / (this.hitShakeDuration || 0.15);
+      shakeX += (Math.random() * 2 - 1) * this.hitShakeAmp * decay;
+      shakeZ += (Math.random() * 2 - 1) * this.hitShakeAmp * decay;
+      this.hitShakeTimer = Math.max(0, this.hitShakeTimer - dt);
+    }
 
     const pitchBias = CAMERA_CONFIG.PITCH_BIAS || 1.0;
     const desiredX = playerPos.x + lookAheadX + shakeX;
     const desiredY = CAMERA_CONFIG.OFFSET_Y * pitchBias;
     const desiredZ = playerPos.z + (CAMERA_CONFIG.OFFSET_Z * pitchBias) + lookAheadZ + shakeZ;
 
-    this.camera.position.lerp(new THREE.Vector3(desiredX, desiredY, desiredZ), CAMERA_CONFIG.LERP_SPEED);
-    this.cameraTarget.lerp(
-      new THREE.Vector3(playerPos.x + lookAheadX * 0.5, 0, playerPos.z + lookAheadZ * 0.5),
-      CAMERA_CONFIG.LERP_SPEED
-    );
+    this.cameraDesiredPos.set(desiredX, desiredY, desiredZ);
+    this.camera.position.lerp(this.cameraDesiredPos, CAMERA_CONFIG.LERP_SPEED);
+    this.cameraLookPos.set(playerPos.x + lookAheadX * 0.5, 0, playerPos.z + lookAheadZ * 0.5);
+    this.cameraTarget.lerp(this.cameraLookPos, CAMERA_CONFIG.LERP_SPEED);
     this.camera.lookAt(this.cameraTarget);
   }
 

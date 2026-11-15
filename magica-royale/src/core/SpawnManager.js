@@ -67,7 +67,7 @@ export class SpawnManager {
   cleanup() {
     this.chests.forEach((c) => c.destroy());
     this.crystals.forEach((c) => c.destroy());
-    this.bots.forEach((b) => b.die());
+    this.bots.forEach((b) => b.destroy());
     this.chests = [];
     this.crystals = [];
     this.bots = [];

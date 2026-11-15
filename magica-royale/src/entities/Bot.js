@@ -110,7 +110,10 @@ export class Bot extends Actor {
   }
 
   think(dt, zoneRadius, allActors, chests = [], gems = [], healthOrbs = [], playerKills = 0, projectiles = [], onShoot) {
-    if (this.isDead) return;
+    if (this.isDead) {
+      super.update(dt);
+      return;
+    }
 
     if (this.spellSlot) {
       this.spellSlot.update(dt);
@@ -157,7 +160,7 @@ export class Bot extends Actor {
       this.visualMesh.rotation.y = THREE.MathUtils.lerp(this.visualMesh.rotation.y, aimAngle, 0.2);
     }
 
-    this.setWobble(Math.hypot(moveX, moveZ) > 0.05 && this.dashTimer <= 0, dt);
+    this.setWobble(Math.hypot(moveX, moveZ) > 0.05 && this.dashTimer <= 0, dt, moveX, moveZ, this.dashTimer > 0);
     super.update(dt);
   }
 }
