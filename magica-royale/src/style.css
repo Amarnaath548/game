@@ -93,23 +93,11 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
 .arena-label { font-size: 11px; font-weight: 800; color: #38bdf8; letter-spacing: 0.5px; margin-top: 2px; }
 #play-match-btn { min-height: 48px; padding: 12px 36px; font-size: 16px; font-weight: 900; color: #fff; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; border-radius: 999px; cursor: pointer; box-shadow: 0 0 20px rgba(37, 99, 235, 0.6); }
 
-/* ---------------- IN-GAME HUD ---------------- */
+/* ---------------- IN-GAME HUD BASE ---------------- */
 #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; display: none; }
-#top-bar { position: absolute; top: calc(8px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; background: rgba(15, 23, 42, 0.92); border: 1px solid #334155; padding: 6px 16px; border-radius: 999px; color: #f8fafc; font-size: 12px; letter-spacing: 0.5px; box-shadow: 0 4px 16px rgba(0,0,0,0.6); text-shadow: 0 1px 3px rgba(0,0,0,0.95); white-space: nowrap; }
 .badge { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
 .badge-alive { color: #39ff14; } .badge-zone { color: #b700ff; }
-
-#player-status { position: absolute; top: calc(44px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: 280px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 4px; pointer-events: none; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 10px; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); }
-.status-labels { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; color: #f8fafc; padding: 0 2px; text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 2px #000; }
-.bar-container { width: 100%; height: 14px; background: rgba(15, 17, 26, 0.9); border: 2px solid #1e293b; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
-.bar-xp { position: relative; height: 8px; border-width: 1px; }
 .xp-bar-label { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 7px; font-weight: 800; color: #e2e8f0; text-shadow: 0 1px 2px rgba(0,0,0,0.95); pointer-events: none; line-height: 1; }
-#hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #10b981, #059669); transition: width 0.15s ease-out; }
-#xp-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #00f2ff, #0284c7); transition: width 0.15s ease-out; }
-
-/* Spell Bar: Bottom-Center */
-/* Spell Panel: Bottom-Center */
-#spell-bar { position: absolute; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); display: flex; pointer-events: auto; z-index: 25; }
 
 @keyframes elementPopIn {
   0% { transform: scale(0.85); opacity: 0; }
@@ -148,13 +136,6 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
 .new-astra-pill {
   animation: popPulse 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
-
-#kill-feed { position: absolute; top: calc(8px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 5px; pointer-events: none; z-index: 20; max-width: 220px; }
-.kill-feed-row { background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(255, 255, 255, 0.15); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #f1f5f9; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.6); text-shadow: 0 1px 3px rgba(0,0,0,0.95); transition: opacity 0.4s, transform 0.4s; }
-.kill-feed-row.fade-out { opacity: 0; transform: translateX(12px); }
-.kill-feed-player { color: #00f2ff; font-weight: 800; text-shadow: 0 1px 2px #000; }
-.kill-feed-bot { color: #f59e0b; text-shadow: 0 1px 2px #000; }
-.kill-feed-action { color: #cbd5e1; font-size: 10px; text-shadow: 0 1px 2px #000; }
 
 .touch-zone { position: absolute; bottom: 0; width: 50%; height: 65%; pointer-events: auto; }
 #left-zone { left: 0; } #right-zone { right: 0; }
@@ -217,18 +198,6 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
 
 /* ---------------- MOBILE RESPONSIVE (800x360, 667x375, 360x640) ---------------- */
 @media (max-height: 440px) {
-  #top-bar { top: calc(4px + env(safe-area-inset-top, 0px)); padding: 3px 10px; font-size: 11px; }
-  #player-status { top: calc(34px + env(safe-area-inset-top, 0px)); width: 220px; padding: 4px 8px; }
-  .status-labels { font-size: 10px; }
-  .bar-container { height: 10px; }
-  .bar-xp { height: 6px; }
-  #spell-bar { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); gap: 4px; }
-  .spell-btn { min-width: 38px; min-height: 38px; padding: 2px 4px; }
-  .spell-num { font-size: 8px; }
-  .spell-name { font-size: 10px; }
-  #dash-btn { width: 56px; height: 56px; font-size: 11px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: calc(16px + env(safe-area-inset-right, 0px)); }
-  #kill-feed { top: calc(4px + env(safe-area-inset-top, 0px)); right: calc(8px + env(safe-area-inset-right, 0px)); max-width: 140px; }
-  .kill-feed-row { font-size: 9px; padding: 2px 5px; }
   .touch-zone { height: 75%; }
   .lobby-tabs { margin: 4px 0; }
   .lobby-tab-btn { min-height: 36px; font-size: 11px; }
@@ -237,7 +206,5 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
 }
 
 @media (max-width: 640px) and (orientation: landscape) {
-  #spell-bar { flex-wrap: nowrap; gap: 3px; }
-  .spell-btn { min-width: 34px; min-height: 36px; }
-  #player-status { width: 200px; }
+  .lobby-tab-btn { font-size: 10px; }
 }

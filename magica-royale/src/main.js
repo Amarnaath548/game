@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import './hud.css';
 import { SceneManager } from './core/SceneManager.js';
 import { InputManager } from './core/InputManager.js';
 import { ObjectPool } from './core/ObjectPool.js';
@@ -39,6 +40,7 @@ const astraVisuals = new AstraVisuals(sceneManager.scene);
 
 // Player Entity
 const player = new Player(sceneManager.scene, input);
+floatingBars.setPlayer(player);
 player.onTapasReadyCallback = () => {
   sound.playTapasReady();
   tutorialHints.onTapasReady();

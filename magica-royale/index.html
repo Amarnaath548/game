@@ -6,6 +6,7 @@
   <title>Divyastra</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="stylesheet" href="./src/style.css" />
+  <link rel="stylesheet" href="./src/hud.css" />
 </head>
 <body>
   <!-- LOBBY SCREEN -->
@@ -64,14 +65,40 @@
 
   <!-- IN-GAME HUD -->
   <div id="hud">
-    <div id="kill-feed"></div>
-
-    <div id="top-bar">
-      <div class="badge badge-alive">ALIVE: <span id="alive-count">12</span></div>
-      <div class="badge badge-zone">ZONE: <span id="zone-status">Safe</span></div>
-      <button id="hud-mute-btn" class="fs-btn" style="width:24px;height:24px;font-size:12px;margin-left:4px;pointer-events:auto;" title="Toggle Sound">🔊</button>
+    <!-- TOP-LEFT LEADERBOARD -->
+    <div id="leaderboard">
+      <div class="leaderboard-header">
+        <span class="leaderboard-title">👑 LEADERS</span>
+        <span class="leaderboard-alive">👥 <span id="alive-count">12</span></span>
+      </div>
+      <div id="leaderboard-rows" class="leaderboard-rows"></div>
     </div>
 
+    <!-- TOP-RIGHT CHUNKY COUNTERS -->
+    <div id="top-right-hud">
+      <div class="top-counters">
+        <div class="top-counter-pill" id="counter-gems">
+          <span class="counter-icon">💎</span>
+          <span id="match-gems-count" class="counter-num">0</span>
+        </div>
+        <div class="top-counter-pill" id="counter-kills">
+          <span class="counter-icon">💀</span>
+          <span id="match-kills-count" class="counter-num">0</span>
+        </div>
+      </div>
+      <div class="top-subrow">
+        <div class="badge badge-zone" id="zone-badge">ZONE: <span id="zone-status">Safe</span></div>
+        <button id="hud-mute-btn" class="fs-btn hud-mute-btn" title="Toggle Sound">🔊</button>
+      </div>
+    </div>
+
+    <!-- PRESERVED HIDDEN TOP-BAR FALLBACK -->
+    <div id="top-bar" style="display:none;"></div>
+
+    <!-- BOTTOM-LEFT KILL FEED -->
+    <div id="kill-feed"></div>
+
+    <!-- BOTTOM-CENTER PLAYER STATUS (CHUNKY BARS) -->
     <div id="player-status">
       <div class="status-labels">
         <span id="player-lvl-text">Lv 1 Pyromancer</span>
@@ -88,6 +115,15 @@
 
     <!-- BOTTOM-CENTER SPELL STATUS PANEL -->
     <div id="spell-bar"></div>
+
+    <!-- BOTTOM-RIGHT ROUND SPELL INDICATOR (64px) -->
+    <div id="spell-indicator">
+      <div id="spell-ind-cd" class="spell-ind-cd">
+        <div id="spell-ind-orb" class="spell-ind-orb">
+          <span id="spell-ind-icon">✨</span>
+        </div>
+      </div>
+    </div>
 
     <div id="perk-overlay"></div>
 

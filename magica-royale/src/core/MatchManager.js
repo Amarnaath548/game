@@ -59,6 +59,7 @@ export class MatchManager {
     this.player.level = 1;
     this.player.xp = 0;
     this.player.kills = 0;
+    this.player.gemsCollected = 0;
     this.player.perks = [];
     this.player.isDead = false;
     this.player.isDying = false;
@@ -130,6 +131,7 @@ export class MatchManager {
       const collected = gem.update(dt, this.player.x, this.player.z);
       if (collected) {
         this.sound.playPickup();
+        this.player.gemsCollected = (this.player.gemsCollected || 0) + 1;
         if (this.questManager) this.questManager.record('gem', 1);
         this.particleSys.spawnBurst(gem.x, 0.6, gem.z, 0x00f2ff, 6, 4);
         this.player.addXP(gem.xpValue, (lvl) => {
@@ -171,14 +173,14 @@ export class MatchManager {
     this.zoneSys.update(dt, [this.player, ...this.spawnManager.bots]);
 
     // Overhead Floating Health Bars for bots & damage numbers
-    this.floatingBars.update(this.spawnManager.bots);
+    this.floatingBars.update(this.getAllAliveActors(), this.player, this.spawnManager.bushes);
     this.damageNumbers.update(dt);
     this.particleSys.update(dt);
 
     // Alive Count & Win/Loss Condition
     const aliveActors = this.getAllAliveActors();
     const isSafe = this.zoneSys.getSafeDistance(this.player.x, this.player.z) > 0;
-    this.ui.updateHUD(this.player, aliveActors.length, isSafe);
+    this.ui.updateHUD(this.player, aliveActors, isSafe, dt);
     this.banners.checkZoneStatus(isSafe);
 
     if (!this.isGameOver) {

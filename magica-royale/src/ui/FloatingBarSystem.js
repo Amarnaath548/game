@@ -1,113 +1,162 @@
 import * as THREE from 'three';
 
+const BOT_NAMES = [
+  'Aarav', 'Daksha', 'Kael', 'Rudra', 'Veda', 'Bhanu', 'Tejas', 'Nakul',
+  'Kiran', 'Vidur', 'Deva', 'Ashoka', 'Taran', 'Madhav', 'Arun', 'Omkar',
+  'Eklavya', 'Samir', 'Varun', 'Yash', 'Alok', 'Neel', 'Chetan', 'Dhruv',
+  'Gautam', 'Ishan', 'Jai', 'Keshav', 'Manan', 'Naveen', 'Pranav', 'Rishi',
+  'Sagar', 'Tanay', 'Utkarsh', 'Veer', 'Yuvraj', 'Aniket', 'Bhavin', 'Chinmay'
+];
+
 export class FloatingBarSystem {
   constructor(camera) {
     this.camera = camera;
+    this.player = null;
     this.container = document.createElement('div');
     this.container.id = 'floating-bars-container';
-    this.container.style.position = 'fixed';
-    this.container.style.inset = '0';
-    this.container.style.pointerEvents = 'none';
-    this.container.style.overflow = 'hidden';
-    this.container.style.zIndex = '5';
+    this.container.style.cssText = 'position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5;';
     document.body.appendChild(this.container);
 
-    this.bars = new Map(); // actor -> DOMElement
+    this.bars = new Map();
     this.projVec = new THREE.Vector3();
   }
 
-  getOrCreateBar(actor) {
-    let el = this.bars.get(actor);
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'actor-overhead';
-      el.style.position = 'absolute';
-      el.style.display = 'flex';
-      el.style.alignItems = 'center';
-      el.style.gap = '4px';
-      el.style.transform = 'translate(-50%, -50%)';
-
-      const lvlTag = document.createElement('span');
-      lvlTag.className = 'actor-lvl-tag';
-      lvlTag.style.fontSize = '10px';
-      lvlTag.style.fontWeight = '800';
-      lvlTag.style.color = '#f8fafc';
-      lvlTag.style.background = 'rgba(15, 23, 42, 0.85)';
-      lvlTag.style.padding = '1px 5px';
-      lvlTag.style.borderRadius = '4px';
-      lvlTag.style.border = '1px solid rgba(0, 0, 0, 0.85)';
-      lvlTag.style.textShadow = '0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px #000';
-      lvlTag.textContent = `Lv ${actor.level || 1}`;
-      el.appendChild(lvlTag);
-
-      const barBg = document.createElement('div');
-      barBg.style.width = '42px';
-      barBg.style.height = '6px';
-      barBg.style.background = 'rgba(15, 23, 42, 0.85)';
-      barBg.style.border = '1px solid #000000';
-      barBg.style.boxShadow = '0 1px 4px rgba(0, 0, 0, 0.7)';
-      barBg.style.borderRadius = '3px';
-      barBg.style.overflow = 'hidden';
-
-      const fill = document.createElement('div');
-      fill.className = 'actor-hp-bar';
-      fill.style.width = '100%';
-      fill.style.height = '100%';
-      fill.style.background = '#ef4444';
-      fill.style.transition = 'width 0.1s linear';
-      barBg.appendChild(fill);
-      el.appendChild(barBg);
-
-      this.container.appendChild(el);
-      this.bars.set(actor, el);
-    }
-    return el;
+  setPlayer(player) {
+    this.player = player;
   }
 
-  update(actors) {
+  getOrCreateBar(actor) {
+    let entry = this.bars.get(actor);
+    if (!entry) {
+      const el = document.createElement('div');
+      el.className = 'actor-overhead';
+      el.style.cssText = 'position:absolute;display:none;flex-direction:column;align-items:center;gap:2px;transform:translate(-50%,-100%);pointer-events:none;';
+
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;gap:4px;white-space:nowrap;';
+
+      const lvl = document.createElement('span');
+      lvl.className = 'overhead-lvl';
+      lvl.style.cssText = 'font-size:9px;font-weight:900;color:#fff;background:rgba(15,23,42,0.92);padding:0 3px;border-radius:3px;border:1px solid #000;line-height:1.2;';
+
+      const name = document.createElement('span');
+      name.className = 'overhead-name';
+      name.style.cssText = 'font-size:11px;font-weight:800;color:#f8fafc;text-shadow:0 1px 3px #000,0 0 2px #000;line-height:1.2;';
+
+      header.appendChild(lvl);
+      header.appendChild(name);
+      el.appendChild(header);
+
+      const bar = document.createElement('div');
+      bar.className = 'overhead-bar';
+      bar.style.cssText = 'display:flex;gap:2px;padding:1px;background:rgba(15,23,42,0.9);border:1.5px solid #000;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.7);width:56px;height:7px;box-sizing:border-box;';
+
+      const segments = [];
+      for (let i = 0; i < 8; i++) {
+        const seg = document.createElement('div');
+        seg.style.cssText = 'flex:1;height:100%;border-radius:1px;background:#22c55e;';
+        bar.appendChild(seg);
+        segments.push(seg);
+      }
+      el.appendChild(bar);
+
+      this.container.appendChild(el);
+      entry = { el, lvl, name, segments, state: { x: -999, y: -999, lvl: '', name: '', activeCount: -1, color: '', visible: false } };
+      this.bars.set(actor, entry);
+    }
+    return entry;
+  }
+
+  ensureDisplayName(actor) {
+    if (actor.isPlayer || actor === this.player) {
+      if (!actor.displayName) {
+        actor.displayName = actor.hero?.name || localStorage.getItem('magica_selected_hero') || 'Hero';
+      }
+      return;
+    }
+    if (!actor.displayName || actor.displayName.includes('_')) {
+      const idx = (typeof actor.id === 'number' ? actor.id - 1 : Math.floor(Math.random() * BOT_NAMES.length)) % BOT_NAMES.length;
+      actor.displayName = BOT_NAMES[(idx + BOT_NAMES.length) % BOT_NAMES.length];
+      actor.name = actor.displayName;
+    }
+  }
+
+  update(actors, playerRef = null, bushes = null) {
+    const player = playerRef || this.player || actors.find((a) => a.isPlayer);
+    if (player && !this.player) this.player = player;
+
+    let targetActors = actors;
+    if (player && !targetActors.includes(player)) {
+      targetActors = [player, ...actors];
+    }
+
     const widthHalf = window.innerWidth / 2;
     const heightHalf = window.innerHeight / 2;
 
-    actors.forEach((actor) => {
-      const el = this.getOrCreateBar(actor);
+    targetActors.forEach((actor) => {
+      this.ensureDisplayName(actor);
+      const entry = this.getOrCreateBar(actor);
+      const { el, lvl, name, segments, state } = entry;
 
       if (actor.isDead) {
-        el.style.display = 'none';
+        if (state.visible) { el.style.display = 'none'; state.visible = false; }
         return;
       }
 
-      // 3D position ~3.5 units high (above 1.4x head/hat)
+      const isActorPlayer = actor.isPlayer || actor === player;
+      if (player && !isActorPlayer) {
+        const distSq = (actor.x - player.x) ** 2 + (actor.z - player.z) ** 2;
+        if (distSq > 1225) { // 35 units
+          if (state.visible) { el.style.display = 'none'; state.visible = false; }
+          return;
+        }
+        if (actor.inBush || (bushes && bushes.some((b) => b.checkInside && b.checkInside(actor.x, actor.z)))) {
+          if (state.visible) { el.style.display = 'none'; state.visible = false; }
+          return;
+        }
+      }
+
       this.projVec.set(actor.x, 3.5, actor.z);
       this.projVec.project(this.camera);
-
       if (this.projVec.z > 1) {
-        el.style.display = 'none';
+        if (state.visible) { el.style.display = 'none'; state.visible = false; }
         return;
       }
 
-      const screenX = (this.projVec.x * widthHalf) + widthHalf;
-      const screenY = -(this.projVec.y * heightHalf) + heightHalf;
+      const screenX = Math.round((this.projVec.x * widthHalf) + widthHalf);
+      const screenY = Math.round(-(this.projVec.y * heightHalf) + heightHalf);
 
-      el.style.display = 'flex';
-      el.style.left = `${screenX}px`;
-      el.style.top = `${screenY}px`;
+      if (!state.visible) { el.style.display = 'flex'; state.visible = true; }
+      if (state.x !== screenX) { el.style.left = `${screenX}px`; state.x = screenX; }
+      if (state.y !== screenY) { el.style.top = `${screenY}px`; state.y = screenY; }
 
-      const lvlTag = el.querySelector('.actor-lvl-tag');
-      if (lvlTag) lvlTag.textContent = `Lv ${actor.level || 1}`;
+      const lvlText = `${actor.level || 1}`;
+      if (state.lvl !== lvlText) { lvl.textContent = lvlText; state.lvl = lvlText; }
 
-      const hpPercent = Math.max(0, Math.min(100, (actor.hp / actor.maxHp) * 100));
-      const fill = el.querySelector('.actor-hp-bar');
-      if (fill) {
-        fill.style.width = `${hpPercent}%`;
-        fill.style.background = actor.hero?.bodyColor
-          ? `#${actor.hero.bodyColor.toString(16).padStart(6, '0')}`
-          : '#ef4444';
+      const nameText = actor.displayName || 'Mage';
+      if (state.name !== nameText) {
+        name.textContent = nameText;
+        name.style.color = isActorPlayer ? '#fde047' : '#ffffff';
+        name.style.fontWeight = isActorPlayer ? '900' : '800';
+        state.name = nameText;
+      }
+
+      const hpPct = Math.max(0, Math.min(100, (actor.hp / actor.maxHp) * 100));
+      const activeCount = actor.hp <= 0 ? 0 : Math.max(1, Math.ceil((hpPct / 100) * 8));
+      const color = hpPct < 25 ? '#ef4444' : (hpPct < 50 ? '#f59e0b' : '#22c55e');
+
+      if (state.activeCount !== activeCount || state.color !== color) {
+        for (let i = 0; i < 8; i++) {
+          segments[i].style.background = i < activeCount ? color : 'rgba(15, 23, 42, 0.7)';
+        }
+        state.activeCount = activeCount;
+        state.color = color;
       }
     });
 
-    this.bars.forEach((el, actor) => {
-      if (!actors.includes(actor) || actor.isDead) {
-        el.style.display = 'none';
+    this.bars.forEach((entry, actor) => {
+      if (!targetActors.includes(actor) || actor.isDead) {
+        if (entry.state.visible) { entry.el.style.display = 'none'; entry.state.visible = false; }
       }
     });
   }

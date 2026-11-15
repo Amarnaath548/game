@@ -6,18 +6,18 @@ import { renderPerkSelection } from '../core/SpellAccess.js';
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
 import { ElementPicker } from './ElementPicker.js';
 import { SpellbookView } from './SpellbookView.js';
+import { Leaderboard } from './Leaderboard.js';
+import { TopRightHUD } from './TopRightHUD.js';
+import { SpellIndicator } from './SpellIndicator.js';
 
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
     this.meta = metaProgression;
-    this.questManager = callbacks.questManager;
-    this.spellbookManager = callbacks.spellbookManager;
-    this.sceneManager = callbacks.sceneManager;
-    this.banners = callbacks.banners;
-    this.onHeroChange = callbacks.onHeroChange;
-    this.onPerkSelected = callbacks.onPerkSelected;
-    this.onStartMatch = callbacks.onStartMatch;
-    this.onReturnToLobby = callbacks.onReturnToLobby; this.onCastRequested = callbacks.onCastRequested; this.onElementPicked = callbacks.onElementPicked;
+    this.questManager = callbacks.questManager; this.spellbookManager = callbacks.spellbookManager;
+    this.sceneManager = callbacks.sceneManager; this.banners = callbacks.banners;
+    this.onHeroChange = callbacks.onHeroChange; this.onPerkSelected = callbacks.onPerkSelected;
+    this.onStartMatch = callbacks.onStartMatch; this.onReturnToLobby = callbacks.onReturnToLobby;
+    this.onCastRequested = callbacks.onCastRequested; this.onElementPicked = callbacks.onElementPicked;
 
     const get = (id) => document.getElementById(id);
     this.lobbyScreen = get('lobby-screen'); this.lobbyTrophies = get('lobby-trophies'); this.lobbyGold = get('lobby-gold');
@@ -30,12 +30,14 @@ export class UIManager {
     this.hpFillEl = get('hp-fill'); this.xpFillEl = get('xp-fill');
     this.lvlTextEl = get('player-lvl-text'); this.hpTextEl = get('player-hp-text');
     this.perkOverlay = get('perk-overlay'); this.endModal = get('end-modal');
-    this.endTitle = get('end-title'); this.endSubtitle = get('end-subtitle');
-    this.rewardTrophy = get('reward-trophy'); this.rewardGold = get('reward-gold');
-    this.modalLobbyBtn = get('modal-lobby-btn'); this.modalPlayAgainBtn = get('modal-play-again-btn');
+    this.endTitle = get('end-title'); this.endSubtitle = get('end-subtitle'); this.rewardTrophy = get('reward-trophy');
+    this.rewardGold = get('reward-gold'); this.modalLobbyBtn = get('modal-lobby-btn'); this.modalPlayAgainBtn = get('modal-play-again-btn');
 
     this.elementPicker = new ElementPicker(this.perkOverlay);
     this.pendingPicks = 0;
+    this.leaderboard = new Leaderboard(get('leaderboard'));
+    this.topRightHUD = new TopRightHUD(get('top-right-hud'));
+    this.spellIndicator = new SpellIndicator(get('spell-indicator'));
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange?.(h));
     if (this.questManager) this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
     if (this.spellbookContainer && this.spellbookManager) this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
@@ -66,6 +68,7 @@ export class UIManager {
     this.modalPlayAgainBtn.addEventListener('click', () => { this.endModal.style.display = 'none'; startMatchUI(); });
     this.modalLobbyBtn.addEventListener('click', () => {
       this.elementPicker.hide(); this.pendingPicks = 0;
+      this.leaderboard?.reset(); this.topRightHUD?.reset(); this.spellIndicator?.reset();
       document.body.classList.remove('in-match'); this.endModal.style.display = 'none'; this.hud.style.display = 'none';
       this.lobbyScreen.style.display = 'flex'; this.renderLobby();
       this.onReturnToLobby?.();
@@ -95,11 +98,8 @@ export class UIManager {
     if (document.getElementById('cast-btn') || !this.hud) return;
     const castBtn = document.createElement('div');
     castBtn.id = 'cast-btn';
-    castBtn.style.cssText = 'position:absolute;bottom:calc(24px + env(safe-area-inset-bottom,0px));right:calc(116px + env(safe-area-inset-right,0px));width:68px;height:68px;border-radius:50%;background:rgba(15,23,42,0.85);border:2px solid #38bdf8;box-shadow:0 0 16px rgba(0,242,255,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;z-index:25;user-select:none;';
-    castBtn.innerHTML = `<svg viewBox="0 0 68 68" style="position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);"><circle cx="34" cy="34" r="30" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4"></circle><circle id="cast-cd-ring" cx="34" cy="34" r="30" fill="none" stroke="#00f2ff" stroke-width="4" stroke-dasharray="188.5" stroke-dashoffset="0"></circle></svg><span style="font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;z-index:2;">CAST</span>`;
-    const trigger = (e) => { e.preventDefault(); e.stopPropagation(); this.onCastRequested?.(); };
-    castBtn.addEventListener('pointerdown', trigger);
-    castBtn.addEventListener('touchstart', trigger, { passive: false });
+    castBtn.style.display = 'none';
+    castBtn.innerHTML = `<svg viewBox="0 0 68 68"><circle id="cast-cd-ring" cx="34" cy="34" r="30"></circle></svg>`;
     this.hud.appendChild(castBtn);
     this.castCdRing = document.getElementById('cast-cd-ring');
   }
@@ -107,9 +107,8 @@ export class UIManager {
   initKeyboardShortcuts() {
     window.addEventListener('keydown', (e) => {
       if (this.perkOverlay.style.display === 'flex' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
-        const index = parseInt(e.code.replace('Digit', ''), 10) - 1;
-        const cards = this.perkOverlay.querySelectorAll('.perk-card');
-        if (cards[index]) cards[index].click();
+        const idx = parseInt(e.code.replace('Digit', ''), 10) - 1;
+        this.perkOverlay.querySelectorAll('.perk-card')[idx]?.click();
       }
     });
   }
@@ -159,10 +158,7 @@ export class UIManager {
     this.spellTierEl.textContent = tierNames[spell.tier] || (spell.id === 'fist' ? 'Mushti' : `Tier ${spell.tier || 1}`);
     this.spellTierEl.style.color = `#${(spell.color || 0x38bdf8).toString(16).padStart(6, '0')}`;
 
-    if (!elements || elements.length === 0) {
-      this.spellChipsEl.innerHTML = '';
-      return;
-    }
+    if (!elements || elements.length === 0) { this.spellChipsEl.innerHTML = ''; return; }
     const icons = { E: '🪨', F: '🔥', W: '💧' };
     this.spellChipsEl.innerHTML = elements.map((e) => {
       const color = ELEMENT_COLORS[e] ? `#${ELEMENT_COLORS[e].toString(16).padStart(6, '0')}` : '#888';
@@ -170,9 +166,13 @@ export class UIManager {
     }).join('');
   }
 
-  updateHUD(player, aliveCount, isSafe) {
+  updateHUD(player, aliveCountOrActors, isSafe, dt = 0.5) {
+    const isList = Array.isArray(aliveCountOrActors);
+    const aliveCount = isList ? aliveCountOrActors.length : aliveCountOrActors;
     if (this.aliveCountEl) this.aliveCountEl.textContent = aliveCount;
-    if (this.zoneStatusEl) {
+    if (this.leaderboard && isList) this.leaderboard.update(aliveCountOrActors, player, dt);
+    if (this.topRightHUD) this.topRightHUD.update(player, isSafe);
+    else if (this.zoneStatusEl) {
       this.zoneStatusEl.textContent = isSafe ? 'Safe' : 'DANGER';
       this.zoneStatusEl.style.color = isSafe ? '#b700ff' : '#ef4444';
     }
@@ -188,6 +188,7 @@ export class UIManager {
     this.lvlTextEl.textContent = `Lv ${player.level} ${player.hero?.name || ''}`;
 
     this.updateSpellPanel(player);
+    if (this.spellIndicator) this.spellIndicator.update(player);
     if (this.tapasIndicatorEl) this.tapasIndicatorEl.style.display = player.tapasActive ? 'inline-block' : 'none';
 
     if (this.castCdRing) {
