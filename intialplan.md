@@ -20,7 +20,7 @@ Building a **Magica.io-style 2.5D top-down battle royale** using an AI-driven wo
 Keep every file under 250 lines so an AI assistant can read and rewrite entire files cleanly:
 
 ```text
-magica-royale/
+divyastra/
 ├── index.html               # Canvas + HUD overlay (Joysticks, HP bar, Match info)
 ├── package.json
 ├── capacitor.config.json    # Android app ID, orientation lock

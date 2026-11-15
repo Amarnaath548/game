@@ -15,13 +15,13 @@ A fast-paced 2.5D battle royale game with 8 elemental spells, distinct blocky wi
 
 ### Netlify Alternative
 To deploy manually on Netlify:
-- **Base directory**: `magica-royale`
+- **Base directory**: `divyastra`
 - **Build command**: `npm run build`
-- **Publish directory**: `magica-royale/dist`
+- **Publish directory**: `divyastra/dist`
 
 ## Local Development
 ```bash
-cd magica-royale
+cd divyastra
 npm install
 npm run dev
 ```

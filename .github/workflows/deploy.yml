@@ -28,11 +28,11 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        working-directory: magica-royale
+        working-directory: divyastra
         run: npm install
 
       - name: Build project
-        working-directory: magica-royale
+        working-directory: divyastra
         run: npm run build
 
       - name: Configure GitHub Pages
@@ -41,7 +41,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: magica-royale/dist
+          path: divyastra/dist
 
   deploy:
     environment:

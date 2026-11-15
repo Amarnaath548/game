@@ -1,47 +1,47 @@
 # Project Context: Divyastra
 
 ## Code Files
-- `magica-royale/src/main.js`: Entry point, system/manager wiring, lightweight animate loop (under 150 lines).
-- `magica-royale/src/core/SpawnManager.js`: Chest, crystal, bush, and bot spawning/cleanup, bot ring coordinates, loot drops.
-- `magica-royale/src/core/CombatResolver.js`: Spell casting, projectile updates, hit resolution, status effects, Electro chain, obelisk/crystal explosions, kill feed & banners.
-- `magica-royale/src/core/MatchManager.js`: Match lifecycle (start/reset), loadout application, gem/orb collection, storm zone updates, win/loss triggers, HUD sync.
-- `magica-royale/src/config/constants.js`: Spells (8 elements), levels, storm phases (110s fast pacing), arena radius (120u), colors, HERO_VISUAL_SCALE.
-- `magica-royale/src/core/SceneManager.js`: Three.js scene, camera with trauma shake decay, lights, obelisks, biome support.
-- `magica-royale/src/core/WorldEnvironment.js`: Ponds with shoreline rings and instanced low-poly props (trees, rocks, fences, pillars).
-- `magica-royale/src/core/InputManager.js`: Dual-stick / WASD + mouse aim assist snap (+/-20 deg), auto-repeat fire.
-- `magica-royale/src/core/SoundManager.js`: Procedural Web Audio API sound effects (no external audio).
-- `magica-royale/src/core/MetaProgression.js`: LocalStorage trophies, ranks, 8 staff loadouts, meta upgrades.
-- `magica-royale/src/core/QuestManager.js`: Daily quest state in localStorage, seeded deterministic quest generator (3 distinct daily quests), event progression recorder, and claim handler.
-- `magica-royale/src/ui/QuestView.js`: Lobby quests tab list renderer, quest progress bars, claim buttons, and uncollected quest badge indicator.
-- `magica-royale/src/core/SpellAccess.js`: Spell ownership validation, lock shake animation helper, perk selection modal renderer.
-- `magica-royale/src/core/ObjectPool.js`: Generic reusable object pool (projectiles, gems, orbs).
-- `magica-royale/src/entities/Actor.js`: Base wizard entity, scaled visual mesh, distinct hero silhouettes, knockback, shields, DoT/chill statuses.
-- `magica-royale/src/entities/HeroVisual.js`: Shared low-poly BoxGeometry hero builder (headgear, silhouetted extras, staff, eyes).
-- `magica-royale/src/entities/Player.js`: Player controller, movement, dash i-frames, XP, dmgBonus, player ground ring & arrow markers.
-- `magica-royale/src/entities/Bot.js`: Bot entity controller, level progression, dash execution, personality traits.
-- `magica-royale/src/entities/BotBrain.js`: State decision engine (FORAGE/SKIRMISH/EVADE), target leading, dash trigger.
-- `magica-royale/src/entities/BotSenses.js`: Spatial perception, projectile ray collision avoidance, target scoring.
-- `magica-royale/src/entities/Projectile.js`: Spell projectile physics, homing trajectories, piercing hits, visual particles.
-- `magica-royale/src/entities/Prop.js`: Chests (Wooden/Mythic), Arcane Crystals, Bushes.
-- `magica-royale/src/entities/Collectibles.js`: XP Gems and Health Orbs.
-- `magica-royale/src/systems/CollisionSystem.js`: 2D circle-circle collision helper math.
-- `magica-royale/src/systems/ActorSeparation.js`: Soft push-apart actor separation system keeping actors from overlapping while preserving dashes and knockback.
-- `magica-royale/src/systems/ParticleSystem.js`: GPU instanced particle pool and burst effects.
-- `magica-royale/src/systems/ZoneSystem.js`: Shrinking storm cylinder, perimeter ring, tick damage.
-- `magica-royale/src/ui/UIManager.js`: 3-tab lobby UI (Heroes/Staves/Upgrades), HUD, 8-spell key shortcuts.
-- `magica-royale/src/ui/Banners.js`: Animated multi-kill banners (Double, Triple, Rampage) and zone transition toasts.
-- `magica-royale/src/ui/HeroSelectView.js`: Lobby hero roster grid view with CSS-rendered blocky previews and unlock/select states.
-- `magica-royale/src/ui/FloatingBarSystem.js`: 2D overhead projected health bars and Lv N tags for bots.
-- `magica-royale/src/ui/DamageNumbers.js`: Pooled 2D floating combat damage numbers over targets.
-- `magica-royale/src/ui/KillFeed.js`: Top-right animated match elimination feed.
-- `magica-royale/src/style.css` & `index.html`: UI styling, lobby layout, responsive touch overlay, 8-spell bar.
-- `magica-royale/src/config/spellRegistry.js`: Elemental enum (E/F/W), trajectory enum, T1 & T2 spell definitions, and sorted combo lookup getSpell().
-- `magica-royale/src/config/spellRegistryT3.js`: Tier 3 Astra spell definitions (10 mythological spells including Samudra Manthan E_F_W).
-- `magica-royale/src/entities/SpellSlotController.js`: Player spell controller with 3-element sorted multiset key lookup, cooldown tracking, and cast payload generation.
-- `magica-royale/src/systems/SpellEffects.js`: Pooled special spell shapes (Radials, Waves, Hazard Zones, and Lightning Beams) with hit checks and lifecycle management.
-- `magica-royale/src/ui/ElementPicker.js`: In-match non-pausing 3-card elemental level-up picker with spell outcome previews and 5s auto-pick fallback.
-- `magica-royale/src/core/SpellbookManager.js`: Spellbook mastery progression state in localStorage, unlock/milestone tracking, stars, and damage bonus lookup.
-- `magica-royale/src/ui/SpellbookView.js`: Lobby SPELLBOOK tab renderer displaying all 19 spells grouped by tier with mastery stars and kill progress.
+- `divyastra/src/main.js`: Entry point, system/manager wiring, lightweight animate loop (under 150 lines).
+- `divyastra/src/core/SpawnManager.js`: Chest, crystal, bush, and bot spawning/cleanup, bot ring coordinates, loot drops.
+- `divyastra/src/core/CombatResolver.js`: Spell casting, projectile updates, hit resolution, status effects, Electro chain, obelisk/crystal explosions, kill feed & banners.
+- `divyastra/src/core/MatchManager.js`: Match lifecycle (start/reset), loadout application, gem/orb collection, storm zone updates, win/loss triggers, HUD sync.
+- `divyastra/src/config/constants.js`: Spells (8 elements), levels, storm phases (110s fast pacing), arena radius (120u), colors, HERO_VISUAL_SCALE.
+- `divyastra/src/core/SceneManager.js`: Three.js scene, camera with trauma shake decay, lights, obelisks, biome support.
+- `divyastra/src/core/WorldEnvironment.js`: Ponds with shoreline rings and instanced low-poly props (trees, rocks, fences, pillars).
+- `divyastra/src/core/InputManager.js`: Dual-stick / WASD + mouse aim assist snap (+/-20 deg), auto-repeat fire.
+- `divyastra/src/core/SoundManager.js`: Procedural Web Audio API sound effects (no external audio).
+- `divyastra/src/core/MetaProgression.js`: LocalStorage trophies, ranks, 8 staff loadouts, meta upgrades.
+- `divyastra/src/core/QuestManager.js`: Daily quest state in localStorage, seeded deterministic quest generator (3 distinct daily quests), event progression recorder, and claim handler.
+- `divyastra/src/ui/QuestView.js`: Lobby quests tab list renderer, quest progress bars, claim buttons, and uncollected quest badge indicator.
+- `divyastra/src/core/SpellAccess.js`: Spell ownership validation, lock shake animation helper, perk selection modal renderer.
+- `divyastra/src/core/ObjectPool.js`: Generic reusable object pool (projectiles, gems, orbs).
+- `divyastra/src/entities/Actor.js`: Base wizard entity, scaled visual mesh, distinct hero silhouettes, knockback, shields, DoT/chill statuses.
+- `divyastra/src/entities/HeroVisual.js`: Shared low-poly BoxGeometry hero builder (headgear, silhouetted extras, staff, eyes).
+- `divyastra/src/entities/Player.js`: Player controller, movement, dash i-frames, XP, dmgBonus, player ground ring & arrow markers.
+- `divyastra/src/entities/Bot.js`: Bot entity controller, level progression, dash execution, personality traits.
+- `divyastra/src/entities/BotBrain.js`: State decision engine (FORAGE/SKIRMISH/EVADE), target leading, dash trigger.
+- `divyastra/src/entities/BotSenses.js`: Spatial perception, projectile ray collision avoidance, target scoring.
+- `divyastra/src/entities/Projectile.js`: Spell projectile physics, homing trajectories, piercing hits, visual particles.
+- `divyastra/src/entities/Prop.js`: Chests (Wooden/Mythic), Arcane Crystals, Bushes.
+- `divyastra/src/entities/Collectibles.js`: XP Gems and Health Orbs.
+- `divyastra/src/systems/CollisionSystem.js`: 2D circle-circle collision helper math.
+- `divyastra/src/systems/ActorSeparation.js`: Soft push-apart actor separation system keeping actors from overlapping while preserving dashes and knockback.
+- `divyastra/src/systems/ParticleSystem.js`: GPU instanced particle pool and burst effects.
+- `divyastra/src/systems/ZoneSystem.js`: Shrinking storm cylinder, perimeter ring, tick damage.
+- `divyastra/src/ui/UIManager.js`: 3-tab lobby UI (Heroes/Staves/Upgrades), HUD, 8-spell key shortcuts.
+- `divyastra/src/ui/Banners.js`: Animated multi-kill banners (Double, Triple, Rampage) and zone transition toasts.
+- `divyastra/src/ui/HeroSelectView.js`: Lobby hero roster grid view with CSS-rendered blocky previews and unlock/select states.
+- `divyastra/src/ui/FloatingBarSystem.js`: 2D overhead projected health bars and Lv N tags for bots.
+- `divyastra/src/ui/DamageNumbers.js`: Pooled 2D floating combat damage numbers over targets.
+- `divyastra/src/ui/KillFeed.js`: Top-right animated match elimination feed.
+- `divyastra/src/style.css` & `index.html`: UI styling, lobby layout, responsive touch overlay, 8-spell bar.
+- `divyastra/src/config/spellRegistry.js`: Elemental enum (E/F/W), trajectory enum, T1 & T2 spell definitions, and sorted combo lookup getSpell().
+- `divyastra/src/config/spellRegistryT3.js`: Tier 3 Astra spell definitions (10 mythological spells including Samudra Manthan E_F_W).
+- `divyastra/src/entities/SpellSlotController.js`: Player spell controller with 3-element sorted multiset key lookup, cooldown tracking, and cast payload generation.
+- `divyastra/src/systems/SpellEffects.js`: Pooled special spell shapes (Radials, Waves, Hazard Zones, and Lightning Beams) with hit checks and lifecycle management.
+- `divyastra/src/ui/ElementPicker.js`: In-match non-pausing 3-card elemental level-up picker with spell outcome previews and 5s auto-pick fallback.
+- `divyastra/src/core/SpellbookManager.js`: Spellbook mastery progression state in localStorage, unlock/milestone tracking, stars, and damage bonus lookup.
+- `divyastra/src/ui/SpellbookView.js`: Lobby SPELLBOOK tab renderer displaying all 19 spells grouped by tier with mastery stars and kill progress.
 
 ## Completed Features
 - 2.5D Battle Royale on 120u arena with 11 bots and mythological Mantra/Shastra/Astra spells (Agni Bana, Jala Tarang, Bhumi Shila, etc.).
@@ -74,6 +74,6 @@
 - **Phase C (Tapas Mechanic) Complete**: Implemented Tapas mechanic with constants `TAPAS_DELAY = 1.2` and `TAPAS_BONUS = 0.4` in `constants.js`; player staying motionless and not casting for 1.2s charges a soft glowing yellow-gold ground ring; once charged, enters Tapas state with sound cue `playTapasReady()` and HUD badge `TAPAS +40%`; moving or taking damage cancels it; the next cast gains +40% bonus damage across all payloads (linear, radial, wave, melee, chains, and hazard ticks) and consumes Tapas. All files preserved under 250 lines.
 - **Bugfix Complete**: Added missing `SpellEffects` and `CollisionSystem` imports to `core/CombatResolver.js`.
 - **Visual & Cast Polish Batch (Astra Rings, Manthan Spiral, Element Particles & Picker Queue) Complete**: Astra geometric ring groups built with independent materials to prevent shared fade issues; Astra ring spawns once per cast and only for bots within 30 units of the player; Samudra Manthan features 4 curved spiral arms for visible swirling rotation; ParticleSystem dynamically derives particle styles from spell elements (F=EMBER, W=DROPLET, E=SHARD, alternating on combos) with color fallback for crystals/chests; and ElementPicker/UIManager queue multi-level picks with pendingPicks until 3 elements or 0.
-- **Game Rebranding Complete**: Renamed the game from "Magica Royale" to "Divyastra" across `config/constants.js`, `index.html`, `package.json`, `README.md`, `GDD.md`, and `CONTEXT.md`; verified lobby logo and document title use `GAME_TITLE`; verified zero remaining references to Magica.io; preserved all existing localStorage keys (`MAGICA_ROYALE_PROGRESSION_V1`, `MAGICA_ROYALE_QUESTS_V1`, `MAGICA_ROYALE_SPELLBOOK_V1`, `magica_biome_history`, `magica_next_biome`, `magica_unlocked_heroes`, `magica_selected_hero`), the `magica-royale` folder name, and GitHub Actions workflow paths.
+- **Game Rebranding Complete**: Renamed the game from "Magica Royale" to "Divyastra" across `config/constants.js`, `index.html`, `package.json`, `README.md`, `GDD.md`, and `CONTEXT.md`; verified lobby logo and document title use `GAME_TITLE`; verified zero remaining references to Magica.io; preserved all existing localStorage keys (`MAGICA_ROYALE_PROGRESSION_V1`, `MAGICA_ROYALE_QUESTS_V1`, `MAGICA_ROYALE_SPELLBOOK_V1`, `magica_biome_history`, `magica_next_biome`, `magica_unlocked_heroes`, `magica_selected_hero`), the `divyastra` folder name, and GitHub Actions workflow paths.
 - **Phase 1 (Camera and World Look) Complete**: Implemented close tilted third-person camera (58 deg pitch, FOV 58, 8% avatar height, CLOSE default, smooth follow, lookahead, soft linear fog into 0x7ff5e4 sky); saturated bright green ground (0x4cc22a) with flat colors (no canvas textures), shoreline rings (0xe9d8a6), and blue ponds (0x3b5f8a); soft directional + strong ambient lighting with shadows disabled on mobile; instanced pine trees, faceted rocks, fences, and stone pillars away from center spawn; non-flickering ground rings/aim line with depthWrite: false and renderOrder.
 - **Actor Separation & Melee Spacing Complete**: Added `systems/ActorSeparation.js` soft push-apart (capped at 0.35u, skipped during dash/knockback/spellDash, clamped to arena radius) integrated into `main.js` per-frame animate loop; tuned melee bot spacing in `BotBrain.js` with 1.4u stopping distance, 0.4 strafe between 1.1-1.6u, and -0.5 back-away bias below 1.1u.
