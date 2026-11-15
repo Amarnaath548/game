@@ -116,7 +116,9 @@ export class Player extends Actor {
 
   takeDamage(amount) {
     if (this.tapasActive || this.tapasTimer > 0) this.breakTapas();
-    return super.takeDamage(amount);
+    const dealt = super.takeDamage(amount);
+    if (dealt > 0) this.onDamage?.(dealt);
+    return dealt;
   }
 
   breakTapas() {

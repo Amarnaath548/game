@@ -1,8 +1,41 @@
+const MUTE_KEY = 'magica_sound_muted';
+
 export class SoundManager {
   constructor() {
     this.ctx = null;
     this.muted = false;
+    try {
+      this.muted = localStorage.getItem(MUTE_KEY) === 'true';
+    } catch {
+      this.muted = false;
+    }
     this.initAudioContext();
+    this.initMuteUI();
+  }
+
+  toggleMute() {
+    this.muted = !this.muted;
+    try {
+      localStorage.setItem(MUTE_KEY, String(this.muted));
+    } catch {}
+    this.updateMuteButtons();
+    return this.muted;
+  }
+
+  updateMuteButtons() {
+    const btns = [document.getElementById('mute-btn'), document.getElementById('hud-mute-btn')].filter(Boolean);
+    btns.forEach((b) => { b.textContent = this.muted ? '🔇' : '🔊'; });
+  }
+
+  initMuteUI() {
+    this.updateMuteButtons();
+    const btns = [document.getElementById('mute-btn'), document.getElementById('hud-mute-btn')].filter(Boolean);
+    btns.forEach((b) => {
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleMute();
+      });
+    });
   }
 
   initAudioContext() {
@@ -18,7 +51,7 @@ export class SoundManager {
       }
     };
 
-    ['pointerdown', 'keydown', 'touchstart', 'click'].forEach((evt) => {
+    ['pointerdown', 'keydown', 'touchstart', 'touchend', 'click'].forEach((evt) => {
       window.addEventListener(evt, startAudio, { once: true, passive: true });
     });
   }
@@ -85,13 +118,32 @@ export class SoundManager {
 
     const now = this.ctx.currentTime;
     osc.frequency.setValueAtTime(110, now);
-    osc.frequency.exponentialRampToValueAtTime(30, now + 0.35);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 0.25);
 
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    gain.gain.setValueAtTime(0.22, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
     osc.start(now);
-    osc.stop(now + 0.35);
+    osc.stop(now + 0.25);
+  }
+
+  playPlayerDamage() {
+    if (this.muted || !this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    const now = this.ctx.currentTime;
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.exponentialRampToValueAtTime(60, now + 0.14);
+
+    gain.gain.setValueAtTime(0.14, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+    osc.start(now);
+    osc.stop(now + 0.14);
   }
 
   playDash() {
@@ -144,13 +196,13 @@ export class SoundManager {
       osc.connect(gain);
       gain.connect(this.ctx.destination);
 
-      const time = now + idx * 0.07;
+      const time = now + idx * 0.04;
       osc.frequency.setValueAtTime(freq, time);
-      gain.gain.setValueAtTime(0.12, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+      gain.gain.setValueAtTime(0.1, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
 
       osc.start(time);
-      osc.stop(time + 0.15);
+      osc.stop(time + 0.12);
     });
   }
 

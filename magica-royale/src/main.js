@@ -19,6 +19,7 @@ import { MatchManager } from './core/MatchManager.js';
 import { QuestManager } from './core/QuestManager.js';
 import { SpellbookManager } from './core/SpellbookManager.js';
 import { AstraVisuals } from './systems/AstraVisuals.js';
+import { TutorialHints } from './ui/TutorialHints.js';
 
 // Core Systems
 const sceneManager = new SceneManager();
@@ -27,6 +28,7 @@ const sound = new SoundManager();
 const meta = new MetaProgression();
 const questManager = new QuestManager();
 const spellbookManager = new SpellbookManager();
+const tutorialHints = new TutorialHints();
 const particleSys = new ParticleSystem(sceneManager.scene, 400);
 const floatingBars = new FloatingBarSystem(sceneManager.camera);
 const damageNumbers = new DamageNumbers(sceneManager.camera);
@@ -38,6 +40,10 @@ const astraVisuals = new AstraVisuals(sceneManager.scene);
 const player = new Player(sceneManager.scene, input);
 player.onTapasReadyCallback = () => {
   sound.playTapasReady();
+  tutorialHints.onTapasReady();
+};
+player.onDamage = () => {
+  sound.playPlayerDamage();
 };
 
 // Pools
@@ -97,12 +103,29 @@ const ui = new UIManager(meta, {
   onStartMatch: () => {
     sceneManager.onMatchStart();
     matchManager.startMatch();
+    tutorialHints.onMatchStart();
     lastTime = performance.now();
   },
-  onReturnToLobby: () => matchManager.resetToLobby()
+  onReturnToLobby: () => {
+    matchManager.resetToLobby();
+    tutorialHints.onMatchEnd();
+  }
 });
 matchManager.ui = ui;
 combatResolver.ui = ui;
+sound.initMuteUI();
+
+const origShowLevelUp = ui.showLevelUp.bind(ui);
+ui.showLevelUp = (p, lvl) => {
+  origShowLevelUp(p, lvl);
+  tutorialHints.onLevelUp(lvl);
+};
+const origShowEndGame = ui.showEndGame.bind(ui);
+ui.showEndGame = (...args) => {
+  tutorialHints.onMatchEnd();
+  origShowEndGame(...args);
+};
+document.getElementById('perk-overlay')?.addEventListener('click', () => tutorialHints.onElementPicked());
 
 // Debug Overlay (?debug=1)
 const isDebug = new URLSearchParams(window.location.search).get('debug') === '1';
@@ -136,14 +159,19 @@ function animate() {
   if (matchManager.matchActive) {
     sceneManager.checkPerformanceFallback(dt, particleSys);
     input.update(player.group.position, spawnManager.bots, player.currentSpell.range);
+    if (input.moveDir.x !== 0 || input.moveDir.z !== 0) {
+      tutorialHints.onMove();
+    }
 
     if (player.dashTimer > 0 && player.dashTimer - dt <= 0) {
       sound.playDash();
+      tutorialHints.onDash();
     }
 
     if (input.fireReleased || (input.isAiming && player.shootCooldown <= 0)) {
       input.fireReleased = false;
       combatResolver.playerShoot(input);
+      tutorialHints.onCast();
     }
 
     player.update(dt, spawnManager.bushes);
