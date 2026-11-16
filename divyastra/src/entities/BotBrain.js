@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SEPARATION_FACTOR } from '../config/constants.js';
 import { BotSenses } from './BotSenses.js';
 import { evaluateCornered } from './BotLastStand.js';
 
@@ -156,11 +157,13 @@ export class BotBrain {
     const aimOffset = (Math.random() - 0.5) * 2 * (maxErrDeg * Math.PI / 180);
     const aimX = Math.sin(baseAngle + aimOffset), aimZ = Math.cos(baseAngle + aimOffset);
 
+    const sepDist = (bot.radius + target.radius) * SEPARATION_FACTOR;
     let moveX, moveZ;
     if (traj === 'MELEE') {
       const perpX = -Math.cos(baseAngle) * bot.strafeDir, perpZ = Math.sin(baseAngle) * bot.strafeDir;
-      const distBias = edist > 1.6 ? 1.0 : (edist < 1.1 ? -0.5 : 0.0);
-      const strafeSpd = edist > 1.6 ? 0.0 : 0.4;
+      const approaching = edist > sepDist + 0.3;
+      const distBias = approaching ? 1.0 : 0.0;
+      const strafeSpd = approaching ? 0.0 : 0.4;
       moveX = perpX * strafeSpd + (edx / edist) * distBias;
       moveZ = perpZ * strafeSpd + (edz / edist) * distBias;
     } else {
@@ -175,7 +178,7 @@ export class BotBrain {
     }
 
     let checkRange = spell.range || 22;
-    if (traj === 'MELEE') checkRange = 1.8;
+    if (traj === 'MELEE') checkRange = sepDist + 0.45;
     else if (traj === 'RADIAL') checkRange = (spell.radius || 6.0) * 0.8;
     const inRange = edist <= checkRange;
     const dashReady = traj !== 'SELF_DASH' || (edist <= 12 && edist >= 2.0);

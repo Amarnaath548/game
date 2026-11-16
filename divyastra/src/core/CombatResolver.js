@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT } from '../config/constants.js';
+import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT, SEPARATION_FACTOR } from '../config/constants.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js'; import { SpellEffects } from '../systems/SpellEffects.js';
 import { HitFeedback } from '../systems/HitFeedback.js'; import { projectileDeflect } from '../systems/ProjectileDeflect.js';
 
@@ -52,7 +52,7 @@ export class CombatResolver {
   executeMelee(cfg, owner) {
     if (owner.punchTimer !== undefined) owner.punchTimer = 0.15; this.particleSys.spawnBurst(owner.x + cfg.dirX * 1.1, 1.0, owner.z + cfg.dirZ * 1.1, 0xffaa44, 8, 4, 1.0, cfg.elements);
     if (this.sound) this.sound.playHit();
-    const halfCos = Math.cos((cfg.arc || 1.75) / 2), range = cfg.range || 2.2;
+    const halfCos = Math.cos((cfg.arc || 1.75) / 2), range = Math.max(cfg.range || 2.2, ((owner?.radius ?? 1.0) + 1.0) * SEPARATION_FACTOR + 0.6);
     const tgts = ((owner === this.player || !!owner?.isPlayer) ? this.spawnManager.bots : [this.player, ...this.spawnManager.bots]).filter((b) => b !== owner);
     const inCone = (t) => { const dx = t.x - owner.x, dz = t.z - owner.z, d = Math.hypot(dx, dz); return d <= range + (t.radius || 0.8) && (cfg.dirX * dx + cfg.dirZ * dz) / (d || 1) >= halfCos; };
     tgts.forEach((t) => { if (!t.isDead && inCone(t)) this.applySpellHit(t, cfg, owner, t.x, t.z, cfg.dirX, cfg.dirZ); });

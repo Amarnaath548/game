@@ -124,6 +124,7 @@ export const LEVEL_TABLE = [
 
 export const TAPAS_DELAY = 1.2;
 export const TAPAS_BONUS = 0.4;
+export const SEPARATION_FACTOR = 1.25;
 export const PROJECTILE_DEFLECT_MAX_PER_CAST = 12;
 
 // Bot AI tuning

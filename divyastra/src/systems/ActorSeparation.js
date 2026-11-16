@@ -1,4 +1,5 @@
-import { ARENA } from '../config/constants.js';
+import { ARENA, SEPARATION_FACTOR } from '../config/constants.js';
+export { SEPARATION_FACTOR };
 
 function isSkipped(actor) {
   return actor.dashTimer > 0 || (actor.isInvulnerable && !!actor.spellDash) || actor.kbTimer > 0;
@@ -24,7 +25,7 @@ export function separateActors(actors) {
       const dx = a.x - b.x;
       const dz = a.z - b.z;
       if (n > 30 && (Math.abs(dx) > 6 || Math.abs(dz) > 6)) continue;
-      const minDist = (a.radius + b.radius) * 1.25;
+      const minDist = (a.radius + b.radius) * SEPARATION_FACTOR;
       const dist = Math.hypot(dx, dz);
       if (dist >= minDist) continue;
 
