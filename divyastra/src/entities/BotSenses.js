@@ -1,3 +1,5 @@
+import { BOT_AGGRO_BASE } from '../config/constants.js';
+
 export class BotSenses {
   static findNearestLoot(bot, gems = [], healthOrbs = [], chests = []) {
     let nearestOrb = null;
@@ -38,7 +40,7 @@ export class BotSenses {
 
   static findThreatsAndTargets(bot, allActors, playerKills = 0) {
     const isKing = playerKills >= 3;
-    const baseAggro = 10 * bot.personality.aggression;
+    const baseAggro = BOT_AGGRO_BASE * bot.personality.aggression;
     const playerAggro = isKing ? baseAggro * (playerKills >= 5 ? 2.8 : 2.2) : baseAggro;
 
     let bestTarget = null;

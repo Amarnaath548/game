@@ -1,5 +1,6 @@
 import { ZoneSystem } from '../systems/ZoneSystem.js';
 import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE } from '../config/constants.js';
+import { getDevTools } from './DevTools.js';
 
 export class MatchManager {
   constructor(deps) {
@@ -95,6 +96,7 @@ export class MatchManager {
     this.spawnManager.startMatch();
 
     this.matchTime = 0;
+    getDevTools().resetMatch();
     if (this.questManager) this.questManager.onMatchStart();
     if (this.spellbookManager) this.spellbookManager.onMatchStart();
     this.isGameOver = false;
@@ -170,7 +172,8 @@ export class MatchManager {
     });
 
     // Storm Zone & Out-of-bounds damage
-    this.zoneSys.update(dt, [this.player, ...this.spawnManager.bots]);
+    const devTools = getDevTools();
+    if (!devTools.pauseZone) this.zoneSys.update(dt, [this.player, ...this.spawnManager.bots]);
 
     // Overhead Floating Health Bars for bots & damage numbers
     this.floatingBars.update(this.getAllAliveActors(), this.player, this.spawnManager.bushes);
@@ -184,19 +187,20 @@ export class MatchManager {
     this.banners.checkZoneStatus(isSafe);
 
     if (!this.isGameOver) {
+      const devT = getDevTools();
       if (this.player.isDead && !this.player.isDying) {
         this.isGameOver = true;
         this.matchActive = false;
         const place = aliveActors.length + 1;
-        if (this.questManager) this.questManager.record('matchEnd', { placement: place, survivalTime: this.matchTime, level: this.player.level });
-        const finished = this.questManager ? this.questManager.getQuestsCompletedThisMatch() : [];
-        this.ui.showEndGame(false, place, this.player, finished, this.spellbookManager?.getMatchSummary());
+        if (!devT.cheatsUsed && this.questManager) this.questManager.record('matchEnd', { placement: place, survivalTime: this.matchTime, level: this.player.level });
+        const finished = (!devT.cheatsUsed && this.questManager) ? this.questManager.getQuestsCompletedThisMatch() : [];
+        this.ui.showEndGame(false, place, this.player, finished, this.spellbookManager?.getMatchSummary(), devT.cheatsUsed);
       } else if (aliveActors.length === 1 && aliveActors[0] === this.player) {
         this.isGameOver = true;
         this.matchActive = false;
-        if (this.questManager) this.questManager.record('matchEnd', { placement: 1, survivalTime: this.matchTime, level: this.player.level });
-        const finished = this.questManager ? this.questManager.getQuestsCompletedThisMatch() : [];
-        this.ui.showEndGame(true, 1, this.player, finished, this.spellbookManager?.getMatchSummary());
+        if (!devT.cheatsUsed && this.questManager) this.questManager.record('matchEnd', { placement: 1, survivalTime: this.matchTime, level: this.player.level });
+        const finished = (!devT.cheatsUsed && this.questManager) ? this.questManager.getQuestsCompletedThisMatch() : [];
+        this.ui.showEndGame(true, 1, this.player, finished, this.spellbookManager?.getMatchSummary(), devT.cheatsUsed);
       }
     }
   }

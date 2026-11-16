@@ -64,6 +64,17 @@ export class SpawnManager {
     }
   }
 
+  spawnSingleBot() {
+    const id = this.bots.length + 1;
+    const angle = Math.random() * Math.PI * 2;
+    const r = 16 + Math.random() * 24;
+    const bx = Math.cos(angle) * r;
+    const bz = Math.sin(angle) * r;
+    const bot = new Bot(this.scene, bx, bz, id);
+    this.bots.push(bot);
+    return bot;
+  }
+
   cleanup() {
     this.chests.forEach((c) => c.destroy());
     this.crystals.forEach((c) => c.destroy());

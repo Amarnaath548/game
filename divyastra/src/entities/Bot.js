@@ -37,6 +37,7 @@ export class Bot extends Actor {
     }
 
     this.state = 'FORAGE';
+    this.evadeTimer = 0;
     this.skirmishMoveTimer = 1.0 + Math.random() * 0.8;
     this.strafeDir = (this.id % 2 === 0) ? 1 : -1;
     this.shootCooldown = 0.5 + Math.random() * 0.5;

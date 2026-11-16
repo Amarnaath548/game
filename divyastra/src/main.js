@@ -22,6 +22,7 @@ import { SpellbookManager } from './core/SpellbookManager.js';
 import { AstraVisuals } from './systems/AstraVisuals.js';
 import { TutorialHints } from './ui/TutorialHints.js';
 import { separateActors } from './systems/ActorSeparation.js';
+import { getDevTools } from './core/DevTools.js';
 
 // Core Systems
 const sceneManager = new SceneManager();
@@ -132,6 +133,21 @@ ui.showEndGame = (...args) => {
   origShowEndGame(...args);
 };
 
+// Dev mode integration
+const devTools = getDevTools();
+let devPanel = null;
+if (devTools.enabled) {
+  import('./ui/DevPanel.js').then(({ DevPanel }) => {
+    devPanel = new DevPanel({ player, spawnManager, matchManager, sceneManager, ui });
+  });
+}
+
+// Hook god mode & no-cooldown
+const origPlayerTakeDamage = player.takeDamage.bind(player);
+player.takeDamage = (amount) => { const a = devTools.onPlayerDamage(amount); return a <= 0 ? 0 : origPlayerTakeDamage(a); };
+const origPlayerShoot = combatResolver.playerShoot.bind(combatResolver);
+combatResolver.playerShoot = (input) => { origPlayerShoot(input); devTools.onPlayerCast(player); };
+
 // Debug Overlay (?debug=1)
 const isDebug = new URLSearchParams(window.location.search).get('debug') === '1';
 const debugEl = document.getElementById('debug-overlay');
@@ -146,8 +162,9 @@ let totalTime = 0;
 function animate() {
   requestAnimationFrame(animate);
   const now = performance.now();
-  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  const rawDt = Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
+  const dt = devTools.enabled ? devTools.scaleDt(rawDt) : rawDt;
   totalTime += dt;
 
   if (isDebug && debugEl) {
@@ -182,19 +199,21 @@ function animate() {
     player.update(dt, spawnManager.bushes);
 
     const allActors = matchManager.getAllAliveActors();
-    spawnManager.bots.forEach((bot) => {
-      bot.think(
-        dt,
-        matchManager.zoneSys.currentRadius,
-        allActors,
-        spawnManager.chests,
-        spawnManager.gems,
-        spawnManager.healthOrbs,
-        player.kills,
-        projectiles,
-        (b, ax, az) => combatResolver.botShoot(b, ax, az)
-      );
-    });
+    if (!devTools.freezeBots) {
+      spawnManager.bots.forEach((bot) => {
+        bot.think(
+          dt,
+          matchManager.zoneSys.currentRadius,
+          allActors,
+          spawnManager.chests,
+          spawnManager.gems,
+          spawnManager.healthOrbs,
+          player.kills,
+          projectiles,
+          (b, ax, az) => combatResolver.botShoot(b, ax, az)
+        );
+      });
+    }
 
     separateActors(matchManager.getAllAliveActors());
     combatResolver.resolveObeliskCollisions(player);
@@ -204,6 +223,7 @@ function animate() {
     if (astraVisuals) astraVisuals.update(dt);
     spawnManager.updateProps(dt);
     matchManager.update(dt);
+    if (devPanel) devPanel.updateCircles(matchManager.getAllAliveActors());
     sceneManager.updateCamera(player.group.position, input.aimDir, dt);
   } else {
     const time = totalTime * 0.2;

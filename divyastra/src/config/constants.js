@@ -129,6 +129,13 @@ export const LEVEL_TABLE = [
 export const TAPAS_DELAY = 1.2;
 export const TAPAS_BONUS = 0.4;
 
+// Bot AI tuning
+export const BOT_AGGRO_BASE = 14;
+export const BOT_DAMAGE_MULT = 1.25;
+export const LAST_STAND_ZONE_RADIUS = 30;
+export const LAST_STAND_ALIVE = 3;
+export const EVADE_PATIENCE = 3;
+
 export const STORM_PHASES = [
   { duration: 25, startRadius: 120, endRadius: 120, tickDamage: 0 },
   { duration: 30, startRadius: 120, endRadius: 75, tickDamage: 10 },

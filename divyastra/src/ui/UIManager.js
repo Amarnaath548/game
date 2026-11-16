@@ -52,11 +52,9 @@ export class UIManager {
     this.playMatchBtn.addEventListener('click', startMatchUI);
     this.modalPlayAgainBtn.addEventListener('click', () => { this.endModal.style.display = 'none'; startMatchUI(); });
     this.modalLobbyBtn.addEventListener('click', () => {
-      this.elementPicker.hide(); this.pendingPicks = 0;
-      this.leaderboard?.reset(); this.topRightHUD?.reset(); this.spellIndicator?.reset();
+      this.elementPicker.hide(); this.pendingPicks = 0; this.leaderboard?.reset(); this.topRightHUD?.reset(); this.spellIndicator?.reset();
       document.body.classList.remove('in-match'); this.endModal.style.display = 'none'; this.hud.style.display = 'none';
-      this.lobbyScreen.style.display = 'flex'; this.renderLobby();
-      this.onReturnToLobby?.();
+      this.lobbyScreen.style.display = 'flex'; this.renderLobby(); this.onReturnToLobby?.();
     });
 
     const tabBtns = document.querySelectorAll('.lobby-tab-btn'), tabPanels = document.querySelectorAll('.tab-panel');
@@ -230,9 +228,10 @@ export class UIManager {
     renderPerkSelection(this.perkOverlay, this.onPerkSelected);
   }
 
-  showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null) {
+  showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null, devCheated = false) {
     this.elementPicker.hide(); this.pendingPicks = 0;
-    const results = this.meta.applyMatchResults(place); this.endModal.style.display = 'flex';
+    const results = devCheated ? { trophyChange: 0, newTrophies: this.meta.data.trophies, goldEarned: 0, newGold: this.meta.data.gold } : this.meta.applyMatchResults(place);
+    this.endModal.style.display = 'flex';
     const heroName = player?.hero?.name || 'Archmage', kills = player?.kills || 0;
     this.endTitle.innerHTML = isVictory ? `<span class="title-win">#1 VICTORY ROYALE!</span>` : `<span class="title-loss">DEFEAT - #${place} of 12</span>`;
     this.endSubtitle.textContent = isVictory ? `Glory to ${heroName}! Sanctum Champion.` : `${heroName} eliminated at rank #${place}.`;
@@ -241,8 +240,10 @@ export class UIManager {
     const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
     const newSpellHtml = spellbookSummary?.newSpells?.length ? `<div class="quest-done-pill new-astra-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New astra unlocked! (${spellbookSummary.newSpells.join(', ')})</div>` : '';
     const starHtml = spellbookSummary?.starsEarned ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ Siddhi earned! (+${spellbookSummary.starsEarned})</div>` : '';
-    statsEl.innerHTML = `<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}${newSpellHtml}${starHtml}`;
+    const devHtml = devCheated ? `<div class="quest-done-pill" style="background:#ef4444;border-color:#f87171;color:#fff;font-weight:900;">DEV MATCH - no rewards</div>` : '';
+    statsEl.innerHTML = `${devHtml}<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}${newSpellHtml}${starHtml}`;
     const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
-    this.rewardTrophy.textContent = `${tSign} 🏆 (${results.newTrophies})`; this.rewardGold.textContent = `+${results.goldEarned} 🪙 (${results.newGold})`;
+    this.rewardTrophy.textContent = `${tSign} 🏆 (${results.newTrophies})`;
+    this.rewardGold.textContent = `+${results.goldEarned} 🪙 (${results.newGold})`;
   }
 }
