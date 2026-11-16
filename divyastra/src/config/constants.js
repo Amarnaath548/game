@@ -94,11 +94,7 @@ export const CAMERA_CONFIG = {
   SHAKE_AMPLITUDE: 0.12,
   SHAKE_DURATION: 0.15,
   SHAKE_DMG_THRESHOLD: 25,
-  ZOOM_LEVELS: {
-    NORMAL: 1.22,
-    CLOSE: 1.0
-  },
-  DEFAULT_ZOOM: 'CLOSE'
+  ZOOM: 1.0
 };
 
 export const PLAYER_BASE = {
