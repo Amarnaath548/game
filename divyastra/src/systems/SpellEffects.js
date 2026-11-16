@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { projectileDeflect } from './ProjectileDeflect.js';
+import { projectileDeflect, destroyProjectilesInRotatedRect } from './ProjectileDeflect.js';
 import { damageObjectsInCircle, damageObjectsInWave } from '../core/EnvironmentDamage.js';
 
 export class SpellEffects {
@@ -139,6 +139,7 @@ export class SpellEffects {
       const dist = w.speed * dt;
       w.x += w.dirX * dist; w.z += w.dirZ * dist; w.distanceTraveled += dist;
       w.mesh.position.set(w.x, 0.45, w.z);
+      if (w.config?.deflectsProjectiles && this.resolver) destroyProjectilesInRotatedRect(w.x, w.z, w.angle, w.width, w.depth, w.owner, w.config, this.resolver.projectiles, this.particleSys, this.resolver.sound);
       const cos = Math.cos(-w.angle), sin = Math.sin(-w.angle);
       const halfW = w.width * 0.5, halfD = w.depth * 0.5;
       targets.forEach((t) => {

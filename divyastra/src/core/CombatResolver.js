@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT, SEPARATION_FACTOR, AOE_SPLASH_DAMAGE_MULT } from '../config/constants.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js'; import { SpellEffects } from '../systems/SpellEffects.js';
-import { HitFeedback } from '../systems/HitFeedback.js'; import { projectileDeflect } from '../systems/ProjectileDeflect.js';
+import { HitFeedback } from '../systems/HitFeedback.js'; import { projectileDeflect, destroyProjectilesInCircle } from '../systems/ProjectileDeflect.js';
 import { damageObjectsInCircle } from './EnvironmentDamage.js'; import { resolveChain, spawnSubMunitions } from './CombatChain.js';
 
 export class CombatResolver {
@@ -97,9 +97,7 @@ export class CombatResolver {
     [...allActors, ...chests.filter((c) => !c.isDead)].forEach((t) => { if (Math.hypot(t.x - crystal.x, t.z - crystal.z) <= crystal.explosionRadius) t.takeDamage(crystal.explosionDamage); });
   }
 
-  spawnSubMunitions(x, z, cfg, owner) {
-    spawnSubMunitions(this, x, z, cfg, owner);
-  }
+  spawnSubMunitions(x, z, cfg, owner) { spawnSubMunitions(this, x, z, cfg, owner); }
 
   applySpellHit(target, cfg, owner, hitX, hitZ, dirX = null, dirZ = null) {
     let dmg = cfg.damage;
@@ -162,6 +160,7 @@ export class CombatResolver {
     this.projectiles.forEach((p) => {
       if (!p.active) return;
       p.update(dt, allActors);
+      if (p.active && p.spellConfig?.deflectsProjectiles) destroyProjectilesInCircle(p.x, p.z, p.radius, p.owner, p.spellConfig, this.projectiles, this.particleSys, this.sound);
       const tgts = (p.owner === this.player || !!p.owner?.isPlayer) ? bots : [this.player, ...bots.filter((b) => b !== p.owner)];
       if (!p.active && p.reachedMaxRange && (p.lobHeight > 0 || p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn)) {
         return this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, null, tgts);
@@ -205,6 +204,7 @@ export class CombatResolver {
       const d = this.spellDashes[i];
       d.elapsed += dt; d.owner.x += d.dirX * d.speed * dt; d.owner.z += d.dirZ * d.speed * dt;
       this.particleSys.spawnBurst(d.owner.x, 0.4, d.owner.z, d.config.color || 0x854d0e, 2, 4, 1.0, d.config.elements);
+      if (d.config?.deflectsProjectiles) destroyProjectilesInCircle(d.owner.x, d.owner.z, (d.owner.radius || 1.0) + 1.2, d.owner, d.config, this.projectiles, this.particleSys, this.sound);
       const tgts = d.owner?.isPlayer ? bots : [this.player, ...bots.filter((b) => b !== d.owner)];
       tgts.forEach((t) => {
         if (!t.isDead && !d.hitTargets.has(t) && CollisionSystem.checkCircle(d.owner.x, d.owner.z, d.owner.radius + 0.5, t.x, t.z, t.radius)) {
@@ -220,6 +220,7 @@ export class CombatResolver {
         this.delayedStrikes.splice(i, 1);
         const tgts = s.owner?.isPlayer ? bots : [this.player, ...bots.filter((b) => b !== s.owner)];
         this.spellEffects.spawnLightningBeam(s.targetX, s.targetZ, s.color || 0xfef08a);
+        if (s.deflectsProjectiles || s.config?.deflectsProjectiles) destroyProjectilesInCircle(s.targetX, s.targetZ, s.aoeRadius || 4.0, s.owner, s.config || s, this.projectiles, this.particleSys, this.sound);
         const strikeHit = new Set();
         damageObjectsInCircle(this, s.targetX, s.targetZ, s.aoeRadius || 4.0, s.damage, strikeHit);
         this.detonateAoE(s.targetX, s.targetZ, s.config || s, s.owner, null, tgts, strikeHit);
@@ -231,9 +232,7 @@ export class CombatResolver {
     this.updateProjectiles(dt, allActors, chests, crystals, bots);
   }
 
-  resolveChain(originX, originZ, cfg, owner, directTarget, targets) {
-    resolveChain(this, originX, originZ, cfg, owner, directTarget, targets);
-  }
+  resolveChain(originX, originZ, cfg, owner, directTarget, targets) { resolveChain(this, originX, originZ, cfg, owner, directTarget, targets); }
 
   reset() {
     this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this.spellDashes.forEach((d) => { if (d.owner) { d.owner.isInvulnerable = false; d.owner.spellDash = false; } }); this.spellDashes = [];

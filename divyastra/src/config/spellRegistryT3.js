@@ -3,7 +3,7 @@ export const SPELLS_T3 = {
     id: 'E_E_E',
     tier: 3,
     name: 'Airavata',
-    lore: 'Mighty celestial pachyderm charge that flattens adversaries',
+    lore: 'Mighty celestial pachyderm charge that flattens adversaries. Blocks enemy projectiles',
     elements: ['E', 'E', 'E'],
     trajectory: 'SELF_DASH',
     color: 0x854d0e,
@@ -13,7 +13,8 @@ export const SPELLS_T3 = {
     radius: 1.4,
     knockback: 8.0,
     stunDuration: 1.2,
-    cooldown: 2.2
+    cooldown: 2.2,
+    deflectsProjectiles: true
   },
   F_F_F: {
     id: 'F_F_F',
@@ -38,7 +39,7 @@ export const SPELLS_T3 = {
     id: 'W_W_W',
     tier: 3,
     name: 'Varunastra',
-    lore: 'Vast tidal wall sweeping away all resistance',
+    lore: 'Vast tidal wall sweeping away all resistance. Blocks enemy projectiles',
     elements: ['W', 'W', 'W'],
     trajectory: 'WAVE',
     color: 0x0ea5e9,
@@ -51,7 +52,8 @@ export const SPELLS_T3 = {
     lifesteal: 0.35,
     slowFactor: 0.35,
     slowDuration: 2.0,
-    cooldown: 2.0
+    cooldown: 2.0,
+    deflectsProjectiles: true
   },
   E_E_F: {
     id: 'E_E_F',
@@ -91,7 +93,7 @@ export const SPELLS_T3 = {
     id: 'E_E_W',
     tier: 3,
     name: 'Nagapasha',
-    lore: 'Piercing serpentine frost binding targets in solid ice',
+    lore: 'Piercing serpentine frost binding targets in solid ice. Blocks enemy projectiles',
     elements: ['E', 'E', 'W'],
     trajectory: 'LINEAR',
     color: 0x7dd3fc,
@@ -103,13 +105,14 @@ export const SPELLS_T3 = {
     freezeDuration: 1.0,
     slowFactor: 0.5,
     slowDuration: 2.5,
-    cooldown: 1.4
+    cooldown: 1.4,
+    deflectsProjectiles: true
   },
   E_W_W: {
     id: 'E_W_W',
     tier: 3,
     name: 'Ganga Pravaha',
-    lore: 'Sacred cascading flood purging foes in freezing wake',
+    lore: 'Sacred cascading flood purging foes in freezing wake. Blocks enemy projectiles',
     elements: ['E', 'W', 'W'],
     trajectory: 'WAVE',
     color: 0xa5f3fc,
@@ -121,7 +124,8 @@ export const SPELLS_T3 = {
     knockback: 5.0,
     slowFactor: 0.5,
     slowDuration: 2.5,
-    cooldown: 2.0
+    cooldown: 2.0,
+    deflectsProjectiles: true
   },
   F_F_W: {
     id: 'F_F_W',
@@ -144,7 +148,7 @@ export const SPELLS_T3 = {
     id: 'F_W_W',
     tier: 3,
     name: 'Vajra',
-    lore: 'Diamond thunderbolt descending to strike and chain foes',
+    lore: 'Diamond thunderbolt descending to strike and chain foes. Blocks enemy projectiles',
     elements: ['F', 'W', 'W'],
     trajectory: 'INSTANT_STRIKE',
     color: 0xfef08a,
@@ -154,7 +158,8 @@ export const SPELLS_T3 = {
     aoeRadius: 4.0,
     chainTargets: 3,
     chainRange: 7.0,
-    cooldown: 1.8
+    cooldown: 1.8,
+    deflectsProjectiles: true
   },
   E_F_W: {
     id: 'E_F_W',
