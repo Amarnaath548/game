@@ -8,6 +8,8 @@ const BOT_NAMES = [
   'Sagar', 'Tanay', 'Utkarsh', 'Veer', 'Yuvraj', 'Aniket', 'Bhavin', 'Chinmay'
 ];
 
+const OVERLAP_DY = 24, OVERLAP_DX = 70, STACK_OFFSET = 14, OVERLAP_INTERVAL = 100;
+
 export class FloatingBarSystem {
   constructor(camera) {
     this.camera = camera;
@@ -19,6 +21,12 @@ export class FloatingBarSystem {
 
     this.bars = new Map();
     this.projVec = new THREE.Vector3();
+
+    // Overlap state — reuse arrays across frames (no per-frame allocation)
+    this._visibleList = [];   // {actor, sx, sy, distSq, isPlayer, entry}
+    this._lastOverlapTime = 0;
+    this._collapseSet = new Set(); // actors that should show compact bar only
+    this._offsetMap = new Map();   // actor -> extra upward offset (px)
   }
 
   setPlayer(player) {
@@ -61,7 +69,10 @@ export class FloatingBarSystem {
       el.appendChild(bar);
 
       this.container.appendChild(el);
-      entry = { el, lvl, name, segments, state: { x: -999, y: -999, lvl: '', name: '', activeCount: -1, color: '', visible: false } };
+      entry = {
+        el, lvl, name, header, segments,
+        state: { x: -999, y: -999, lvl: '', name: '', activeCount: -1, color: '', visible: false, collapsed: false }
+      };
       this.bars.set(actor, entry);
     }
     return entry;
@@ -81,6 +92,54 @@ export class FloatingBarSystem {
     }
   }
 
+  /** Throttled overlap check — runs at most 10 times per second, reuses arrays. */
+  _runOverlapCheck(now) {
+    if (now - this._lastOverlapTime < OVERLAP_INTERVAL) return;
+    this._lastOverlapTime = now;
+    const list = this._visibleList;
+    const collapse = this._collapseSet;
+    const offsets = this._offsetMap;
+    collapse.clear();
+    offsets.clear();
+
+    const n = list.length;
+    if (n < 2) return;
+    const player = this.player;
+
+    for (let i = 0; i < n; i++) {
+      const a = list[i];
+      if (a.isPlayer || collapse.has(a.actor)) continue;
+      // gather cluster: all actors near a's screen pos (including a)
+      let clusterCount = 0;
+      let closestIdx = i;
+      let closestDist = a.distSq;
+      for (let j = 0; j < n; j++) {
+        if (j === i) continue;
+        const b = list[j];
+        if (b.isPlayer) continue;
+        if (Math.abs(a.sy - b.sy) < OVERLAP_DY && Math.abs(a.sx - b.sx) < OVERLAP_DX) {
+          clusterCount++;
+          if (b.distSq < closestDist) { closestDist = b.distSq; closestIdx = j; }
+        }
+      }
+      if (clusterCount === 0) continue;
+
+      // Collapse everyone in cluster except the closest to player
+      let offsetIdx = 0;
+      for (let j = 0; j < n; j++) {
+        const b = list[j];
+        if (b.isPlayer) continue;
+        const near = (j === i) ||
+          (Math.abs(a.sy - b.sy) < OVERLAP_DY && Math.abs(a.sx - b.sx) < OVERLAP_DX);
+        if (!near) continue;
+        if (j === closestIdx) continue;
+        collapse.add(b.actor);
+        offsetIdx++;
+        offsets.set(b.actor, offsetIdx * STACK_OFFSET);
+      }
+    }
+  }
+
   update(actors, playerRef = null, bushes = null) {
     const player = playerRef || this.player || actors.find((a) => a.isPlayer);
     if (player && !this.player) this.player = player;
@@ -92,11 +151,13 @@ export class FloatingBarSystem {
 
     const widthHalf = window.innerWidth / 2;
     const heightHalf = window.innerHeight / 2;
+    const visibleList = this._visibleList;
+    visibleList.length = 0;
 
     targetActors.forEach((actor) => {
       this.ensureDisplayName(actor);
       const entry = this.getOrCreateBar(actor);
-      const { el, lvl, name, segments, state } = entry;
+      const { el, lvl, name, header, segments, state } = entry;
 
       if (actor.isDead) {
         if (state.visible) { el.style.display = 'none'; state.visible = false; }
@@ -104,8 +165,9 @@ export class FloatingBarSystem {
       }
 
       const isActorPlayer = actor.isPlayer || actor === player;
+      let distSq = 0;
       if (player && !isActorPlayer) {
-        const distSq = (actor.x - player.x) ** 2 + (actor.z - player.z) ** 2;
+        distSq = (actor.x - player.x) ** 2 + (actor.z - player.z) ** 2;
         if (distSq > 1225) { // 35 units
           if (state.visible) { el.style.display = 'none'; state.visible = false; }
           return;
@@ -126,9 +188,33 @@ export class FloatingBarSystem {
       const screenX = Math.round((this.projVec.x * widthHalf) + widthHalf);
       const screenY = Math.round(-(this.projVec.y * heightHalf) + heightHalf);
 
+      // Store for overlap check
+      visibleList.push({ actor, sx: screenX, sy: screenY, distSq, isPlayer: isActorPlayer, entry });
+
       if (!state.visible) { el.style.display = 'flex'; state.visible = true; }
-      if (state.x !== screenX) { el.style.left = `${screenX}px`; state.x = screenX; }
-      if (state.y !== screenY) { el.style.top = `${screenY}px`; state.y = screenY; }
+    });
+
+    // Run overlap clustering (throttled)
+    this._runOverlapCheck(performance.now());
+
+    // Apply positions + collapse state
+    const collapse = this._collapseSet;
+    const offsets = this._offsetMap;
+    for (let i = 0; i < visibleList.length; i++) {
+      const { actor, sx, sy, isPlayer, entry } = visibleList[i];
+      const { el, lvl, name, header, segments, state } = entry;
+      const collapsed = !isPlayer && collapse.has(actor);
+      const extraOffset = offsets.get(actor) || 0;
+      const finalY = sy - extraOffset;
+
+      if (state.x !== sx) { el.style.left = `${sx}px`; state.x = sx; }
+      if (state.y !== finalY) { el.style.top = `${finalY}px`; state.y = finalY; }
+
+      // Collapse / expand header (name + level badge)
+      if (collapsed !== state.collapsed) {
+        header.style.display = collapsed ? 'none' : 'flex';
+        state.collapsed = collapsed;
+      }
 
       const lvlText = `${actor.level || 1}`;
       if (state.lvl !== lvlText) { lvl.textContent = lvlText; state.lvl = lvlText; }
@@ -136,8 +222,8 @@ export class FloatingBarSystem {
       const nameText = actor.displayName || 'Mage';
       if (state.name !== nameText) {
         name.textContent = nameText;
-        name.style.color = isActorPlayer ? '#fde047' : '#ffffff';
-        name.style.fontWeight = isActorPlayer ? '900' : '800';
+        name.style.color = isPlayer ? '#fde047' : '#ffffff';
+        name.style.fontWeight = isPlayer ? '900' : '800';
         state.name = nameText;
       }
 
@@ -146,13 +232,13 @@ export class FloatingBarSystem {
       const color = hpPct < 25 ? '#ef4444' : (hpPct < 50 ? '#f59e0b' : '#22c55e');
 
       if (state.activeCount !== activeCount || state.color !== color) {
-        for (let i = 0; i < 8; i++) {
-          segments[i].style.background = i < activeCount ? color : 'rgba(15, 23, 42, 0.7)';
+        for (let j = 0; j < 8; j++) {
+          segments[j].style.background = j < activeCount ? color : 'rgba(15, 23, 42, 0.7)';
         }
         state.activeCount = activeCount;
         state.color = color;
       }
-    });
+    }
 
     this.bars.forEach((entry, actor) => {
       if (!targetActors.includes(actor) || actor.isDead) {

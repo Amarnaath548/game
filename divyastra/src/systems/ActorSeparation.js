@@ -24,7 +24,7 @@ export function separateActors(actors) {
       const dx = a.x - b.x;
       const dz = a.z - b.z;
       if (n > 30 && (Math.abs(dx) > 6 || Math.abs(dz) > 6)) continue;
-      const minDist = (a.radius + b.radius) * 0.9;
+      const minDist = (a.radius + b.radius) * 1.25;
       const dist = Math.hypot(dx, dz);
       if (dist >= minDist) continue;
 

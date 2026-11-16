@@ -8,6 +8,9 @@ function incMatchCount() {
   try { localStorage.setItem(STORAGE_KEY, String(getMatchCount() + 1)); } catch {}
 }
 
+// Strict hint order — a hint must not show until all prior hints have been shown & dismissed.
+const HINT_ORDER = ['move', 'cast', 'tapas', 'levelUp', 'dash'];
+
 export class TutorialHints {
   constructor() {
     this.active = false;
@@ -18,6 +21,7 @@ export class TutorialHints {
     this.hasDashed = false;
     this.onDismiss = null;
     this.shown = {};
+    this.queue = []; // pending {id, text, onDismiss} entries
 
     this.container = document.createElement('div');
     this.container.id = 'tutorial-hint-banner';
@@ -36,25 +40,38 @@ export class TutorialHints {
     (document.getElementById('hud') || document.body).appendChild(this.container);
   }
 
+  _isBusy() {
+    return this.currentHint === 'move' || this.currentHint === 'cast';
+  }
+
+  /** Try to show next queued hint (only when not busy with move/cast). */
+  _drainQueue() {
+    if (!this.active || this.skipped || this._isBusy() || this.queue.length === 0) return;
+    if (this.currentHint) return; // another hint still visible
+    const next = this.queue.shift();
+    this._showNow(next.id, next.text, next.onDismiss);
+  }
+
   onMatchStart() {
     this.reset();
     if (getMatchCount() >= 2) return;
     incMatchCount();
     this.active = true;
     this.hasDashed = false;
-    this.showHint('move', 'Drag the left stick to move', () => {
-      this.showHint('cast', 'Drag the right side to aim and release to cast your Mushti');
+    this._showNow('move', 'Drag the left stick to move', () => {
+      this._showNow('cast', 'Drag the right side to aim and release to cast your Mushti');
       if (this.dashHintTimer) clearTimeout(this.dashHintTimer);
       this.dashHintTimer = setTimeout(() => {
         this.dashHintTimer = null;
         if (!this.hasDashed && !this.shown.dash && this.active && !this.skipped) {
-          this.showHint('dash', 'Tap Dash to dodge');
+          this._enqueue('dash', 'Tap Dash to dodge');
         }
       }, 15000);
     });
   }
 
-  showHint(id, text, onDismiss = null) {
+  /** Internal: show immediately, no queue check. */
+  _showNow(id, text, onDismiss = null) {
     if (!this.active || this.skipped || this.shown[id]) return;
     if (this.timer) clearTimeout(this.timer);
     this.shown[id] = true;
@@ -65,6 +82,15 @@ export class TutorialHints {
     this.timer = setTimeout(() => this.dismiss(id), 6000);
   }
 
+  /** Queue a hint; it waits until move/cast are done. */
+  _enqueue(id, text, onDismiss = null) {
+    if (!this.active || this.skipped || this.shown[id]) return;
+    // Don't double-queue
+    if (this.queue.some((q) => q.id === id)) return;
+    this.queue.push({ id, text, onDismiss });
+    this._drainQueue();
+  }
+
   dismiss(id) {
     if (this.currentHint !== id) return;
     if (this.timer) { clearTimeout(this.timer); this.timer = null; }
@@ -73,6 +99,7 @@ export class TutorialHints {
     const cb = this.onDismiss;
     this.onDismiss = null;
     if (cb) cb();
+    this._drainQueue();
   }
 
   onMove() {
@@ -85,12 +112,12 @@ export class TutorialHints {
 
   onTapasReady() {
     if (!this.active || this.skipped || this.shown.tapas) return;
-    this.showHint('tapas', 'Stand still to charge Tapas: your next cast hits harder');
+    this._enqueue('tapas', 'Stand still to charge Tapas: your next cast hits harder');
   }
 
   onLevelUp() {
     if (!this.active || this.skipped || this.shown.levelUp) return;
-    this.showHint('levelUp', 'Pick an element. Combine them to unlock new spells');
+    this._enqueue('levelUp', 'Pick an element. Combine them to unlock new spells');
   }
 
   onElementPicked() {
@@ -114,6 +141,7 @@ export class TutorialHints {
     if (this.dashHintTimer) { clearTimeout(this.dashHintTimer); this.dashHintTimer = null; }
     this.currentHint = null;
     this.onDismiss = null;
+    this.queue.length = 0;
     this.container.style.display = 'none';
   }
 
