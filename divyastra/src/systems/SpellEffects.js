@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { projectileDeflect } from './ProjectileDeflect.js';
 
 export class SpellEffects {
   constructor(scene, particleSys, astraVisuals = null) {
@@ -66,6 +67,7 @@ export class SpellEffects {
     r.mesh.position.set(x, 0.08, z); r.mesh.scale.set(0.1, 1, 0.1); r.mesh.visible = true;
     if (config.id === 'E_F_W' && this.astraVisuals) this.astraVisuals.spawnSpiral(x, z);
     if (this.particleSys) this.particleSys.spawnBurst(x, 0.5, z, config.color, 12, 6);
+    if (config.deflectsProjectiles) projectileDeflect.addBarrier(x, z, config, owner, r);
   }
 
   spawnWave(x, z, dirX, dirZ, config, owner) {
@@ -113,11 +115,12 @@ export class SpellEffects {
     this.radials.forEach((r) => {
       if (!r.active) return;
       r.elapsed += dt;
-      const progress = r.elapsed / r.duration;
-      if (progress >= 1.0) { r.active = false; r.mesh.visible = false; return; }
-      r.curRadius = THREE.MathUtils.lerp(0.5, r.maxRadius, Math.sqrt(progress));
+      const expandDur = r.duration, holdDur = r.config?.deflectHold || 0, totalDur = expandDur + holdDur;
+      if (r.elapsed >= totalDur) { r.active = false; r.mesh.visible = false; return; }
+      const progress = Math.min(1.0, r.elapsed / expandDur);
+      r.curRadius = progress < 1.0 ? THREE.MathUtils.lerp(0.5, r.maxRadius, Math.sqrt(progress)) : r.maxRadius;
       r.mesh.scale.set(r.curRadius, 1, r.curRadius);
-      r.mat.opacity = 0.85 * (1.0 - progress);
+      r.mat.opacity = 0.85 * (1.0 - r.elapsed / totalDur);
       targets.forEach((t) => {
         if (t.isDead || t === r.owner || r.hitTargets.has(t)) return;
         const d = Math.hypot(t.x - r.x, t.z - r.z);

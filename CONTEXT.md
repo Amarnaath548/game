@@ -25,6 +25,7 @@
 - `divyastra/src/entities/Prop.js`: Chests (Wooden/Mythic), Arcane Crystals, Bushes.
 - `divyastra/src/entities/Collectibles.js`: XP Gems and Health Orbs.
 - `divyastra/src/systems/CollisionSystem.js`: 2D circle-circle collision helper math.
+- `divyastra/src/systems/ProjectileDeflect.js`: Barrier tracking for Tier 3 RADIAL spells (Agneyastra, Samudra Manthan) deflecting incoming enemy flying projectiles with edge flash.
 - `divyastra/src/systems/ActorSeparation.js`: Soft push-apart actor separation system keeping actors from overlapping while preserving dashes and knockback.
 - `divyastra/src/systems/ParticleSystem.js`: GPU instanced particle pool and burst effects.
 - `divyastra/src/systems/ZoneSystem.js`: Shrinking storm cylinder, perimeter ring, tick damage.
@@ -78,3 +79,4 @@
 - **Phase 1 (Camera and World Look) Complete**: Implemented close tilted third-person camera (58 deg pitch, FOV 58, 8% avatar height, CLOSE default, smooth follow, lookahead, soft linear fog into 0x7ff5e4 sky); saturated bright green ground (0x4cc22a) with flat colors (no canvas textures), shoreline rings (0xe9d8a6), and blue ponds (0x3b5f8a); soft directional + strong ambient lighting with shadows disabled on mobile; instanced pine trees, faceted rocks, fences, and stone pillars away from center spawn; non-flickering ground rings/aim line with depthWrite: false and renderOrder.
 - **Camera Zoom Simplification Complete**: Removed the "View: Close / Normal" button and zoom toggle; set CAMERA_CONFIG.ZOOM = 1.0 (CLOSE zoom) as the single camera zoom; stripped zoom UI/key controls/localStorage from CameraZoom.js; all files kept under 250 lines.
 - **Actor Separation & Melee Spacing Complete**: Added `systems/ActorSeparation.js` soft push-apart (capped at 0.35u, skipped during dash/knockback/spellDash, clamped to arena radius) integrated into `main.js` per-frame animate loop; tuned melee bot spacing in `BotBrain.js` with 1.4u stopping distance, 0.4 strafe between 1.1-1.6u, and -0.5 back-away bias below 1.1u.
+- **Tier 3 Radial Projectile Deflection Complete**: Added projectile deflection to Tier 3 RADIAL spells (Agneyastra F_F_F and Samudra Manthan E_F_W) with `deflectsProjectiles: true`, `deflectHold: 0.3`, `PROJECTILE_DEFLECT_MAX_PER_CAST = 12`, small spark bursts, rate-limited sound, ring material edge flash, lore update, and isolated `systems/ProjectileDeflect.js` wired before projectile updates in `CombatResolver`.

@@ -19,7 +19,7 @@ export const SPELLS_T3 = {
     id: 'F_F_F',
     tier: 3,
     name: 'Agneyastra',
-    lore: 'Invincible thermonuclear firestorm consuming everything nearby',
+    lore: 'Invincible thermonuclear firestorm consuming everything nearby. Blocks enemy projectiles',
     elements: ['F', 'F', 'F'],
     trajectory: 'RADIAL',
     color: 0xff2200,
@@ -30,7 +30,9 @@ export const SPELLS_T3 = {
     knockback: 4.0,
     burnDuration: 3.0,
     burnDps: 12,
-    cooldown: 2.2
+    cooldown: 2.2,
+    deflectsProjectiles: true,
+    deflectHold: 0.3
   },
   W_W_W: {
     id: 'W_W_W',
@@ -158,7 +160,7 @@ export const SPELLS_T3 = {
     id: 'E_F_W',
     tier: 3,
     name: 'Samudra Manthan',
-    lore: 'Cosmic ocean churning vortex tossing all surrounding forces',
+    lore: 'Cosmic ocean churning vortex tossing all surrounding forces. Blocks enemy projectiles',
     elements: ['E', 'F', 'W'],
     trajectory: 'RADIAL',
     color: 0x99f6e4,
@@ -167,7 +169,9 @@ export const SPELLS_T3 = {
     range: 5.5,
     radius: 5.5,
     knockback: 7.0,
-    cooldown: 2.0
+    cooldown: 2.0,
+    deflectsProjectiles: true,
+    deflectHold: 0.3
   }
 };
 
