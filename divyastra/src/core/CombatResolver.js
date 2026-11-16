@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT, SEPARATION_FACTOR, AOE_SPLASH_DAMAGE_MULT } from '../config/constants.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js'; import { SpellEffects } from '../systems/SpellEffects.js';
 import { HitFeedback } from '../systems/HitFeedback.js'; import { projectileDeflect, destroyProjectilesInCircle } from '../systems/ProjectileDeflect.js';
-import { damageObjectsInCircle } from './EnvironmentDamage.js'; import { resolveChain, spawnSubMunitions } from './CombatChain.js';
+import { damageObjectsInCircle } from './EnvironmentDamage.js'; import { resolveChain, spawnSubMunitions, resolveObeliskCollisions } from './CombatChain.js';
 
 export class CombatResolver {
   constructor(deps) {
@@ -233,6 +233,7 @@ export class CombatResolver {
   }
 
   resolveChain(originX, originZ, cfg, owner, directTarget, targets) { resolveChain(this, originX, originZ, cfg, owner, directTarget, targets); }
+  resolveObeliskCollisions(actor) { resolveObeliskCollisions(this, actor); }
 
   reset() {
     this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this.spellDashes.forEach((d) => { if (d.owner) { d.owner.isInvulnerable = false; d.owner.spellDash = false; } }); this.spellDashes = [];

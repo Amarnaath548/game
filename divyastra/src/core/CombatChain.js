@@ -23,3 +23,15 @@ export function spawnSubMunitions(resolver, x, z, cfg, owner) {
     }, owner);
   }
 }
+
+export function resolveObeliskCollisions(resolver, actor) {
+  if (!resolver?.sceneManager?.obelisks || !actor) return;
+  resolver.sceneManager.obelisks.forEach((o) => {
+    const dx = actor.x - o.x, dz = actor.z - o.z, dist = Math.hypot(dx, dz), minDist = actor.radius + o.radius;
+    if (dist < minDist && dist > 0.001) {
+      actor.x = o.x + (dx / dist) * minDist;
+      actor.z = o.z + (dz / dist) * minDist;
+      if (actor.group) { actor.group.position.x = actor.x; actor.group.position.z = actor.z; }
+    }
+  });
+}
