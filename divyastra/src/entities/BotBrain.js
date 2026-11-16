@@ -8,6 +8,7 @@ export class BotBrain {
     this.bot = bot;
     this.chaseTarget = null;
     this.chaseTimer = 0;
+    this.isMeditating = false;
   }
 
   evaluate(dt, zoneRadius, allActors, chests, gems, healthOrbs, playerKills, projectiles, onShoot) {
@@ -57,7 +58,25 @@ export class BotBrain {
 
     if (cornered && (isLowHp || threats.highLevelThreat !== null)) {
       // LAST STAND: fight nearest hostile instead of fleeing
+      this.isMeditating = false;
       return this._fightNearest(bot, dt, threats, loot, incoming, onShoot);
+    }
+
+    const hostileNear = !!(threats.nearestHostile && threats.nearestHostileDist <= 14);
+    const hasLootNear = (loot.nearestOrb && loot.nearestOrbDist <= 10) || (loot.nearestGem && loot.nearestGemDist <= 10) || (loot.nearestChest && loot.nearestChestDist <= 10);
+    const hpRatio = bot.hp / bot.maxHp;
+
+    if (this.isMeditating) {
+      if (hostileNear || isStormThreat || cornered || hpRatio >= 0.9 || incoming) {
+        this.isMeditating = false;
+      }
+    } else if (!cornered && !isStormThreat && !hostileNear && !hasLootNear && hpRatio < 0.7) {
+      this.isMeditating = true;
+    }
+
+    if (this.isMeditating) {
+      bot.state = 'MEDITATE';
+      return { moveX: 0, moveZ: 0, aimX: 0, aimZ: 0 };
     }
 
     if (isLowHp || isStormThreat || threats.highLevelThreat !== null) {

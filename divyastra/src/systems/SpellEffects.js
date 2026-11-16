@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { projectileDeflect } from './ProjectileDeflect.js';
+import { damageObjectsInCircle, damageObjectsInWave } from '../core/EnvironmentDamage.js';
 
 export class SpellEffects {
   constructor(scene, particleSys, astraVisuals = null) {
     this.scene = scene;
     this.particleSys = particleSys;
     this.astraVisuals = astraVisuals;
+    this.resolver = null;
 
     // 1. Radials
     this.maxRadials = 4;
@@ -129,6 +131,7 @@ export class SpellEffects {
           if (onHitCallback) onHitCallback(t, r.config, r.owner, r.x, r.z);
         }
       });
+      if (this.resolver && r.config?.damage > 0) damageObjectsInCircle(this.resolver, r.x, r.z, r.curRadius, r.config.damage, r.hitTargets);
     });
 
     this.waves.forEach((w) => {
@@ -147,6 +150,7 @@ export class SpellEffects {
           if (onHitCallback) onHitCallback(t, w.config, w.owner, w.x, w.z, w.dirX, w.dirZ);
         }
       });
+      if (this.resolver && w.config?.damage > 0) damageObjectsInWave(this.resolver, w);
       if (w.distanceTraveled >= w.maxRange) { w.active = false; w.mesh.visible = false; }
     });
 
@@ -175,6 +179,7 @@ export class SpellEffects {
             if (onHitCallback) onHitCallback(t, { ...hz.config, damage: tickDmg, isDoT: true }, hz.owner, hz.x, hz.z);
           }
         });
+        if (this.resolver && tickDmg > 0) damageObjectsInCircle(this.resolver, hz.x, hz.z, hz.radius, tickDmg);
       }
       if (hz.elapsed >= hz.duration) { hz.active = false; hz.mesh.visible = false; }
     });

@@ -124,6 +124,9 @@ export const LEVEL_TABLE = [
 
 export const TAPAS_DELAY = 1.2;
 export const TAPAS_BONUS = 0.4;
+export const TAPAS_HEAL_PCT_PER_SEC = 0.04;
+export const AOE_SPLASH_DAMAGE_MULT = 0.7;
+export const HAZARD_TICK_RATE = 0.25;
 export const SEPARATION_FACTOR = 1.25;
 export const PROJECTILE_DEFLECT_MAX_PER_CAST = 12;
 

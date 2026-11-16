@@ -112,7 +112,7 @@ export class TutorialHints {
 
   onTapasReady() {
     if (!this.active || this.skipped || this.shown.tapas) return;
-    this._enqueue('tapas', 'Stand still to charge Tapas: your next cast hits harder');
+    this._enqueue('tapas', 'Stand still to charge Tapas: it heals you and your next cast hits harder.');
   }
 
   onLevelUp() {

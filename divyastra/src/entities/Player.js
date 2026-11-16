@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { Actor } from './Actor.js';
-import { PLAYER_BASE, LEVEL_TABLE, COLORS, ARENA, HEROES, TAPAS_DELAY, TAPAS_BONUS } from '../config/constants.js';
+import { PLAYER_BASE, LEVEL_TABLE, COLORS, ARENA, HEROES } from '../config/constants.js';
 import { SpellSlotController } from './SpellSlotController.js';
 import { getSpell, FIST_SPELL } from '../config/spellRegistry.js';
+import { TapasComponent } from './TapasComponent.js';
 
 export class Player extends Actor {
   constructor(scene, inputManager, hero = null) {
@@ -36,24 +37,7 @@ export class Player extends Actor {
     this.dashVec = { x: 0, z: 0 };
     this.shootCooldown = 0;
 
-    // Tapas state (Meditative focus: +40% dmg after 1.2s standing still & not casting)
-    this.tapasTimer = 0;
-    this.tapasActive = false;
-    this.onTapasReadyCallback = null;
-
-    // Tapas Visual Ring
-    const tapasGeo = new THREE.RingGeometry(1.65, 1.85, 32);
-    tapasGeo.rotateX(-Math.PI / 2);
-    this.tapasRingMat = new THREE.MeshBasicMaterial({
-      color: 0xfbbf24,
-      transparent: true,
-      opacity: 0,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
-    this.tapasRing = new THREE.Mesh(tapasGeo, this.tapasRingMat);
-    this.tapasRing.position.y = 0.05;
-    this.group.add(this.tapasRing);
+    this.tapas = new TapasComponent(this);
 
     // Aim Indicator
     const aimLineGeo = new THREE.PlaneGeometry(0.35, 9);
@@ -110,23 +94,25 @@ export class Player extends Actor {
     }
   }
 
+  get tapasActive() { return this.tapas?.active || false; }
+  get tapasTimer() { return this.tapas?.timer || 0; }
+  get tapasRingMat() { return this.tapas?.ringMat; }
+  set onTapasReadyCallback(cb) { if (this.tapas) this.tapas.onReady = cb; }
+  get onTapasReadyCallback() { return this.tapas?.onReady; }
+
   takeDamage(amount) {
-    if (this.tapasActive || this.tapasTimer > 0) this.breakTapas();
+    if (this.tapas) this.tapas.breakTapas();
     const dealt = super.takeDamage(amount);
     if (dealt > 0) this.onDamage?.(dealt);
     return dealt;
   }
 
   breakTapas() {
-    this.tapasTimer = 0;
-    this.tapasActive = false;
-    if (this.tapasRingMat) this.tapasRingMat.opacity = 0;
+    this.tapas?.breakTapas();
   }
 
   consumeTapasBonus() {
-    const bonus = this.tapasActive ? TAPAS_BONUS : 0;
-    this.breakTapas();
-    return bonus;
+    return this.tapas ? this.tapas.consumeBonus() : 0;
   }
 
   addXP(amount, onLevelUp) {
@@ -203,20 +189,7 @@ export class Player extends Actor {
     const isMoving = Math.hypot(this.input.moveDir.x, this.input.moveDir.z) > 0.05 || this.dashTimer > 0;
     this.setWobble(isMoving && this.dashTimer <= 0, dt, this.input.moveDir.x, this.input.moveDir.z, this.dashTimer > 0);
 
-    if (isMoving || this.shootCooldown > 0) {
-      this.breakTapas();
-    } else {
-      this.tapasTimer += dt;
-      const progress = Math.min(1.0, this.tapasTimer / TAPAS_DELAY);
-      this.tapasRingMat.opacity = progress * 0.85;
-      const sc = 0.8 + progress * 0.2;
-      this.tapasRing.scale.set(sc, 1, sc);
-      if (progress >= 1.0 && !this.tapasActive) {
-        this.tapasActive = true;
-        this.tapasRingMat.color.setHex(0xfacc15);
-        if (this.onTapasReadyCallback) this.onTapasReadyCallback();
-      }
-    }
+    this.tapas.update(dt, isMoving, this.shootCooldown > 0);
 
     const inBush = bushes.some((bush) => bush.checkInside(this.x, this.z));
     const targetOpacity = inBush ? 0.35 : 1.0;
@@ -237,6 +210,7 @@ export class Player extends Actor {
   }
 
   destroyVisuals() {
+    this.tapas?.destroy();
     this.group.visible = false;
   }
 }

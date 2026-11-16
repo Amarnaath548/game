@@ -3,6 +3,7 @@ import { Actor } from './Actor.js';
 import { PLAYER_BASE, ARENA, LEVEL_TABLE, HEROES } from '../config/constants.js';
 import { BotBrain } from './BotBrain.js';
 import { SpellSlotController } from './SpellSlotController.js';
+import { TapasComponent } from './TapasComponent.js';
 
 export class Bot extends Actor {
   constructor(scene, x, z, id = 1, hero = null) {
@@ -52,6 +53,16 @@ export class Bot extends Actor {
     this.waypointTimer = 0;
 
     this.brain = new BotBrain(this);
+    this.tapas = new TapasComponent(this);
+  }
+
+  takeDamage(amount) {
+    if (this.tapas) this.tapas.breakTapas();
+    return super.takeDamage(amount);
+  }
+
+  consumeTapasBonus() {
+    return this.tapas ? this.tapas.consumeBonus() : 0;
   }
 
   get currentSpell() {
@@ -161,7 +172,14 @@ export class Bot extends Actor {
       this.visualMesh.rotation.y = THREE.MathUtils.lerp(this.visualMesh.rotation.y, aimAngle, 0.2);
     }
 
-    this.setWobble(Math.hypot(moveX, moveZ) > 0.05 && this.dashTimer <= 0, dt, moveX, moveZ, this.dashTimer > 0);
+    const isMoving = Math.hypot(moveX, moveZ) > 0.05 || this.dashTimer > 0;
+    this.setWobble(isMoving && this.dashTimer <= 0, dt, moveX, moveZ, this.dashTimer > 0);
+    this.tapas.update(dt, isMoving, this.shootCooldown > 0);
     super.update(dt);
+  }
+
+  destroyVisuals() {
+    this.tapas?.destroy();
+    super.destroyVisuals?.();
   }
 }
