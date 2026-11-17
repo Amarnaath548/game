@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { COLORS, ARENA, CAMERA_CONFIG, BIOMES, QUALITY } from '../config/constants.js';
 import { CameraZoom } from './CameraZoom.js';
 import { WorldEnvironment } from './WorldEnvironment.js';
+import { WorldLandmarks } from './WorldLandmarks.js';
 
 export class SceneManager {
   constructor() {
@@ -36,6 +37,7 @@ export class SceneManager {
     this.initLights(isMobile);
     this.initArena();
     this.worldEnv = new WorldEnvironment(this.scene);
+    this.worldLandmarks = new WorldLandmarks(this.scene, this.obelisks);
     this.applyBiome(this.nextBiomeKey);
     window.addEventListener('resize', () => this.onResize());
   }
@@ -188,6 +190,7 @@ export class SceneManager {
     if (this.dirLight) { this.dirLight.color.setHex(biome.dirLightColor); this.dirLight.intensity = biome.dirLightIntensity; }
     if (this.floorMat) this.floorMat.color.setHex(biome.floorColor);
     if (this.worldEnv) this.worldEnv.applyBiome(biome);
+    if (this.worldLandmarks) this.worldLandmarks.applyBiome(biome);
     if (this.obeliskMeshes) {
       this.obeliskMeshes.forEach((mesh) => {
         if (Array.isArray(mesh.material)) mesh.material.forEach((m, i) => m.color.setHex(i === 2 ? biome.obeliskTopColor : biome.obeliskColor));

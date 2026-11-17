@@ -22,6 +22,7 @@ export class MatchManager {
     this.orbPool = deps.orbPool;
     this.questManager = deps.questManager;
     this.spellbookManager = deps.spellbookManager;
+    this.arenaInteractables = deps.arenaInteractables;
 
     this.zoneSys = new ZoneSystem(this.sceneManager.scene);
     this.matchActive = false;
@@ -98,6 +99,7 @@ export class MatchManager {
     this.applyLobbyLoadout();
     this.sceneManager.startMatchBiome(this.spawnManager.bushes);
     this.spawnManager.startMatch();
+    if (this.arenaInteractables) this.arenaInteractables.spawn();
 
     this.matchTime = 0;
     getDevTools().resetMatch();
@@ -122,6 +124,7 @@ export class MatchManager {
     this.killFeed.reset();
     this.banners.reset();
     this.combatResolver.reset();
+    if (this.arenaInteractables) this.arenaInteractables.cleanup();
   }
 
   getAllAliveActors() {

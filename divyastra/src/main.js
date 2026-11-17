@@ -22,6 +22,7 @@ import { SpellbookManager } from './core/SpellbookManager.js';
 import { AstraVisuals } from './systems/AstraVisuals.js';
 import { TutorialHints } from './ui/TutorialHints.js';
 import { separateActors } from './systems/ActorSeparation.js';
+import { ArenaInteractables } from './systems/ArenaInteractables.js';
 import { getDevTools } from './core/DevTools.js';
 
 // Core Systems
@@ -38,6 +39,7 @@ const damageNumbers = new DamageNumbers(sceneManager.camera);
 const killFeed = new KillFeed();
 const banners = new BannerManager();
 const astraVisuals = new AstraVisuals(sceneManager.scene);
+const arenaInteractables = new ArenaInteractables(sceneManager.scene, sceneManager.obelisks, particleSys, sound);
 
 // Player Entity
 const player = new Player(sceneManager.scene, input);
@@ -79,11 +81,11 @@ const healthOrbs = orbPool.pool.map((mesh) => new HealthOrb(mesh, orbPool));
 // Managers
 const spawnManager = new SpawnManager(sceneManager.scene, gems, healthOrbs);
 const combatResolver = new CombatResolver({
-  sceneManager, sound, particleSys, damageNumbers, killFeed, banners, spawnManager, player, projectiles, questManager, meta, spellbookManager, astraVisuals
+  sceneManager, sound, particleSys, damageNumbers, killFeed, banners, spawnManager, player, projectiles, questManager, meta, spellbookManager, astraVisuals, arenaInteractables
 });
 const matchManager = new MatchManager({
   sceneManager, sound, meta, ui: null, banners, floatingBars, damageNumbers, killFeed,
-  particleSys, player, spawnManager, combatResolver, projectiles, projPool, gemPool, orbPool, questManager, spellbookManager
+  particleSys, player, spawnManager, combatResolver, projectiles, projPool, gemPool, orbPool, questManager, spellbookManager, arenaInteractables
 });
 
 // UI
@@ -219,6 +221,7 @@ function animate() {
     }
 
     separateActors(matchManager.getAllAliveActors());
+    arenaInteractables.update(dt, matchManager.getAllAliveActors());
     combatResolver.resolveObeliskCollisions(player);
     spawnManager.bots.forEach((bot) => combatResolver.resolveObeliskCollisions(bot));
 

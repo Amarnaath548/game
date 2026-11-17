@@ -8,6 +8,7 @@ export class CombatResolver {
   constructor(deps) {
     Object.assign(this, deps);
     this.astraVisuals = deps.astraVisuals || null;
+    this.arenaInteractables = deps.arenaInteractables || null;
     this.hitFeedback = new HitFeedback({ sceneManager: deps.sceneManager, player: deps.player });
     this.spellEffects = deps.spellEffects || new SpellEffects(deps.sceneManager.scene, deps.particleSys, this.astraVisuals);
     this.spellEffects.resolver = this;
@@ -166,6 +167,8 @@ export class CombatResolver {
         return this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, null, tgts);
       }
       if (!p.active) return;
+      // Surya Mirror reflection check
+      if (p.lobHeight <= 0 && this.arenaInteractables && this.arenaInteractables.reflectProjectile(p)) return;
       if (p.lobHeight <= 0 && this.sceneManager.obelisks.some((o) => CollisionSystem.checkCircle(p.x, p.z, p.radius, o.x, o.z, o.radius))) {
         this.particleSys.spawnImpact(p.x, p.z, 0x888899, 1.2); p.despawn(); return;
       }
