@@ -16,14 +16,9 @@ export class DevTools {
   }
 
   _init() {
-    const params = new URLSearchParams(window.location.search);
-    const devParam = params.get('dev');
-    try {
-      if (devParam === '1') { localStorage.setItem('divyastra_dev', '1'); this.enabled = true; }
-      else if (devParam === '0') { localStorage.removeItem('divyastra_dev'); this.enabled = false; }
-      else { this.enabled = localStorage.getItem('divyastra_dev') === '1'; }
-    } catch { this.enabled = devParam === '1'; }
-  }
+  const params = new URLSearchParams(window.location.search);
+  this.enabled = params.get('dev') === '1';
+}
 
   markCheat() { this.cheatsUsed = true; }
 

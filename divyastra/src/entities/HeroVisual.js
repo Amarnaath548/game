@@ -32,9 +32,9 @@ export function buildHeroVisual(actor, hero) {
   const dhotiGeo = GEO_CACHE.dhoti.clone();
   dhotiGeo.translate(0, -0.16, 0);
 
-  const mergedBodyGeo = BufferGeometryUtils.mergeGeometries([
+  const mergedBodyGeo = safeMerge([
     upperTorsoGeo, shoulderLGeo, shoulderRGeo, dhotiGeo
-  ], false);
+  ]);
 
   const bodyMesh = new THREE.Mesh(mergedBodyGeo, bodyMat);
   bodyMesh.castShadow = true;
@@ -58,7 +58,7 @@ export function buildHeroVisual(actor, hero) {
   noseGeo.rotateX(Math.PI / 2);
   noseGeo.translate(0, -0.02, 0.22);
 
-  const mergedHeadGeo = BufferGeometryUtils.mergeGeometries([headGeo, noseGeo], false);
+  const mergedHeadGeo = safeMerge([headGeo, noseGeo]);
   const headMesh = new THREE.Mesh(mergedHeadGeo, MAT_SKIN);
   headMesh.castShadow = true;
   headGroup.add(headMesh);
@@ -136,14 +136,22 @@ function buildLimbGroup(px, py, pz, isLeg, mat) {
     endGeo.translate(0, -0.56, 0);
   }
 
-  const merged = BufferGeometryUtils.mergeGeometries([
-    upperGeo, jointGeo, lowerGeo, endGeo
-  ], false);
+  const merged = safeMerge([upperGeo, jointGeo, lowerGeo, endGeo]);
 
   const mesh = new THREE.Mesh(merged, mat);
   mesh.castShadow = true;
   group.add(mesh);
   return group;
+}
+
+function safeMerge(geometries) {
+  const normalized = geometries.map((g) => {
+    const nonIndexed = g.index ? g.toNonIndexed() : g.clone();
+    if (!nonIndexed.attributes.normal) nonIndexed.computeVertexNormals();
+    if (nonIndexed.attributes.uv) nonIndexed.deleteAttribute('uv');
+    return nonIndexed;
+  });
+  return BufferGeometryUtils.mergeGeometries(normalized, false);
 }
 
 function getArchetypeFromLegacy(hatType) {
