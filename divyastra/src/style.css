@@ -26,18 +26,17 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; f
 .hero-card { background: rgba(18, 22, 36, 0.85); border: 2px solid #334155; border-radius: 10px; overflow: hidden; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; }
 .hero-card:hover { transform: translateY(-2px); border-color: #64748b; }
 .hero-card.selected { border-color: #00f2ff; box-shadow: 0 0 16px rgba(0, 242, 255, 0.35); }
-.hero-preview-box { width: 100%; height: 60px; background: rgba(10, 12, 20, 0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding-top: 4px; }
-.hero-head { width: 20px; height: 16px; background: #fed7aa; border-radius: 2px; position: relative; display: flex; align-items: center; justify-content: space-around; padding: 0 2px; z-index: 2; }
-.hero-eye { width: 3px; height: 3px; background: #0f172a; border-radius: 1px; }
-.hero-body { width: 26px; height: 14px; border-radius: 2px; border-top: 3px solid; z-index: 1; margin-top: -1px; }
-.hero-hat { position: relative; z-index: 3; margin-bottom: -1px; }
-.hat-pointed_hat { width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 12px solid var(--accent); }
-.hat-horns { width: 22px; height: 7px; display: flex; justify-content: space-between; }
-.hat-horns::before, .hat-horns::after { content: ''; width: 5px; height: 7px; background: var(--accent); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
-.hat-crown { width: 18px; height: 7px; background: var(--accent); clip-path: polygon(0% 100%, 0% 0%, 33% 50%, 50% 0%, 67% 50%, 100% 0%, 100% 100%); }
-.hat-hood { width: 22px; height: 7px; background: var(--accent); border-radius: 5px 5px 0 0; }
-.hat-helmet { width: 8px; height: 7px; background: var(--accent); border-radius: 2px 2px 0 0; }
-.hat-default { width: 12px; height: 6px; background: var(--accent); border-radius: 2px 2px 0 0; }
+.hero-preview-box { width: 100%; height: 60px; background: rgba(10, 12, 20, 0.7); display: flex; align-items: center; justify-content: center; position: relative; }
+.hero-avatar { position: relative; display: flex; flex-direction: column; align-items: center; }
+.hero-head { width: 18px; height: 18px; background: #e29d72; border-radius: 50%; position: relative; z-index: 2; box-shadow: inset -2px -2px 0 rgba(0,0,0,0.2); }
+.hero-nose { width: 3px; height: 4px; background: #c57b50; position: absolute; top: 7px; left: 50%; transform: translateX(-50%); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+.hero-body { width: 24px; height: 16px; border-radius: 4px 4px 8px 8px; border-top: 3px solid; z-index: 1; margin-top: -1px; }
+.avatar-orb { position: absolute; right: -12px; top: 10px; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 6px var(--accent); }
+.avatar-headgear { position: relative; z-index: 3; margin-bottom: -1px; }
+.sil-tapasvi .avatar-headgear { width: 12px; height: 9px; background: var(--accent); border-radius: 6px 6px 0 0; box-shadow: 0 2px 0 #f59e0b; }
+.sil-agni .avatar-headgear { width: 16px; height: 12px; background: var(--accent); clip-path: polygon(15% 100%, 0% 20%, 35% 55%, 50% 0%, 65% 55%, 100% 20%, 85% 100%); }
+.sil-jala .avatar-headgear { width: 22px; height: 10px; background: var(--accent); border-radius: 11px 11px 4px 4px; border-bottom: 2px solid #99f6e4; }
+.sil-prithvi .avatar-headgear { width: 20px; height: 6px; background: #64748b; border-radius: 2px; border-top: 2px solid var(--accent); }
 
 .hero-card-content { padding: 8px; display: flex; flex-direction: column; gap: 4px; flex: 1; justify-content: space-between; }
 .hero-name { font-size: 13px; font-weight: 800; color: #f8fafc; }

@@ -1,13 +1,12 @@
 import { HEROES } from '../config/constants.js';
 
-function getHatClass(hatType) {
-  const h = (hatType || '').toLowerCase();
-  if (h.includes('hat') || h.includes('wizard')) return 'hat-pointed_hat';
-  if (h.includes('horn')) return 'hat-horns';
-  if (h.includes('crown')) return 'hat-crown';
-  if (h.includes('hood')) return 'hat-hood';
-  if (h.includes('crest') || h.includes('helmet')) return 'hat-helmet';
-  return 'hat-default';
+function getSilhouetteClass(hero) {
+  const arch = (hero.archetype || hero.hatType || '').toLowerCase();
+  if (arch.includes('tapasvi') || arch.includes('jata')) return 'sil-tapasvi';
+  if (arch.includes('agni') || arch.includes('flame') || arch.includes('wizard')) return 'sil-agni';
+  if (arch.includes('jala') || arch.includes('turban') || arch.includes('hood')) return 'sil-jala';
+  if (arch.includes('prithvi') || arch.includes('circlet') || arch.includes('helmet') || arch.includes('horn')) return 'sil-prithvi';
+  return 'sil-tapasvi';
 }
 
 export class HeroSelectView {
@@ -33,20 +32,22 @@ export class HeroSelectView {
 
       const bodyHex = '#' + hero.bodyColor.toString(16).padStart(6, '0');
       const accentHex = '#' + hero.accentColor.toString(16).padStart(6, '0');
-      const hatClass = getHatClass(hero.hatType);
+      const silClass = getSilhouetteClass(hero);
 
       card.innerHTML = `
         <div class="hero-preview-box">
-          <div class="hero-hat ${hatClass}" style="--accent: ${accentHex};"></div>
-          <div class="hero-head">
-            <div class="hero-eye"></div>
-            <div class="hero-eye"></div>
+          <div class="hero-avatar ${silClass}" style="--accent: ${accentHex}; --body: ${bodyHex};">
+            <div class="avatar-headgear"></div>
+            <div class="hero-head">
+              <div class="hero-nose"></div>
+            </div>
+            <div class="hero-body" style="background: ${bodyHex}; border-color: ${accentHex};"></div>
+            <div class="avatar-orb" style="background: ${accentHex};"></div>
           </div>
-          <div class="hero-body" style="background: ${bodyHex}; border-color: ${accentHex};"></div>
         </div>
         <div class="hero-card-content">
           <div class="hero-name">${hero.name}</div>
-          <div class="hero-traits">${hero.hatType.replace('_', ' ')} • ${hero.extra}</div>
+          <div class="hero-traits">${hero.archetype || 'SEEKER'} • ${hero.extra.replace('_', ' ')}</div>
           ${isSelected
             ? '<div class="hero-badge badge-active">SELECTED</div>'
             : isUnlocked

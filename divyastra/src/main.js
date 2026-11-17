@@ -97,9 +97,12 @@ const ui = new UIManager(meta, {
     input.fireReleased = true;
   },
   onHeroChange: (hero) => {
-    player.hero = hero;
-    if (player.bodyMat) player.bodyMat.color.setHex(hero.bodyColor);
-    if (player.accentMat) player.accentMat.color.setHex(hero.accentColor);
+    if (player.rebuildHeroVisual) player.rebuildHeroVisual(hero);
+    else {
+      player.hero = hero;
+      if (player.bodyMat) player.bodyMat.color.setHex(hero.bodyColor);
+      if (player.accentMat) player.accentMat.color.setHex(hero.accentColor);
+    }
   },
   onPerkSelected: (perk) => {
     player.applyPerk(perk);

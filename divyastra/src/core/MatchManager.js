@@ -35,9 +35,13 @@ export class MatchManager {
 
     const selectedHeroId = localStorage.getItem('magica_selected_hero') || 'ignis';
     const hero = HEROES.find((h) => h.id === selectedHeroId) || HEROES[0];
-    this.player.hero = hero;
-    if (this.player.bodyMat) this.player.bodyMat.color.setHex(hero.bodyColor);
-    if (this.player.accentMat) this.player.accentMat.color.setHex(hero.accentColor);
+    if (this.player.hero?.id !== hero.id && this.player.rebuildHeroVisual) {
+      this.player.rebuildHeroVisual(hero);
+    } else {
+      this.player.hero = hero;
+      if (this.player.bodyMat) this.player.bodyMat.color.setHex(hero.bodyColor);
+      if (this.player.accentMat) this.player.accentMat.color.setHex(hero.accentColor);
+    }
 
     if (this.player.spellSlot) {
       this.player.spellSlot.reset();

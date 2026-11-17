@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE } from '../config/constants.js';
 import { buildHeroVisual } from './HeroVisual.js';
+import { updateTierVisuals } from './HeroTierVisuals.js';
 
 export class Actor {
   constructor(scene, options = {}) {
@@ -17,24 +18,13 @@ export class Actor {
     this.shieldActive = false;
     this.shieldHp = 0;
     this.shieldTimer = 0;
-    this.kbTimer = 0;
-    this.kbVx = 0;
-    this.kbVz = 0;
-    this.lastX = this.x;
-    this.lastZ = this.z;
-    this.vx = 0;
-    this.vz = 0;
+    this.kbTimer = 0; this.kbVx = 0; this.kbVz = 0;
+    this.lastX = this.x; this.lastZ = this.z;
+    this.vx = 0; this.vz = 0;
     this.spellDash = false;
 
     // Status effects
-    this.status = {
-      chillTimer: 0,
-      chillFactor: 1.0,
-      burnTimer: 0,
-      burnDps: 0,
-      poisonTimer: 0,
-      poisonDps: 0
-    };
+    this.status = { chillTimer: 0, chillFactor: 1.0, burnTimer: 0, burnDps: 0, poisonTimer: 0, poisonDps: 0 };
 
     // Hero configuration
     this.hero = options.hero || (options.heroId ? HEROES.find(h => h.id === options.heroId) : null) || HEROES[0];
@@ -64,8 +54,15 @@ export class Actor {
     this.orbTimer = 0;
     this.isDying = false;
     this.deathTimer = 0;
-    this.rightArm = this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.56) < 0.05 && Math.abs(c.position.y - 0.7) < 0.05);
-    this.staffShaft = this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.68) < 0.05 && Math.abs(c.position.y - 1.0) < 0.05);
+    this.rightArm = this.rightArm || this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.38) < 0.1);
+    this.staffShaft = this.staffShaft || this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.68) < 0.1);
+  }
+
+  rebuildHeroVisual(hero) {
+    this.hero = hero;
+    while (this.visualMesh.children.length > 0) this.visualMesh.remove(this.visualMesh.children[0]);
+    buildHeroVisual(this, hero);
+    this.robeMat = this.bodyMat; this.hatMat = this.accentMat;
   }
 
   applyShield(amount = 80, duration = 3.0) {
@@ -142,22 +139,27 @@ export class Actor {
     if (this.punchTimer > 0) {
       this.punchTimer -= dt;
       if (this.rightArm) this.rightArm.rotation.x = -1.2;
-      if (this.staffShaft) this.staffShaft.rotation.x = -1.2;
+      if (this.staffShaft && this.staffShaft.parent === this.visualMesh) this.staffShaft.rotation.x = -1.2;
     } else if (this.castTimer > 0) {
       this.castTimer -= dt;
       const rotX = this.castTimer > 0.15 ? 0.25 : 0.25 * (this.castTimer / 0.15);
       if (this.rightArm) this.rightArm.rotation.x = rotX;
-      if (this.staffShaft) this.staffShaft.rotation.x = rotX;
+      if (this.staffShaft && this.staffShaft.parent === this.visualMesh) this.staffShaft.rotation.x = rotX;
     } else {
       if (this.rightArm && this.rightArm.rotation.x !== 0) this.rightArm.rotation.x = 0;
-      if (this.staffShaft && this.staffShaft.rotation.x !== 0) this.staffShaft.rotation.x = 0;
+      if (this.staffShaft && this.staffShaft.parent === this.visualMesh && this.staffShaft.rotation.x !== 0) this.staffShaft.rotation.x = 0;
     }
+
+    const tier = this.spellSlot?.elements?.length || this.spellSlot?.activeSpell?.tier || 0;
+    updateTierVisuals(this, tier, dt);
+    if (this.spinningStaffTip) this.spinningStaffTip.rotation.y += dt * 3.0;
 
     if (this.orbTimer > 0) {
       this.orbTimer -= dt;
       if (this.staffOrb) {
         const p = 1.0 - (this.orbTimer / 0.2);
-        const sc = this.orbTimer > 0 ? (1.0 + 0.4 * Math.sin(Math.max(0, Math.min(1, p)) * Math.PI)) : 1.0;
+        const pulse = this.orbTimer > 0 ? (1.0 + 0.35 * Math.sin(Math.max(0, Math.min(1, p)) * Math.PI)) : 1.0;
+        const sc = (this.tierBaseScale || 1.0) * pulse;
         this.staffOrb.scale.set(sc, sc, sc);
       }
     }
@@ -192,6 +194,13 @@ export class Actor {
       this.walkTime += dt * 14;
       this.visualMesh.position.y = Math.abs(Math.sin(this.walkTime)) * 0.28;
       this.wobbleZ = Math.sin(this.walkTime) * 0.08;
+      if (this.leftLeg && this.rightLeg) {
+        this.leftLeg.rotation.x = Math.sin(this.walkTime) * 0.45;
+        this.rightLeg.rotation.x = -Math.sin(this.walkTime) * 0.45;
+      }
+      if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) {
+        this.leftArm.rotation.x = -Math.sin(this.walkTime) * 0.35;
+      }
       const len = Math.hypot(moveX, moveZ);
       if (len > 0.01) {
         const nx = moveX / len, nz = moveZ / len, ang = this.visualMesh.rotation.y;
@@ -201,6 +210,13 @@ export class Actor {
     } else {
       this.visualMesh.position.y = THREE.MathUtils.lerp(this.visualMesh.position.y, 0, 0.2);
       this.wobbleZ = THREE.MathUtils.lerp(this.wobbleZ || 0, 0, 0.2);
+      if (this.leftLeg && this.rightLeg) {
+        this.leftLeg.rotation.x = THREE.MathUtils.lerp(this.leftLeg.rotation.x, 0, 0.2);
+        this.rightLeg.rotation.x = THREE.MathUtils.lerp(this.rightLeg.rotation.x, 0, 0.2);
+      }
+      if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) {
+        this.leftArm.rotation.x = THREE.MathUtils.lerp(this.leftArm.rotation.x, 0, 0.2);
+      }
     }
     this.leanX = THREE.MathUtils.lerp(this.leanX || 0, targetLeanX, 0.15);
     this.leanZ = THREE.MathUtils.lerp(this.leanZ || 0, targetLeanZ, 0.15);

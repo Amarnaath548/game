@@ -64,14 +64,14 @@ export const BIOMES = {
 };
 
 export const HEROES = [
-  { id: 'ignis', name: 'Ignis', bodyColor: 0xd92638, accentColor: 0xff9900, hatType: 'WIZARD_HAT', extra: 'CAPE' },
-  { id: 'glacia', name: 'Glacia', bodyColor: 0x0284c7, accentColor: 0xe0f2fe, hatType: 'HOOD', extra: 'BACKPACK' },
-  { id: 'volt', name: 'Volt', bodyColor: 0xeab308, accentColor: 0x3b82f6, hatType: 'HORNS', extra: 'TAIL' },
-  { id: 'tox', name: 'Tox', bodyColor: 0x16a34a, accentColor: 0xa3e635, hatType: 'MASK', extra: 'BACKPACK' },
-  { id: 'nyx', name: 'Nyx', bodyColor: 0x7c3aed, accentColor: 0xc084fc, hatType: 'HOOD', extra: 'CAPE' },
-  { id: 'aegis', name: 'Aegis', bodyColor: 0x64748b, accentColor: 0xf59e0b, hatType: 'HELMET', extra: 'PAULDRONS' },
-  { id: 'krag', name: 'Krag', bodyColor: 0x854d0e, accentColor: 0xf97316, hatType: 'HORNS', extra: 'TAIL' },
-  { id: 'aurelia', name: 'Aurelia', bodyColor: 0xdb2777, accentColor: 0xfacc15, hatType: 'CROWN', extra: 'CAPE' }
+  { id: 'ignis', name: 'Tapasvi', archetype: 'TAPASVI', bodyColor: 0xe06014, accentColor: 0xfbbf24, hatType: 'JATA', extra: 'UTTARIYA' },
+  { id: 'glacia', name: 'Glacia', archetype: 'JALA', bodyColor: 0x0284c7, accentColor: 0x99f6e4, hatType: 'TURBAN', extra: 'WAVE_PADS' },
+  { id: 'volt', name: 'Volt', archetype: 'AGNI', bodyColor: 0xd92638, accentColor: 0xf97316, hatType: 'FLAME_CREST', extra: 'MANTLE' },
+  { id: 'tox', name: 'Tox', archetype: 'PRITHVI', bodyColor: 0x166534, accentColor: 0xc2410c, hatType: 'CIRCLET', extra: 'ROCK_SHOULDERS' },
+  { id: 'nyx', name: 'Nyx', archetype: 'JALA', bodyColor: 0x312e81, accentColor: 0x38bdf8, hatType: 'TURBAN', extra: 'WAVE_PADS' },
+  { id: 'aegis', name: 'Aegis', archetype: 'PRITHVI', bodyColor: 0x475569, accentColor: 0xd97706, hatType: 'CIRCLET', extra: 'ROCK_SHOULDERS' },
+  { id: 'krag', name: 'Krag', archetype: 'AGNI', bodyColor: 0x1e293b, accentColor: 0xf59e0b, hatType: 'FLAME_CREST', extra: 'MANTLE' },
+  { id: 'aurelia', name: 'Aurelia', archetype: 'TAPASVI', bodyColor: 0x9f1239, accentColor: 0xfacc15, hatType: 'JATA', extra: 'UTTARIYA' }
 ];
 
 export const ARENA = {

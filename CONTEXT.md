@@ -15,8 +15,11 @@
 - `divyastra/src/ui/QuestView.js`: Lobby quests tab list renderer, quest progress bars, claim buttons, and uncollected quest badge indicator.
 - `divyastra/src/core/SpellAccess.js`: Spell ownership validation, lock shake animation helper, perk selection modal renderer.
 - `divyastra/src/core/ObjectPool.js`: Generic reusable object pool (projectiles, gems, orbs).
-- `divyastra/src/entities/Actor.js`: Base wizard entity, scaled visual mesh, distinct hero silhouettes, knockback, shields, DoT/chill statuses.
-- `divyastra/src/entities/HeroVisual.js`: Shared low-poly BoxGeometry hero builder (headgear, silhouetted extras, staff, eyes).
+- `divyastra/src/entities/Actor.js`: Base wizard entity, scaled visual mesh, distinct hero silhouettes, knockback, shields, DoT/chill statuses, dynamic power tier visuals, limb walk cycles.
+- `divyastra/src/entities/HeroVisual.js`: Soft low-poly hero builder with merged body/head geometries, pivoted limbs, staff, and shield.
+- `divyastra/src/entities/HeroArchetypes.js`: Four distinct mythological silhouettes (Tapasvi jata topknot & uttariya, Agni flame crest & mantle, Jala turban with comet tails & wave pads, Prithvi stone circlet, beard & boulder tip).
+- `divyastra/src/entities/HeroTierVisuals.js`: Pre-attached dynamic power tier upgrades (T2 brow-band/rings/ferrule and T3 floating 25° halo & rotating staff orb ring).
+- `divyastra/src/entities/HeroMaterials.js`: Global shared MeshLambertMaterials (flatShading: true) and primitive geometry cache.
 - `divyastra/src/entities/Player.js`: Player controller, movement, dash i-frames, XP, dmgBonus, player ground ring & arrow markers.
 - `divyastra/src/entities/Bot.js`: Bot entity controller, level progression, dash execution, personality traits.
 - `divyastra/src/entities/BotBrain.js`: State decision engine (FORAGE/SKIRMISH/EVADE), target leading, dash trigger.
@@ -43,6 +46,7 @@
 - `divyastra/src/ui/ElementPicker.js`: In-match non-pausing 3-card elemental level-up picker with spell outcome previews and 5s auto-pick fallback.
 - `divyastra/src/core/SpellbookManager.js`: Spellbook mastery progression state in localStorage, unlock/milestone tracking, stars, and damage bonus lookup.
 - `divyastra/src/ui/SpellbookView.js`: Lobby SPELLBOOK tab renderer displaying all 19 spells grouped by tier with mastery stars and kill progress.
+- `divyastra/src/entities/HeroMaterials.js`: Global shared MeshLambertMaterials (flatShading: true) and primitive geometry cache.
 
 ## Completed Features
 - 2.5D Battle Royale on 120u arena with 11 bots and mythological Mantra/Shastra/Astra spells (Agni Bana, Jala Tarang, Bhumi Shila, etc.).
@@ -81,3 +85,4 @@
 - **Actor Separation & Melee Spacing Complete**: Added `systems/ActorSeparation.js` soft push-apart (capped at 0.35u, skipped during dash/knockback/spellDash, clamped to arena radius) integrated into `main.js` per-frame animate loop; tuned melee bot spacing in `BotBrain.js` with 1.4u stopping distance, 0.4 strafe between 1.1-1.6u, and -0.5 back-away bias below 1.1u.
 - **Tier 3 Radial Projectile Deflection Complete**: Added projectile deflection to Tier 3 RADIAL spells (Agneyastra F_F_F and Samudra Manthan E_F_W) with `deflectsProjectiles: true`, `deflectHold: 0.3`, `PROJECTILE_DEFLECT_MAX_PER_CAST = 12`, small spark bursts, rate-limited sound, ring material edge flash, lore update, and isolated `systems/ProjectileDeflect.js` wired before projectile updates in `CombatResolver`.
 - **Melee Spacing & Bot Hit Fix Complete**: Exported `SEPARATION_FACTOR = 1.25` in `constants.js` and `ActorSeparation.js`; updated `BotBrain.js` MELEE branch to calculate `sepDist`, attack at `sepDist + 0.45` (~2.95u), approach while `edist > sepDist + 0.3` with zero strafe, and strafe at 0.4 inside without backing away; updated `CombatResolver.js` `executeMelee` cone reach to `Math.max(cfg.range || 2.2, (owner.radius + 1.0) * SEPARATION_FACTOR + 0.6)` ensuring bot and player melee hits reliably land at separation distance.
+- **Soft Low-Poly Character Models Complete**: Replaced blocky BoxGeometry avatars with smooth faceted characters (~1,800–2,400 tris, flatShading: true, zero textures) optimized for 58° camera; implemented 4 distinct mythological silhouettes (Tapasvi default seeker, Agni, Jala, Prithvi) across all 8 heroes; adhered to cultural respect rules (clean spherical faces, subtle nose bridge, zero deity faces/tilak/symbols/eyes); split character creation cleanly into modular files (`HeroVisual.js`, `HeroArchetypes.js`, `HeroTierVisuals.js`, `HeroMaterials.js`) with static parts merged via `BufferGeometryUtils.mergeGeometries()` for ~5–7 draw calls; pre-attached and dynamically toggled power tier visuals (Shastra T2 gold brow-band/shoulder rings/ferrule, Astra T3 25° backward-tilted halo & rotating staff orb ring); added walk cycle limb sway; and updated lobby preview CSS thumbnails.
