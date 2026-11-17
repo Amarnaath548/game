@@ -4,6 +4,7 @@ import { CameraZoom } from './CameraZoom.js';
 import { WorldEnvironment } from './WorldEnvironment.js';
 import { WorldLandmarks } from './WorldLandmarks.js';
 
+
 export class SceneManager {
   constructor() {
     this.scene = new THREE.Scene();
@@ -30,7 +31,7 @@ export class SceneManager {
     this.qualityEvaluated = false;
     this.matchFpsTimer = 0; this.matchFpsFrames = 0;
 
-    this.initLights(isMobile);
+    this.initLights();
     this.initArena();
     this.worldEnv = new WorldEnvironment(this.scene);
     this.worldLandmarks = new WorldLandmarks(this.scene, this.obelisks);
