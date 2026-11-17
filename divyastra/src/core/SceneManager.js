@@ -14,9 +14,7 @@ export class SceneManager {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setClearColor(BIOMES.GRASS.skyColor, 1.0);
 
-    const isMobile = typeof navigator !== 'undefined' && (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
-      (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
-    this.renderer.shadowMap.enabled = !isMobile;
+    this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     document.body.appendChild(this.renderer.domElement);
 
@@ -25,14 +23,12 @@ export class SceneManager {
     this.cameraLookPos = new THREE.Vector3();
     this.hitShakeTimer = 0; this.hitShakeDuration = 0.15; this.hitShakeAmp = 0.12; this.trauma = 0;
     this.zoom = new CameraZoom();
-    this.obelisks = [];
-    this.obeliskMeshes = [];
+    this.obelisks = []; this.obeliskMeshes = [];
     this.biomeHistory = this.loadBiomeHistory();
     this.nextBiomeKey = this.initNextBiome();
     this.qualityMode = QUALITY || 'auto';
     this.qualityEvaluated = false;
-    this.matchFpsTimer = 0;
-    this.matchFpsFrames = 0;
+    this.matchFpsTimer = 0; this.matchFpsFrames = 0;
 
     this.initLights(isMobile);
     this.initArena();
@@ -109,19 +105,17 @@ export class SceneManager {
   addTrauma(amount = 0.4) { this.trauma = Math.min(1.0, this.trauma + amount); }
   triggerHitShake(amp = 0.12, dur = 0.15) { this.hitShakeAmp = amp; this.hitShakeDuration = dur; this.hitShakeTimer = dur; }
 
-  initLights(isMobile = false) {
-    this.ambientLight = new THREE.AmbientLight(BIOMES.GRASS.ambientColor, BIOMES.GRASS.ambientIntensity);
-    this.scene.add(this.ambientLight);
-    this.dirLight = new THREE.DirectionalLight(BIOMES.GRASS.dirLightColor, BIOMES.GRASS.dirLightIntensity);
-    this.dirLight.position.set(35, 65, 30);
-    this.dirLight.castShadow = !isMobile;
-    if (!isMobile) {
-      this.dirLight.shadow.mapSize.set(1024, 1024);
-      this.dirLight.shadow.camera.near = 10;
-      this.dirLight.shadow.camera.far = 160;
-      const d = 60, sc = this.dirLight.shadow.camera;
-      sc.left = -d; sc.right = d; sc.top = d; sc.bottom = -d;
-    }
+  initLights() {
+    this.hemiLight = new THREE.HemisphereLight(0xFFFBEB, 0x3D6B24, 0.7);
+    this.scene.add(this.hemiLight);
+    this.dirLight = new THREE.DirectionalLight(0xFFF4D2, 1.45);
+    this.dirLight.position.set(40, 65, 30);
+    this.dirLight.castShadow = true;
+    this.dirLight.shadow.mapSize.set(1024, 1024);
+    this.dirLight.shadow.camera.near = 10;
+    this.dirLight.shadow.camera.far = 160;
+    const d = 75, sc = this.dirLight.shadow.camera;
+    sc.left = -d; sc.right = d; sc.top = d; sc.bottom = -d;
     this.scene.add(this.dirLight);
   }
 
@@ -143,38 +137,6 @@ export class SceneManager {
       ringMesh.renderOrder = 1;
       this.scene.add(ringMesh);
     });
-
-    [[10, 10], [-10, 10], [10, -10], [-10, -10]].forEach(([x, z]) => {
-      const obeliskGroup = new THREE.Group();
-      obeliskGroup.position.set(x, 0, z);
-
-      const shadow = new THREE.Mesh(
-        new THREE.CircleGeometry(2.4, 16).rotateX(-Math.PI / 2),
-        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false })
-      );
-      shadow.position.y = 0.02;
-      obeliskGroup.add(shadow);
-
-      const pillarGeo = new THREE.BoxGeometry(2.4, 5.6, 2.4);
-      const sideMat = new THREE.MeshLambertMaterial({ color: BIOMES.GRASS.obeliskColor, flatShading: true });
-      const topMat = new THREE.MeshLambertMaterial({ color: BIOMES.GRASS.obeliskTopColor, flatShading: true });
-      const pillar = new THREE.Mesh(pillarGeo, [sideMat, sideMat, topMat, sideMat, sideMat, sideMat]);
-      pillar.position.y = 2.8; pillar.castShadow = true; pillar.receiveShadow = true;
-      obeliskGroup.add(pillar);
-      this.obeliskMeshes.push(pillar);
-
-      const cap = new THREE.Mesh(new THREE.ConeGeometry(1.9, 1.4, 4), topMat);
-      cap.position.y = 6.3; cap.rotation.y = Math.PI / 4; cap.castShadow = true;
-      obeliskGroup.add(cap);
-      this.obeliskMeshes.push(cap);
-
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(pillarGeo), new THREE.LineBasicMaterial({ color: 0xcfd8dc, transparent: true, opacity: 0.65 }));
-      edges.position.y = 2.8;
-      obeliskGroup.add(edges);
-
-      this.scene.add(obeliskGroup);
-      this.obelisks.push({ x, z, radius: 1.5 });
-    });
   }
 
   applyBiome(biomeKey = null, bushes = []) {
@@ -186,8 +148,13 @@ export class SceneManager {
     const near = biome.fogNear || 45, far = biome.fogFar || 140;
     if (!this.scene.fog) this.scene.fog = new THREE.Fog(biome.fogColor, near, far);
     else { this.scene.fog.color.setHex(biome.fogColor); this.scene.fog.near = near; this.scene.fog.far = far; }
-    if (this.ambientLight) { this.ambientLight.color.setHex(biome.ambientColor); this.ambientLight.intensity = biome.ambientIntensity; }
-    if (this.dirLight) { this.dirLight.color.setHex(biome.dirLightColor); this.dirLight.intensity = biome.dirLightIntensity; }
+    const isSnow = biome && biome.id === 'SNOW';
+    if (this.hemiLight) {
+      this.hemiLight.color.setHex(isSnow ? 0xE0F2FE : 0xFFFBEB);
+      this.hemiLight.groundColor.setHex(isSnow ? 0x64748B : 0x3D6B24);
+      this.hemiLight.intensity = isSnow ? 0.85 : 0.7;
+    }
+    if (this.dirLight) { this.dirLight.color.setHex(isSnow ? 0xFFFFFF : 0xFFF4D2); this.dirLight.intensity = isSnow ? 1.35 : 1.45; }
     if (this.floorMat) this.floorMat.color.setHex(biome.floorColor);
     if (this.worldEnv) this.worldEnv.applyBiome(biome);
     if (this.worldLandmarks) this.worldLandmarks.applyBiome(biome);

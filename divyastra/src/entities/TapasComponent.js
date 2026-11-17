@@ -16,6 +16,7 @@ export class TapasComponent {
     });
     this.ring = new THREE.Mesh(geo, this.ringMat);
     this.ring.position.y = 0.05;
+    this.ring.renderOrder = 5;
     this.actor.group.add(this.ring);
 
     this.plusPool = [];

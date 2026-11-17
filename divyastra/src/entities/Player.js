@@ -47,7 +47,7 @@ export class Player extends Actor {
       transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false
     });
     this.aimLine = new THREE.Mesh(aimLineGeo, this.aimLineMat);
-    this.aimLine.position.y = 0.06; this.aimLine.renderOrder = 2;
+    this.aimLine.position.y = 0.05; this.aimLine.renderOrder = 5;
     this.group.add(this.aimLine);
 
     // Player Marker
@@ -55,14 +55,14 @@ export class Player extends Actor {
     const ringGeo = new THREE.RingGeometry(1.25, 1.48, 32); ringGeo.rotateX(-Math.PI / 2);
     this.markerRingMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false });
     this.markerRing = new THREE.Mesh(ringGeo, this.markerRingMat);
-    this.markerRing.position.y = 0.04; this.markerRing.renderOrder = 3;
+    this.markerRing.position.y = 0.05; this.markerRing.renderOrder = 5;
     this.group.add(this.markerRing);
 
     const glowGeo = new THREE.RingGeometry(1.05, 1.75, 32);
     glowGeo.rotateX(-Math.PI / 2);
     this.markerGlowMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false });
     this.markerGlow = new THREE.Mesh(glowGeo, this.markerGlowMat);
-    this.markerGlow.position.y = 0.035;
+    this.markerGlow.position.y = 0.048; this.markerGlow.renderOrder = 5;
     this.group.add(this.markerGlow);
 
     const arrowGeo = new THREE.ConeGeometry(0.32, 0.58, 4);

@@ -145,7 +145,7 @@ export class ArcaneCrystal {
 }
 
 export class ShadowBush {
-  constructor(x, z, scene, radius = 2.8, bushColor = 0x22c55e) {
+  constructor(x, z, scene, radius = 2.8, bushColor = 0x3A9620) {
     this.x = x;
     this.z = z;
     this.radius = radius;
@@ -154,56 +154,41 @@ export class ShadowBush {
     this.group = new THREE.Group();
     this.group.position.set(x, 0, z);
 
-    // Soft darker contact shadow on floor
-    const shadowGeo = new THREE.CircleGeometry(radius * 0.95, 16);
-    shadowGeo.rotateX(-Math.PI / 2);
-    const shadowMat = new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      transparent: true,
-      opacity: 0.32,
-      depthWrite: false
-    });
-    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
-    shadow.position.y = 0.02;
-    this.group.add(shadow);
+    const shadowGeo = new THREE.CircleGeometry(radius * 0.95, 16); shadowGeo.rotateX(-Math.PI / 2);
+    const shadow = new THREE.Mesh(shadowGeo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false }));
+    shadow.position.y = 0.02; this.group.add(shadow);
 
-    // Chunky low-poly faceted bush
-    const bushGeo = new THREE.DodecahedronGeometry(radius, 0);
-    this.mat = new THREE.MeshLambertMaterial({
-      color: bushColor,
-      flatShading: true,
-      transparent: true,
-      opacity: 0.88
-    });
-    this.mesh = new THREE.Mesh(bushGeo, this.mat);
-    this.mesh.scale.set(1.05, 0.46, 1.05);
-    this.mesh.position.y = radius * 0.35;
-    this.mesh.receiveShadow = true;
-    this.group.add(this.mesh);
+    // Multi-lobe opaque low-poly leafy shrub (3-4 overlapping clusters in #3A9620 & #5BC227)
+    this.mat1 = new THREE.MeshLambertMaterial({ color: bushColor, flatShading: true });
+    this.mat2 = new THREE.MeshLambertMaterial({ color: 0x5BC227, flatShading: true });
 
-    // Lighter edge highlights
-    const edgesGeo = new THREE.EdgesGeometry(bushGeo);
-    this.edgesMat = new THREE.LineBasicMaterial({
-      color: 0x86efac,
-      transparent: true,
-      opacity: 0.55
+    const lobeOffsets = [
+      [0, 0, 0, radius * 0.65, this.mat1],
+      [radius * 0.35, 0, radius * 0.2, radius * 0.52, this.mat2],
+      [-radius * 0.32, 0, -radius * 0.22, radius * 0.5, this.mat2],
+      [0, 0, -radius * 0.32, radius * 0.46, this.mat1]
+    ];
+
+    lobeOffsets.forEach(([ox, , oz, r, mat]) => {
+      const m = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), mat);
+      m.position.set(ox, r * 0.55, oz); m.scale.set(1.15, 0.55, 1.15);
+      m.castShadow = true; m.receiveShadow = true; this.group.add(m);
     });
-    const edges = new THREE.LineSegments(edgesGeo, this.edgesMat);
-    edges.scale.copy(this.mesh.scale);
-    edges.position.copy(this.mesh.position);
-    this.group.add(edges);
 
     this.scene.add(this.group);
   }
 
-  setBiomeColor(color, edgeColor = 0x86efac) {
-    if (this.mat) this.mat.color.setHex(color);
-    if (this.edgesMat) this.edgesMat.color.setHex(edgeColor);
+  setBiomeColor(color, edgeColor = 0x5BC227) {
+    if (this.mat1) this.mat1.color.setHex(color);
+    if (this.mat2) this.mat2.color.setHex(edgeColor);
   }
 
   checkInside(actorX, actorZ) {
-    const dx = actorX - this.x;
-    const dz = actorZ - this.z;
-    return (dx * dx + dz * dz) <= (this.radius * this.radius);
+    const dx = actorX - this.x, dz = actorZ - this.z;
+    const inside = (dx * dx + dz * dz) <= (this.radius * this.radius);
+    const op = inside ? 0.35 : 1.0;
+    if (this.mat1) { this.mat1.opacity = op; this.mat1.transparent = inside; }
+    if (this.mat2) { this.mat2.opacity = op; this.mat2.transparent = inside; }
+    return inside;
   }
 }
