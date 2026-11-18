@@ -3,22 +3,22 @@ import { MAT_GOLD } from './HeroMaterials.js';
 
 export function buildTierVisuals(actor, headGroup, torsoGroup, staffGroup) {
   // Tier 2 (Shastra): Brow-band, shoulder rings, staff ferrule
-  const browBandGeo = new THREE.TorusGeometry(0.23, 0.022, 6, 14);
+  const browBandGeo = new THREE.TorusGeometry(0.275, 0.022, 6, 14);
   const browBand = new THREE.Mesh(browBandGeo, MAT_GOLD);
-  browBand.position.set(0, 0.02, 0);
+  browBand.position.set(0, 0.1, 0);
   browBand.rotation.x = Math.PI / 2;
   browBand.visible = false;
   headGroup.add(browBand);
 
-  const shoulderRingGeo = new THREE.TorusGeometry(0.16, 0.02, 6, 12);
+  const shoulderRingGeo = new THREE.TorusGeometry(0.18, 0.02, 6, 12);
   const shoulderL = new THREE.Mesh(shoulderRingGeo, MAT_GOLD);
-  shoulderL.position.set(-0.36, 0.42, 0);
+  shoulderL.position.set(-0.4, 0.46, 0);
   shoulderL.rotation.y = Math.PI / 2;
   shoulderL.visible = false;
   torsoGroup.add(shoulderL);
 
   const shoulderR = new THREE.Mesh(shoulderRingGeo, MAT_GOLD);
-  shoulderR.position.set(0.36, 0.42, 0);
+  shoulderR.position.set(0.4, 0.46, 0);
   shoulderR.rotation.y = Math.PI / 2;
   shoulderR.visible = false;
   torsoGroup.add(shoulderR);

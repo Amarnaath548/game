@@ -193,8 +193,7 @@ export class Player extends Actor {
 
     const inBush = bushes.some((bush) => bush.checkInside(this.x, this.z));
     const targetOpacity = inBush ? 0.35 : 1.0;
-    this.robeMat.transparent = inBush;
-    this.robeMat.opacity = targetOpacity;
+    this.setHeroOpacity(targetOpacity);
 
     this.markerTime += dt;
     const pulse = 1.0 + Math.sin(this.markerTime * 4.5) * 0.08;

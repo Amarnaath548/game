@@ -65,6 +65,20 @@ export class Actor {
     this.robeMat = this.bodyMat; this.hatMat = this.accentMat;
   }
 
+  // Flash / fade every material of the hero model together (skin, sash, beads, cloth, glow...)
+  setHeroEmissive(hex) {
+    for (const m of this.heroMats || [this.bodyMat, this.accentMat]) m?.emissive?.setHex(hex);
+  }
+
+  setHeroOpacity(opacity) {
+    const translucent = opacity < 1;
+    for (const m of this.heroMats || [this.bodyMat, this.accentMat, this.staffOrbMat]) {
+      if (!m) continue;
+      m.transparent = translucent || !!m.userData?.keepTransparent;
+      m.opacity = opacity;
+    }
+  }
+
   applyShield(amount = 80, duration = 3.0) {
     this.shieldHp = amount;
     this.shieldTimer = duration;
@@ -93,8 +107,7 @@ export class Actor {
 
     this.hp -= amount;
     this.hitTimer = 0.08;
-    this.bodyMat.emissive.setHex(0xffffff);
-    this.accentMat.emissive.setHex(0xffffff);
+    this.setHeroEmissive(0xffffff);
 
     if (this.hp <= 0) {
       this.hp = 0;
@@ -123,17 +136,14 @@ export class Actor {
         this.deathTimer -= dt;
         const progress = Math.max(0, this.deathTimer / 0.35), sc = progress * HERO_VISUAL_SCALE;
         this.visualMesh.scale.set(sc, sc, sc);
-        if (this.bodyMat) this.bodyMat.opacity = progress;
-        if (this.accentMat) this.accentMat.opacity = progress;
-        if (this.staffOrbMat) this.staffOrbMat.opacity = progress;
+        this.setHeroOpacity(progress);
         if (this.deathTimer <= 0) { this.isDying = false; this.destroyVisuals(); }
       }
       return;
     }
 
     if (this.hitTimer > 0 && (this.hitTimer -= dt) <= 0) {
-      if (this.bodyMat?.emissive) this.bodyMat.emissive.setHex(0x000000);
-      if (this.accentMat?.emissive) this.accentMat.emissive.setHex(0x000000);
+      this.setHeroEmissive(0x000000);
     }
 
     if (this.punchTimer > 0) {
@@ -228,9 +238,7 @@ export class Actor {
     if (this.isDead) return;
     this.isDead = true; this.isDying = true; this.deathTimer = 0.35;
     if (this.shieldMesh) this.shieldMesh.visible = false;
-    if (this.bodyMat) this.bodyMat.transparent = true;
-    if (this.accentMat) this.accentMat.transparent = true;
-    if (this.staffOrbMat) this.staffOrbMat.transparent = true;
+    for (const m of this.heroMats || []) m.transparent = true;
   }
 
   destroyVisuals() {
@@ -239,9 +247,7 @@ export class Actor {
       return;
     }
     this.scene.remove(this.group);
-    if (this.bodyMat) this.bodyMat.dispose();
-    if (this.accentMat) this.accentMat.dispose();
-    if (this.staffOrbMat) this.staffOrbMat.dispose();
+    for (const m of this.heroMats || []) m.dispose();
     if (this.shieldMesh?.material) this.shieldMesh.material.dispose();
   }
 

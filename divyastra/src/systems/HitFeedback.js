@@ -34,8 +34,7 @@ export class HitFeedback {
     // 1. Material Flash (only touch actor-owned materials, 0.08s duration)
     if (isWithinRange && !target.isDead) {
       target.hitTimer = 0.08;
-      if (target.bodyMat?.emissive) target.bodyMat.emissive.setHex(0xffffff);
-      if (target.accentMat?.emissive) target.accentMat.emissive.setHex(0xffffff);
+      target.setHeroEmissive?.(0xffffff);
     }
 
     // 2. Camera Shake: only when PLAYER takes damage, or lands a hit above threshold

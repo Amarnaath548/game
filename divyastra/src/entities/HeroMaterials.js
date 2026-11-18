@@ -1,7 +1,14 @@
 import * as THREE from 'three';
 
 // Global shared materials (flatShading: true, zero textures) for mobile WebGL
-export const MAT_SKIN = new THREE.MeshLambertMaterial({ color: 0xe29d72, flatShading: true });
+// Sage-style palette (matches the low-poly ascetic reference art)
+export const SKIN_COLOR = 0xd69c68;
+export const HAIR_COLOR = 0x3a2515;
+export const BEAD_COLOR = 0x7a4325;
+export const CLAY_COLOR = 0x8c5a33;
+export const CLOTH_SAND = 0xe3cfa5;
+
+export const MAT_SKIN = new THREE.MeshLambertMaterial({ color: SKIN_COLOR, flatShading: true });
 export const MAT_WOOD = new THREE.MeshLambertMaterial({ color: 0x5c3a21, flatShading: true });
 export const MAT_GOLD = new THREE.MeshLambertMaterial({ color: 0xf59e0b, flatShading: true });
 export const MAT_ORANGE_FIRE = new THREE.MeshLambertMaterial({ color: 0xf97316, flatShading: true });

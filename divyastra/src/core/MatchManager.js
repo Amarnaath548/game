@@ -72,9 +72,7 @@ export class MatchManager {
     this.player.deathTimer = 0;
     this.player.group.visible = true;
     if (this.player.visualMesh) this.player.visualMesh.scale.set(HERO_VISUAL_SCALE, HERO_VISUAL_SCALE, HERO_VISUAL_SCALE);
-    if (this.player.bodyMat) { this.player.bodyMat.opacity = 1.0; this.player.bodyMat.transparent = false; }
-    if (this.player.accentMat) { this.player.accentMat.opacity = 1.0; this.player.accentMat.transparent = false; }
-    if (this.player.staffOrbMat) { this.player.staffOrbMat.opacity = 1.0; this.player.staffOrbMat.transparent = false; }
+    this.player.setHeroOpacity(1.0);
     this.player.group.position.set(0, 0, 0);
     this.player.x = 0;
     this.player.z = 0;
