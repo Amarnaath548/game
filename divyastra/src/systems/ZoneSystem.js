@@ -1,8 +1,15 @@
 import * as THREE from 'three';
-import { STORM_PHASES, COLORS, ARENA } from '../config/constants.js';
+import { STORM_PHASES, ARENA } from '../config/constants.js';
+import { ZoneVisuals } from './ZoneVisuals.js';
+
+export let activeZoneSystem = null;
 
 export class ZoneSystem {
   constructor(scene) {
+    if (activeZoneSystem && typeof activeZoneSystem.dispose === 'function') {
+      activeZoneSystem.dispose();
+    }
+
     this.scene = scene;
     this.currentPhaseIndex = 0;
     this.phaseTime = 0;
@@ -12,36 +19,12 @@ export class ZoneSystem {
     this.isMatchOver = false;
     this.initRadius = STORM_PHASES[0].startRadius;
 
-    // Flat ground band showing the storm area — a wide annulus from the
-    // boundary edge outward to the arena edge. Fully visible from the 58°
-    // overhead camera without any vertical surface creating purple haze.
-    const bandOuter = ARENA.RADIUS + 30; // extend past arena edge
-    const bandGeo = new THREE.RingGeometry(this.currentRadius, bandOuter, 64);
-    bandGeo.rotateX(-Math.PI / 2);
-    this.bandMat = new THREE.MeshBasicMaterial({
-      color: COLORS.STORM_RING,
-      transparent: true,
-      opacity: 0.0,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
-    this.stormBand = new THREE.Mesh(bandGeo, this.bandMat);
-    this.stormBand.position.y = 0.04;
-    this.stormBand.renderOrder = 1;
-    this.scene.add(this.stormBand);
+    this.visuals = new ZoneVisuals(scene);
+    this.forcefield = this.visuals.wall;
+    this.groundRing = this.visuals.edgeRing;
 
-    // Bright thin boundary ring on the ground
-    const ringGeo = new THREE.RingGeometry(this.currentRadius - 0.6, this.currentRadius + 0.6, 64);
-    ringGeo.rotateX(-Math.PI / 2);
-    this.ringMat = new THREE.MeshBasicMaterial({
-      color: COLORS.STORM_RING,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
-    this.groundRing = new THREE.Mesh(ringGeo, this.ringMat);
-    this.groundRing.position.y = 0.09;
-    this.groundRing.renderOrder = 2;
-    this.scene.add(this.groundRing);
+    activeZoneSystem = this;
+    if (typeof window !== 'undefined') window.__zoneSys = this;
   }
 
   update(dt, actors = []) {
@@ -59,24 +42,11 @@ export class ZoneSystem {
       progress
     );
 
-    // Rebuild the storm band geometry every frame (cheap for a single ring)
-    this.stormBand.geometry.dispose();
-    const bandOuter = ARENA.RADIUS + 30;
-    const newGeo = new THREE.RingGeometry(Math.max(0.1, this.currentRadius), bandOuter, 64);
-    newGeo.rotateX(-Math.PI / 2);
-    this.stormBand.geometry = newGeo;
+    // Update visuals with current state & player
+    const player = actors.find((a) => a.isPlayer);
+    this.visuals.update(dt, this, player);
 
-    // Scale the boundary ring instead of rebuilding
-    const scale = this.currentRadius / this.initRadius;
-    this.groundRing.scale.set(scale, scale, 1);
-
-    // Storm band opacity: invisible during safe phase, ramps up with damage
-    const stormStrength = currentPhase.tickDamage > 0
-      ? Math.min(1.0, currentPhase.tickDamage / 40)
-      : 0;
-    this.bandMat.opacity = THREE.MathUtils.lerp(0.0, 0.3, stormStrength);
-
-    // Tick out-of-bounds damage
+    // Tick out-of-bounds damage (logic strictly unchanged)
     if (currentPhase.tickDamage > 0) {
       const damageTick = currentPhase.tickDamage * dt;
       actors.forEach((actor) => {
@@ -104,8 +74,27 @@ export class ZoneSystem {
     }
   }
 
+  isShrinking() {
+    const currentPhase = STORM_PHASES[this.currentPhaseIndex];
+    if (!currentPhase) return false;
+    return currentPhase.endRadius < currentPhase.startRadius;
+  }
+
+  getTimeUntilNextShrink() {
+    const currentPhase = STORM_PHASES[this.currentPhaseIndex];
+    if (!currentPhase) return 0;
+    if (currentPhase.endRadius < currentPhase.startRadius) {
+      return 0; // Currently shrinking
+    }
+    return Math.max(0, currentPhase.duration - this.phaseTime);
+  }
+
   getSafeDistance(x, z) {
     const dist = Math.hypot(x - this.centerX, z - this.centerZ);
     return this.currentRadius - dist;
+  }
+
+  dispose() {
+    if (this.visuals) this.visuals.dispose();
   }
 }

@@ -1,3 +1,5 @@
+import { activeZoneSystem } from '../systems/ZoneSystem.js';
+
 export class TopRightHUD {
   constructor(containerEl = null) {
     this.container = containerEl || document.getElementById('top-right-hud');
@@ -19,19 +21,21 @@ export class TopRightHUD {
         </div>
       </div>
       <div class="top-subrow">
-        <div class="badge badge-zone">ZONE: <span id="zone-status">Safe</span></div>
+        <div class="badge badge-zone">ZONE: <span id="zone-status">Safe</span> • <span id="zone-countdown" style="color:#d8b4fe;">Next shrink 0:25</span></div>
         <button id="hud-mute-btn" class="fs-btn hud-mute-btn" title="Toggle Sound">🔊</button>
       </div>
     `;
     this.gemsEl = this.container.querySelector('#match-gems-count');
     this.killsEl = this.container.querySelector('#match-kills-count');
     this.zoneStatusEl = this.container.querySelector('#zone-status');
+    this.zoneCountdownEl = this.container.querySelector('#zone-countdown');
     this.lastGems = -1;
     this.lastKills = -1;
     this.lastSafe = null;
+    this.lastCountdownText = '';
   }
 
-  update(player, isSafe) {
+  update(player, isSafe, zoneSysParam = null) {
     if (player) {
       const gems = player.gemsCollected || 0;
       if (this.lastGems !== gems) {
@@ -49,13 +53,32 @@ export class TopRightHUD {
       this.zoneStatusEl.style.color = isSafe ? '#a855f7' : '#ef4444';
       this.lastSafe = isSafe;
     }
+
+    const zSys = zoneSysParam || activeZoneSystem || (typeof window !== 'undefined' ? window.__zoneSys : null);
+    if (this.zoneCountdownEl && zSys) {
+      let text = '';
+      if (zSys.isShrinking()) {
+        text = 'Shrinking...';
+      } else {
+        const t = Math.max(0, Math.ceil(zSys.getTimeUntilNextShrink()));
+        const m = Math.floor(t / 60);
+        const s = (t % 60).toString().padStart(2, '0');
+        text = `Next shrink ${m}:${s}`;
+      }
+      if (text !== this.lastCountdownText) {
+        this.zoneCountdownEl.textContent = text;
+        this.lastCountdownText = text;
+      }
+    }
   }
 
   reset() {
     this.lastGems = -1;
     this.lastKills = -1;
     this.lastSafe = null;
+    this.lastCountdownText = '';
     if (this.gemsEl) this.gemsEl.textContent = '0';
     if (this.killsEl) this.killsEl.textContent = '0';
+    if (this.zoneCountdownEl) this.zoneCountdownEl.textContent = 'Next shrink 0:25';
   }
 }
