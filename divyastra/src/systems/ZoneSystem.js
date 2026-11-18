@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { STORM_PHASES, COLORS } from '../config/constants.js';
+import { STORM_PHASES, COLORS, ARENA } from '../config/constants.js';
 
 export class ZoneSystem {
   constructor(scene) {
@@ -10,31 +10,37 @@ export class ZoneSystem {
     this.centerX = 0;
     this.centerZ = 0;
     this.isMatchOver = false;
+    this.initRadius = STORM_PHASES[0].startRadius;
 
-    // Visual Cylinder Forcefield — rendered on the OUTSIDE of the boundary.
-    // Opacity ramps from ~0 (safe phase) up to 0.35 (storm phase) so the
-    // translucent band never makes the player feel they are inside the storm.
-    const cylGeo = new THREE.CylinderGeometry(this.currentRadius, this.currentRadius, 18, 64, 1, true);
-    this.cylMat = new THREE.MeshBasicMaterial({
+    // Flat ground band showing the storm area — a wide annulus from the
+    // boundary edge outward to the arena edge. Fully visible from the 58°
+    // overhead camera without any vertical surface creating purple haze.
+    const bandOuter = ARENA.RADIUS + 30; // extend past arena edge
+    const bandGeo = new THREE.RingGeometry(this.currentRadius, bandOuter, 64);
+    bandGeo.rotateX(-Math.PI / 2);
+    this.bandMat = new THREE.MeshBasicMaterial({
       color: COLORS.STORM_RING,
       transparent: true,
-      opacity: 0.04,
-      side: THREE.BackSide, // only visible from inside looking out at the boundary wall
+      opacity: 0.0,
+      side: THREE.DoubleSide,
       depthWrite: false
     });
-    this.forcefield = new THREE.Mesh(cylGeo, this.cylMat);
-    this.forcefield.position.set(0, 9, 0);
-    this.scene.add(this.forcefield);
+    this.stormBand = new THREE.Mesh(bandGeo, this.bandMat);
+    this.stormBand.position.y = 0.04;
+    this.stormBand.renderOrder = 1;
+    this.scene.add(this.stormBand);
 
-    // Glowing ground perimeter ring
-    const ringGeo = new THREE.RingGeometry(this.currentRadius - 0.4, this.currentRadius + 0.4, 64);
+    // Bright thin boundary ring on the ground
+    const ringGeo = new THREE.RingGeometry(this.currentRadius - 0.6, this.currentRadius + 0.6, 64);
     ringGeo.rotateX(-Math.PI / 2);
     this.ringMat = new THREE.MeshBasicMaterial({
       color: COLORS.STORM_RING,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      depthWrite: false
     });
     this.groundRing = new THREE.Mesh(ringGeo, this.ringMat);
-    this.groundRing.position.y = 0.08;
+    this.groundRing.position.y = 0.09;
+    this.groundRing.renderOrder = 2;
     this.scene.add(this.groundRing);
   }
 
@@ -47,41 +53,42 @@ export class ZoneSystem {
     this.phaseTime += dt;
     const progress = Math.min(1.0, this.phaseTime / currentPhase.duration);
 
-    // Lerp radius
     this.currentRadius = THREE.MathUtils.lerp(
       currentPhase.startRadius,
       currentPhase.endRadius,
       progress
     );
 
-    // Update 3D visual cylinder scale
-    const scale = this.currentRadius / STORM_PHASES[0].startRadius;
-    this.forcefield.scale.set(scale, 1, scale);
+    // Rebuild the storm band geometry every frame (cheap for a single ring)
+    this.stormBand.geometry.dispose();
+    const bandOuter = ARENA.RADIUS + 30;
+    const newGeo = new THREE.RingGeometry(Math.max(0.1, this.currentRadius), bandOuter, 64);
+    newGeo.rotateX(-Math.PI / 2);
+    this.stormBand.geometry = newGeo;
+
+    // Scale the boundary ring instead of rebuilding
+    const scale = this.currentRadius / this.initRadius;
     this.groundRing.scale.set(scale, scale, 1);
 
-    // Ramp cylinder opacity: 0.04 when no damage (safe), up to 0.35 when storm is active
+    // Storm band opacity: invisible during safe phase, ramps up with damage
     const stormStrength = currentPhase.tickDamage > 0
       ? Math.min(1.0, currentPhase.tickDamage / 40)
       : 0;
-    this.cylMat.opacity = THREE.MathUtils.lerp(0.04, 0.35, stormStrength);
+    this.bandMat.opacity = THREE.MathUtils.lerp(0.0, 0.3, stormStrength);
 
-    // Tick out-of-bounds damage (ONLY if phase has tickDamage > 0)
+    // Tick out-of-bounds damage
     if (currentPhase.tickDamage > 0) {
       const damageTick = currentPhase.tickDamage * dt;
       actors.forEach((actor) => {
         if (actor.isDead) return;
         const dist = Math.hypot(actor.x - this.centerX, actor.z - this.centerZ);
-        // Generous buffer so actors inside the boundary never take storm damage
         if (dist > this.currentRadius + 1.0) {
           let dmg = damageTick;
-          // Protect bots from dying automatically to storm before final phase
           if (!actor.isPlayer && this.currentPhaseIndex < 3) {
             const safeFloor = Math.round(actor.maxHp * 0.4);
             dmg = Math.min(dmg, Math.max(0, actor.hp - safeFloor));
           }
-          if (dmg > 0) {
-            actor.takeDamage(dmg);
-          }
+          if (dmg > 0) actor.takeDamage(dmg);
         }
       });
     }
@@ -102,4 +109,3 @@ export class ZoneSystem {
     return this.currentRadius - dist;
   }
 }
-
