@@ -27,6 +27,7 @@ export class MatchManager {
     this.zoneSys = new ZoneSystem(this.sceneManager.scene);
     this.matchActive = false;
     this.isGameOver = false;
+    this.isPaused = false;
     this.matchTime = 0;
   }
 
@@ -130,7 +131,7 @@ export class MatchManager {
   }
 
   update(dt) {
-    if (!this.matchActive) return;
+    if (!this.matchActive || this.isPaused) return;
     this.matchTime = (this.matchTime || 0) + dt;
 
     // Gems & Orbs Player Collection

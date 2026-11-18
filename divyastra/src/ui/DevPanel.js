@@ -10,6 +10,7 @@ export class DevPanel {
     this.matchManager = deps.matchManager;
     this.sceneManager = deps.sceneManager;
     this.ui = deps.ui;
+    this.devInspectView = deps.devInspectView;
     this.dev = getDevTools();
     this.circleEls = [];
     this._build();
@@ -22,8 +23,14 @@ export class DevPanel {
 
     const btn = document.createElement('button');
     btn.textContent = 'DEV';
-    btn.style.cssText = 'pointer-events:auto;background:#7c3aed;color:#fff;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font:bold 11px monospace;box-shadow:0 2px 6px rgba(0,0,0,0.5);';
+    btn.style.cssText = 'pointer-events:auto;background:#7c3aed;color:#fff;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font:bold 11px monospace;box-shadow:0 2px 6px rgba(0,0,0,0.5);margin-right:4px;';
     wrap.appendChild(btn);
+
+    const inspectBtn = document.createElement('button');
+    inspectBtn.textContent = 'DEV VIEW / INSPECT';
+    inspectBtn.style.cssText = 'pointer-events:auto;background:#0284c7;color:#fff;border:1px solid #38bdf8;padding:3px 8px;border-radius:4px;cursor:pointer;font:bold 11px monospace;box-shadow:0 2px 6px rgba(0,0,0,0.5);';
+    inspectBtn.onclick = () => { if (this.devInspectView) this.devInspectView.toggle(); };
+    wrap.appendChild(inspectBtn);
 
     const panel = document.createElement('div');
     panel.style.cssText = 'display:none;pointer-events:auto;background:rgba(15,20,40,0.94);border:1px solid #7c3aed;border-radius:6px;padding:6px;margin-top:4px;max-width:210px;box-shadow:0 4px 12px rgba(0,0,0,0.7);';

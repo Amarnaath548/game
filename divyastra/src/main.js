@@ -24,6 +24,7 @@ import { TutorialHints } from './ui/TutorialHints.js';
 import { separateActors } from './systems/ActorSeparation.js';
 import { ArenaInteractables } from './systems/ArenaInteractables.js';
 import { getDevTools } from './core/DevTools.js';
+import { DevInspectView } from './ui/DevInspectView.js';
 
 // Core Systems
 const sceneManager = new SceneManager();
@@ -44,13 +45,8 @@ const arenaInteractables = new ArenaInteractables(sceneManager.scene, sceneManag
 // Player Entity
 const player = new Player(sceneManager.scene, input);
 floatingBars.setPlayer(player);
-player.onTapasReadyCallback = () => {
-  sound.playTapasReady();
-  tutorialHints.onTapasReady();
-};
-player.onDamage = () => {
-  sound.playPlayerDamage();
-};
+player.onTapasReadyCallback = () => { sound.playTapasReady(); tutorialHints.onTapasReady(); };
+player.onDamage = () => sound.playPlayerDamage();
 
 // Pools
 const projPool = new ObjectPool(() => {
@@ -128,22 +124,17 @@ matchManager.ui = ui;
 combatResolver.ui = ui;
 
 const origShowLevelUp = ui.showLevelUp.bind(ui);
-ui.showLevelUp = (p, lvl) => {
-  origShowLevelUp(p, lvl);
-  tutorialHints.onLevelUp(lvl);
-};
+ui.showLevelUp = (p, lvl) => { origShowLevelUp(p, lvl); tutorialHints.onLevelUp(lvl); };
 const origShowEndGame = ui.showEndGame.bind(ui);
-ui.showEndGame = (...args) => {
-  tutorialHints.onMatchEnd();
-  origShowEndGame(...args);
-};
+ui.showEndGame = (...args) => { tutorialHints.onMatchEnd(); origShowEndGame(...args); };
 
-// Dev mode integration
+// Dev & Inspect mode integration
+const devInspectView = new DevInspectView({ sceneManager, matchManager, spawnManager, arenaInteractables, player });
 const devTools = getDevTools();
 let devPanel = null;
 if (devTools.enabled) {
   import('./ui/DevPanel.js').then(({ DevPanel }) => {
-    devPanel = new DevPanel({ player, spawnManager, matchManager, sceneManager, ui });
+    devPanel = new DevPanel({ player, spawnManager, matchManager, sceneManager, ui, devInspectView });
   });
 }
 
@@ -181,6 +172,12 @@ function animate() {
       debugFrames = 0;
       debugTimer = 0;
     }
+  }
+
+  if (devInspectView.isOpen) {
+    devInspectView.update(dt);
+    sceneManager.render();
+    return;
   }
 
   if (matchManager.matchActive) {
