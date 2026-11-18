@@ -20,7 +20,7 @@ export const BIOMES = {
   GRASS: {
     id: 'GRASS',
     name: 'Grass Plains',
-    floorColor: 0x68D61E,
+    floorColor: 0x76C725,
     floorAccentColor: 0x58c016,
     shorelineColor: 0xe9d8a6,
     pondColor: 0x3b5f8a,

@@ -3,6 +3,7 @@ import { COLORS, ARENA, CAMERA_CONFIG, BIOMES, QUALITY } from '../config/constan
 import { CameraZoom } from './CameraZoom.js';
 import { WorldEnvironment } from './WorldEnvironment.js';
 import { WorldLandmarks } from './WorldLandmarks.js';
+import { WorldTerrain } from './WorldTerrain.js';
 
 
 export class SceneManager {
@@ -113,6 +114,8 @@ export class SceneManager {
     this.dirLight.position.set(40, 65, 30);
     this.dirLight.castShadow = true;
     this.dirLight.shadow.mapSize.set(1024, 1024);
+    this.dirLight.shadow.bias = -0.0004;
+    this.dirLight.shadow.normalBias = 0.03;
     this.dirLight.shadow.camera.near = 10;
     this.dirLight.shadow.camera.far = 160;
     const d = 75, sc = this.dirLight.shadow.camera;
@@ -127,17 +130,8 @@ export class SceneManager {
     this.floorMesh.receiveShadow = true;
     this.scene.add(this.floorMesh);
 
-    [ARENA.RINGS.SANCTUM_MAX, ARENA.RINGS.RUINS_MAX, ARENA.RINGS.SPAWN_MAX].forEach((radius, idx) => {
-      const ringGeo = new THREE.RingGeometry(radius - 0.35, radius, 64).rotateX(-Math.PI / 2);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: idx === 2 ? COLORS.STORM_RING : COLORS.RING_DIVIDER,
-        transparent: true, opacity: idx === 2 ? 0.95 : 0.65, side: THREE.DoubleSide, depthWrite: false
-      });
-      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-      ringMesh.position.y = 0.04;
-      ringMesh.renderOrder = 1;
-      this.scene.add(ringMesh);
-    });
+    // Mottled grass, sandy roads, stepping stones and the terracotta cliff rim
+    this.terrain = new WorldTerrain(this.scene);
   }
 
   applyBiome(biomeKey = null, bushes = []) {
@@ -157,6 +151,7 @@ export class SceneManager {
     }
     if (this.dirLight) { this.dirLight.color.setHex(isSnow ? 0xFFFFFF : 0xFFF4D2); this.dirLight.intensity = isSnow ? 1.35 : 1.45; }
     if (this.floorMat) this.floorMat.color.setHex(biome.floorColor);
+    if (this.terrain) this.terrain.applyBiome(biome);
     if (this.worldEnv) this.worldEnv.applyBiome(biome);
     if (this.worldLandmarks) this.worldLandmarks.applyBiome(biome);
     if (this.obeliskMeshes) {

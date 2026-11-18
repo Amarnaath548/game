@@ -174,7 +174,7 @@ export class CombatResolver {
       }
       for (const c of chests) {
         if (!c.isDead && p.active && CollisionSystem.checkCircle(p.x, p.z, p.radius, c.x, c.z, c.radius)) {
-          this.sound.playHit(); this.particleSys.spawnImpact(p.x, p.z, c.isMythic ? 0x9333ea : 0x8b5a2b, 1.5);
+          this.sound.playHit(); this.particleSys.spawnImpact(p.x, p.z, c.isMythic ? 0xf5b82e : 0x8b5a2b, 1.5);
           if (c.takeDamage(p.damage)) { this.sound.playExplosion(); this.spawnManager.dropLoot(c.x, c.z, c.isMythic ? 8 : 3, c.isMythic ? 1 : 0.35); }
           if (p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn || p.spellConfig?.hazardZone) {
             this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, c, tgts);

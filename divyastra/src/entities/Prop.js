@@ -15,26 +15,53 @@ export class Chest {
     this.group = new THREE.Group();
     this.group.position.set(x, 0, z);
 
-    // Chest Body
-    const bodyGeo = new THREE.BoxGeometry(
-      isMythic ? 2.4 : 1.8,
-      isMythic ? 1.5 : 1.1,
-      isMythic ? 1.6 : 1.2
-    );
-    this.baseColor = isMythic ? 0x9333ea : 0x8b5a2b;
-    this.mat = new THREE.MeshLambertMaterial({ color: this.baseColor });
-    this.bodyMesh = new THREE.Mesh(bodyGeo, this.mat);
-    this.bodyMesh.position.y = isMythic ? 0.75 : 0.55;
+    // Chest body + domed lid + gold bands (mythic sits on the plaza dais and glows)
+    const W = isMythic ? 2.4 : 1.8;
+    const H = isMythic ? 1.0 : 0.75;
+    const D = isMythic ? 1.6 : 1.2;
+    const baseY = isMythic ? 0.4 : 0;
+    this.baseColor = isMythic ? 0xF2B01E : 0x8b5a2b;
+    this.mat = new THREE.MeshLambertMaterial({ color: this.baseColor, flatShading: true, emissive: isMythic ? 0x5A3D00 : 0x000000 });
+    const bandMat = new THREE.MeshLambertMaterial({ color: isMythic ? 0xB45309 : 0xD9A520, flatShading: true });
+    const goldMat = new THREE.MeshLambertMaterial({ color: 0xFFD54A, flatShading: true });
+
+    this.bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), this.mat);
+    this.bodyMesh.position.y = baseY + H / 2;
     this.bodyMesh.castShadow = true;
     this.bodyMesh.receiveShadow = true;
     this.group.add(this.bodyMesh);
 
-    // Gold Trim / Lock
-    const lockGeo = new THREE.BoxGeometry(0.4, 0.45, 0.25);
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(D / 2, D / 2, W, 10, 1, false, 0, Math.PI), this.mat);
+    lid.rotation.set(0, 0, Math.PI / 2); // axis along X, dome facing up
+    lid.position.y = baseY + H;
+    lid.castShadow = true;
+    this.group.add(lid);
+
+    [-W * 0.32, W * 0.32].forEach((bx) => {
+      const band = new THREE.Mesh(new THREE.BoxGeometry(0.18, H + 0.04, D + 0.06), bandMat);
+      band.position.set(bx, baseY + H / 2, 0); this.group.add(band);
+      const bandLid = new THREE.Mesh(new THREE.CylinderGeometry(D / 2 + 0.04, D / 2 + 0.04, 0.18, 10, 1, false, 0, Math.PI), bandMat);
+      bandLid.rotation.set(0, 0, Math.PI / 2);
+      bandLid.position.set(bx, baseY + H, 0); this.group.add(bandLid);
+    });
+
     const lockMat = new THREE.MeshBasicMaterial({ color: isMythic ? 0x00f2ff : 0xffd700 });
-    const lock = new THREE.Mesh(lockGeo, lockMat);
-    lock.position.set(0, isMythic ? 0.8 : 0.6, isMythic ? 0.82 : 0.62);
+    const lock = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.42, 0.18), lockMat);
+    lock.position.set(0, baseY + H * 0.72, D / 2 + 0.06);
     this.group.add(lock);
+
+    if (isMythic) {
+      // Gilded corner studs + soft ground glow
+      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+        const stud = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), goldMat);
+        stud.position.set(sx * (W / 2 - 0.05), baseY + 0.12, sz * (D / 2 - 0.05)); this.group.add(stud);
+      });
+      const glow = new THREE.Mesh(
+        new THREE.CircleGeometry(2.6, 20).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: 0xFFD54A, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending })
+      );
+      glow.position.y = baseY + 0.03; glow.renderOrder = 15; this.group.add(glow);
+    }
 
     this.scene.add(this.group);
     this.hitTimer = 0;

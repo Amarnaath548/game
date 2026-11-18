@@ -1,19 +1,6 @@
 import { Chest, ArcaneCrystal, ShadowBush } from '../entities/Prop.js';
 import { Bot } from '../entities/Bot.js';
-
-const CHEST_COORDS = [
-  [-20, -20], [20, -20], [-20, 20], [20, 20],
-  [-45, -25], [45, -25], [-45, 25], [45, 25],
-  [0, 50], [0, -50], [-50, 0], [50, 0],
-  [-75, -40], [75, -40], [-75, 40], [75, 40],
-  [40, 70], [-40, -70], [70, 40], [-70, -40],
-  [-90, 0], [90, 0], [0, -90], [0, 90]
-];
-
-const CRYSTAL_COORDS = [
-  [-35, 0], [35, 0], [0, -35], [0, 35],
-  [-60, -60], [60, 60], [-60, 60], [60, -60]
-];
+import { CHEST_COORDS, CRYSTAL_COORDS, BUSH_COORDS, MYTHIC_CHEST } from '../config/worldLayout.js';
 
 const BOT_SPAWNS = [
   { r: 26, angle: 0.5 }, { r: 28, angle: 2.6 }, { r: 30, angle: 4.7 },
@@ -31,21 +18,14 @@ export class SpawnManager {
     this.crystals = [];
     this.bots = [];
 
-    this.bushes = [
-      new ShadowBush(-20, -12, this.scene),
-      new ShadowBush(20, 12, this.scene),
-      new ShadowBush(-15, 28, this.scene),
-      new ShadowBush(15, -28, this.scene),
-      new ShadowBush(-42, 15, this.scene),
-      new ShadowBush(42, -15, this.scene)
-    ];
+    this.bushes = BUSH_COORDS.map(([x, z]) => new ShadowBush(x, z, this.scene));
   }
 
   startMatch() {
     this.cleanup();
 
     // Spawn Mythic center chest + 24 arena chests
-    this.chests.push(new Chest(0, -12, this.scene, true));
+    this.chests.push(new Chest(MYTHIC_CHEST[0], MYTHIC_CHEST[1], this.scene, true));
     CHEST_COORDS.forEach(([x, z]) => {
       this.chests.push(new Chest(x, z, this.scene, false));
     });

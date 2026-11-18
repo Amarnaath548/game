@@ -1,134 +1,240 @@
 import * as THREE from 'three';
+import { part, merge, decalMat } from './geoUtils.js';
+import {
+  mulberry32, isClear, STEPWELL, TORANA_R, PATH_HALF_W
+} from '../config/worldLayout.js';
 
-const POND_LOCS = [[-38, 34], [46, 28]];
-const BANYAN_LOCS = [
-  [-68, 48, 1.1], [-22, 62, 1.0], [-66, 60, 0.95], [68, 46, 0.9],
-  [42, 60, 1.05], [20, -56, 1.1], [56, -68, 1.2], [38, -74, 1.05],
-  [-85, 20, 1.2], [-75, -45, 1.0], [-30, -90, 1.05], [85, -25, 1.15],
-  [78, 68, 1.1], [-20, 95, 1.2], [15, 95, 0.9]
+const FEATURE_BANYANS = [
+  [-52, -54, 1.55], [-35, -61, 1.35], // NW pair
+  [52, 46, 1.6]                        // SE giant
 ];
-const PINE_LOCS = [
-  [-64, 30, 0.9], [-38, 60, 1.2], [24, 14, 1.0], [68, 20, 1.15],
-  [58, 56, 0.85], [62, -56, 0.95], [30, -68, 0.9], [-90, -30, 1.1],
-  [-15, -95, 0.95], [92, 15, 1.0]
-];
-const MEGALITH_LOCS = [
-  [-55, 55, 2.2, 0.9], [-48, 64, 1.8, 1.4], [-64, 48, 2.0, 0.6],
-  [-36, 56, 1.5, 2.1], [-58, 60, 1.7, 1.0], [-52, 68, 1.4, 1.8]
-];
-const ROCK_LOCS = [
-  [-30, 52, 1.4, 0.8, 1.2, 0.6], [-65, 42, 1.1, 1.1, 1.0, 1.2],
-  [32, 48, 1.2, 0.9, 1.3, 0.4], [66, 40, 1.5, 1.0, 1.2, 1.8],
-  [22, -58, 1.3, 0.9, 1.4, 1.1], [56, -62, 1.6, 1.2, 1.5, 0.9],
-  [-78, 5, 2.0, 1.3, 1.8, 0.5], [-55, -75, 1.8, 1.2, 1.6, 2.9],
-  [75, -50, 1.7, 1.1, 1.5, 0.8], [88, -10, 1.5, 0.9, 1.4, 1.4],
-  [82, 35, 1.9, 1.4, 1.8, 2.2], [-25, 85, 1.6, 1.0, 1.5, 0.3]
-];
+
+const LAND = {
+  GRASS: {
+    water: 0x29A3DD, waterEdge: 0x86D6F5, pad: 0x4CB82E,
+    treadLight: 0xEBCB92, treadDark: 0xCFA66A, riser: 0xAD8450,
+    stone: 0xD4C7A8, stoneDark: 0xB3A47F,
+    rock: [0x8B939A, 0x737C84, 0x9AA2A8], moss: 0x6FC22B, brown: 0xB5683A
+  },
+  SNOW: {
+    water: 0x60A5FA, waterEdge: 0xBFE0FF, pad: 0x8FB8D8,
+    treadLight: 0xAFC0D2, treadDark: 0x8FA3BA, riser: 0x6F8299,
+    stone: 0x94A3B8, stoneDark: 0x64748B,
+    rock: [0x94A3B8, 0x7C8CA2, 0xA9B7C9], moss: 0xDCEBFA, brown: 0x7B8CA3
+  }
+};
 
 export class WorldEnvironment {
   constructor(scene) {
     this.scene = scene;
     this.dummy = new THREE.Object3D();
-    this.initPonds();
+    this.rng = mulberry32(2026);
+    this.placed = []; // [x, z, r] footprints of placed trees/rocks for spacing
+    this.initStepwell();
     this.initBanyans();
     this.initPines();
-    this.initMegaliths();
     this.initRocks();
     this.initScatter();
   }
 
-  /* ── Stepped Jala Step-Well with Azure Water & Shrines ── */
-  initPonds() {
-    this.stepHiMat = new THREE.MeshLambertMaterial({ color: 0xE6C28A, flatShading: true });
-    this.stepShMat = new THREE.MeshLambertMaterial({ color: 0xC49E66, flatShading: true });
-    this.pondMat = new THREE.MeshLambertMaterial({ color: 0x2B8CBE });
-    this.lotusMat = new THREE.MeshBasicMaterial({ color: 0xF472B6 });
-    this.lotusPadMat = new THREE.MeshLambertMaterial({ color: 0x2E8B22 });
-
-    POND_LOCS.forEach(([px, pz]) => {
-      // 3 descending concentric sandstone step tiers (14x10, 12x8, 10x6)
-      [[5.8, 7.6, 0.16, this.stepShMat], [4.4, 5.8, 0.10, this.stepHiMat], [3.2, 4.4, 0.05, this.stepShMat]].forEach(([ir, or, y, mat]) => {
-        const t = new THREE.Mesh(new THREE.RingGeometry(ir, or, 8).rotateX(-Math.PI / 2), mat);
-        t.position.set(px, y, pz); t.scale.set(1.2, 1, 0.9); t.renderOrder = 1; this.scene.add(t);
-      });
-      const water = new THREE.Mesh(new THREE.CircleGeometry(3.6, 16).rotateX(-Math.PI / 2), this.pondMat);
-      water.position.set(px, 0.035, pz); water.scale.set(1.2, 1, 0.9); this.scene.add(water);
-
-      // Central 2-tier stepped stone shrine pedestal in water
-      const ped1 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 1.6), this.stepShMat);
-      ped1.position.set(px, 0.2, pz); ped1.castShadow = true; this.scene.add(ped1);
-      const ped2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.35, 1.0), this.stepHiMat);
-      ped2.position.set(px, 0.55, pz); ped2.castShadow = true; this.scene.add(ped2);
-      const fin = new THREE.Mesh(new THREE.OctahedronGeometry(0.3, 0), this.stepShMat);
-      fin.position.set(px, 0.85, pz); fin.castShadow = true; this.scene.add(fin);
-
-      // Lotus pads (r=0.95) with multi-cone pink lotus blossoms
-      for (let i = 0; i < 4; i++) {
-        const a = (i / 4) * Math.PI * 2 + 0.4;
-        const lx = px + Math.cos(a) * 2.8, lz = pz + Math.sin(a) * 2.1;
-        const pad = new THREE.Mesh(new THREE.CircleGeometry(0.95, 8).rotateX(-Math.PI / 2), this.lotusPadMat);
-        pad.position.set(lx, 0.045, lz); pad.renderOrder = 2; this.scene.add(pad);
-        for (let k = 0; k < 3; k++) {
-          const bud = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.4, 4), this.lotusMat);
-          bud.position.set(lx + (k - 1) * 0.16, 0.25, lz + (k % 2) * 0.1); this.scene.add(bud);
-        }
-      }
-    });
+  // Rejection-sample a clear spot (away from gameplay anchors and previously placed footprints)
+  findSpot(rMin, rMax, footprint, tries = 80, opts = {}) {
+    for (let t = 0; t < tries; t++) {
+      const a = this.rng() * Math.PI * 2;
+      const d = rMin + this.rng() * (rMax - rMin);
+      const x = Math.cos(a) * d;
+      const z = Math.sin(a) * d;
+      if (!isClear(x, z, footprint, opts)) continue;
+      if (this.placed.some(([px, pz, pr]) => Math.hypot(x - px, z - pz) < pr + footprint)) continue;
+      return [x, z];
+    }
+    return null;
   }
 
-  /* ── Lush Banyans with Multi-Lobe Canopies & Vines ── */
-  initBanyans() {
-    const count = BANYAN_LOCS.length;
-    this.bTrunkMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.6, 1.1, 3.4, 7), new THREE.MeshLambertMaterial({ color: 0x5c3a21 }), count);
-    this.bTrunkMesh.castShadow = true;
-    this.bRootMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.06, 0.08, 2.8, 4), new THREE.MeshLambertMaterial({ color: 0x4a2e1b }), count * 7);
+  /* ── Octagonal Jala step-well: descending sandstone treads, lotus pond, shrine, lotus pedestals ── */
+  initStepwell() {
+    const { x: px, z: pz } = STEPWELL;
+    const g = new THREE.Group();
+    g.position.set(px, 0, pz);
+    g.rotation.y = Math.PI / 8;
+    this.scene.add(g);
 
-    const fGeo = new THREE.DodecahedronGeometry(1.0, 0);
-    this.foliageShMat = new THREE.MeshLambertMaterial({ color: 0x4E9A1E, flatShading: true });
-    this.foliageHiMat = new THREE.MeshLambertMaterial({ color: 0x8CD926, flatShading: true });
-    this.bLobeShMesh = new THREE.InstancedMesh(fGeo, this.foliageShMat, count * 3);
-    this.bLobeHiMesh = new THREE.InstancedMesh(fGeo, this.foliageHiMat, count * 3);
-    this.bLobeShMesh.castShadow = true; this.bLobeHiMesh.castShadow = true;
+    const treadMats = [0, 1, 2, 3, 4].map((k) => decalMat(k % 2 ? LAND.GRASS.treadDark : LAND.GRASS.treadLight));
+    const riserMat = decalMat(LAND.GRASS.riser);
+    this.riserMat = riserMat;
+    this.treadMats = treadMats;
 
-    let rIdx = 0, shIdx = 0, hiIdx = 0;
-    BANYAN_LOCS.forEach(([x, z, s], i) => {
-      this.dummy.position.set(x, 1.7 * s, z); this.dummy.rotation.set(0, i * 1.1, 0);
-      this.dummy.scale.set(s, s, s); this.dummy.updateMatrix();
-      this.bTrunkMesh.setMatrixAt(i, this.dummy.matrix);
+    const R0 = 11.5, W = 1.3;
+    for (let k = 0; k < 5; k++) {
+      const outer = R0 - W * k;
+      const inner = outer - W;
+      const t = new THREE.Mesh(new THREE.RingGeometry(inner, outer, 8).rotateX(-Math.PI / 2), treadMats[k]);
+      t.position.y = 0.02 + k * 0.004; t.renderOrder = 6 + k * 2; t.receiveShadow = true; g.add(t);
+      // dark riser shadow band along the outer edge of each tread
+      const s = new THREE.Mesh(new THREE.RingGeometry(outer - 0.4, outer, 8).rotateX(-Math.PI / 2), riserMat);
+      s.position.y = 0.024 + k * 0.004; s.renderOrder = 7 + k * 2; s.receiveShadow = true; g.add(s);
+    }
 
-      for (let r = 0; r < 7; r++) {
-        const ra = i * 1.8 + r * 0.897, rad = (1.5 + (r % 3) * 0.3) * s;
-        this.dummy.position.set(x + Math.cos(ra) * rad, 1.4 * s, z + Math.sin(ra) * rad);
-        this.dummy.scale.set(s, s, s); this.dummy.updateMatrix();
-        this.bRootMesh.setMatrixAt(rIdx++, this.dummy.matrix);
+    this.waterMat = decalMat(LAND.GRASS.water);
+    const water = new THREE.Mesh(new THREE.CircleGeometry(R0 - W * 5, 8).rotateX(-Math.PI / 2), this.waterMat);
+    water.position.y = 0.04; water.renderOrder = 18; g.add(water);
+
+    this.waterEdgeMat = decalMat(LAND.GRASS.waterEdge, { opacity: 0.55, transparent: true });
+    const shine = new THREE.Mesh(new THREE.RingGeometry(R0 - W * 5 - 0.55, R0 - W * 5, 8).rotateX(-Math.PI / 2), this.waterEdgeMat);
+    shine.position.y = 0.044; shine.renderOrder = 19; g.add(shine);
+
+    // Central shrine: 2-tier plinth, four columns, slab + pyramid roof
+    this.stoneMat = new THREE.MeshLambertMaterial({ color: LAND.GRASS.stone, flatShading: true });
+    this.stoneDarkMat = new THREE.MeshLambertMaterial({ color: LAND.GRASS.stoneDark, flatShading: true });
+    const plinthA = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.34, 3.2), this.stoneDarkMat);
+    plinthA.position.y = 0.17; g.add(plinthA);
+    const plinthB = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.34, 2.4), this.stoneMat);
+    plinthB.position.y = 0.51; g.add(plinthB);
+    const colGeo = new THREE.BoxGeometry(0.3, 1.5, 0.3);
+    [[-0.85, -0.85], [0.85, -0.85], [-0.85, 0.85], [0.85, 0.85]].forEach(([cx, cz]) => {
+      const c = new THREE.Mesh(colGeo, this.stoneMat); c.position.set(cx, 1.5, cz); c.castShadow = true; g.add(c);
+    });
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.2, 2.4), this.stoneDarkMat);
+    slab.position.y = 2.35; slab.castShadow = true; g.add(slab);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.75, 0.9, 4), this.stoneMat);
+    roof.position.y = 2.9; roof.rotation.y = Math.PI / 4; roof.castShadow = true; g.add(roof);
+    const finial = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), new THREE.MeshLambertMaterial({ color: 0xF2C14E, flatShading: true }));
+    finial.position.y = 3.45; g.add(finial);
+
+    // Four lotus pedestals at the diagonals
+    const pinkMat = new THREE.MeshLambertMaterial({ color: 0xF472B6, flatShading: true });
+    const goldMat = new THREE.MeshLambertMaterial({ color: 0xFACC15, flatShading: true });
+    const petalGeo = new THREE.ConeGeometry(0.16, 0.42, 4);
+    const lotus = (parent, lx, ly, lz, s = 1) => {
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        const p = new THREE.Mesh(petalGeo, pinkMat);
+        p.position.set(lx + Math.cos(a) * 0.17 * s, ly + 0.2 * s, lz + Math.sin(a) * 0.17 * s);
+        p.rotation.set(Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5);
+        p.scale.setScalar(s); parent.add(p);
       }
-      for (let c = 0; c < 3; c++) {
-        const ca = i * 1.4 + c * 2.094;
-        this.dummy.position.set(x + Math.cos(ca) * 1.3 * s, (3.3 + c * 0.2) * s, z + Math.sin(ca) * 1.3 * s);
-        this.dummy.scale.set(s * 2.5, s * 0.85, s * 2.5); this.dummy.updateMatrix();
-        this.bLobeShMesh.setMatrixAt(shIdx++, this.dummy.matrix);
-      }
-      for (let c = 0; c < 3; c++) {
-        const ca = i * 1.4 + c * 2.094 + 1.047;
-        this.dummy.position.set(x + Math.cos(ca) * 1.1 * s, (3.7 + c * 0.2) * s, z + Math.sin(ca) * 1.1 * s);
-        this.dummy.scale.set(s * 2.2, s * 0.75, s * 2.2); this.dummy.updateMatrix();
-        this.bLobeHiMesh.setMatrixAt(hiIdx++, this.dummy.matrix);
-      }
+      const c = new THREE.Mesh(new THREE.SphereGeometry(0.11 * s, 5, 4), goldMat);
+      c.position.set(lx, ly + 0.16 * s, lz); parent.add(c);
+    };
+    [[-2.9, -2.9], [2.9, -2.9], [-2.9, 2.9], [2.9, 2.9]].forEach(([ox, oz]) => {
+      const b1 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.4, 1.0), this.stoneDarkMat);
+      b1.position.set(ox, 0.2, oz); b1.castShadow = true; g.add(b1);
+      const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.34, 0.68), this.stoneMat);
+      b2.position.set(ox, 0.57, oz); b2.castShadow = true; g.add(b2);
+      lotus(g, ox, 0.74, oz, 1.1);
     });
 
-    [this.bTrunkMesh, this.bRootMesh, this.bLobeShMesh, this.bLobeHiMesh].forEach((m) => {
+    // Lily pads with the odd blossom
+    this.padMat = decalMat(LAND.GRASS.pad);
+    const padGeo = new THREE.CircleGeometry(0.75, 8).rotateX(-Math.PI / 2);
+    const prng = mulberry32(77);
+    for (let i = 0; i < 11; i++) {
+      const a = (i / 11) * Math.PI * 2 + prng() * 0.5;
+      const d = 2.2 + prng() * 2.3;
+      const lx = Math.cos(a) * d, lz = Math.sin(a) * d;
+      if ((Math.abs(Math.abs(lx) - 2.9) < 0.9) && (Math.abs(Math.abs(lz) - 2.9) < 0.9)) continue;
+      const pad = new THREE.Mesh(padGeo, this.padMat);
+      pad.position.set(lx, 0.05, lz); pad.scale.setScalar(0.8 + prng() * 0.5); pad.renderOrder = 20; g.add(pad);
+      if (i % 4 === 0) lotus(g, lx, 0.05, lz, 0.7);
+    }
+    this.stepwell = g;
+  }
+
+  /* ── Banyans: stacked faceted canopy lobes, buttressed trunks, hanging aerial roots ── */
+  initBanyans() {
+    const feature = FEATURE_BANYANS.map(([x, z, s]) => ({ x, z, s }));
+    feature.forEach((b) => this.placed.push([b.x, b.z, 3.6 * b.s]));
+
+    const trees = [...feature];
+    const target = 22;
+    let guard = 0;
+    while (trees.length < target && guard++ < 600) {
+      const s = 0.95 + this.rng() * 0.5;
+      const spot = this.findSpot(34, 112, 3.4 * s, 12);
+      if (!spot) continue;
+      trees.push({ x: spot[0], z: spot[1], s });
+      this.placed.push([spot[0], spot[1], 3.6 * s]);
+    }
+    this.banyanData = trees;
+
+    const trunkGeo = merge([
+      part(new THREE.CylinderGeometry(0.75, 1.3, 4.4, 7), [0, 2.2, 0]),
+      ...[0, 2.1, 4.2].map((a) => part(
+        new THREE.CylinderGeometry(0.34, 0.55, 3.6, 6),
+        [Math.cos(a) * 1.55, 1.7, Math.sin(a) * 1.55], [Math.sin(a) * 0.14, 0, -Math.cos(a) * 0.14]
+      )),
+      ...[0.4, 1.5, 2.6, 3.7, 4.9].map((a) => part(
+        new THREE.ConeGeometry(0.55, 1.1, 4),
+        [Math.cos(a) * 1.35, 0.5, Math.sin(a) * 1.35], [Math.sin(a) * 0.55, 0, -Math.cos(a) * 0.55]
+      ))
+    ]);
+    const n = trees.length;
+    this.bTrunkMesh = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0x6B4426, flatShading: true }), n);
+    this.bTrunkMesh.castShadow = true;
+
+    const ROOTS = 16;
+    const rootGeo = new THREE.CylinderGeometry(0.05, 0.085, 1, 4).translate(0, -0.5, 0);
+    this.bRootMesh = new THREE.InstancedMesh(rootGeo, new THREE.MeshLambertMaterial({ color: 0x5A3A22, flatShading: true }), n * ROOTS);
+
+    const lobeGeo = new THREE.IcosahedronGeometry(1, 1);
+    this.foliageDarkMat = new THREE.MeshLambertMaterial({ color: 0x3F8E1C, flatShading: true });
+    this.foliageMidMat = new THREE.MeshLambertMaterial({ color: 0x5BB22A, flatShading: true });
+    this.foliageHiMat = new THREE.MeshLambertMaterial({ color: 0x86D63A, flatShading: true });
+    this.bLobeDark = new THREE.InstancedMesh(lobeGeo, this.foliageDarkMat, n * 4);
+    this.bLobeMid = new THREE.InstancedMesh(lobeGeo, this.foliageMidMat, n * 3);
+    this.bLobeHi = new THREE.InstancedMesh(lobeGeo, this.foliageHiMat, n * 2);
+    [this.bLobeDark, this.bLobeMid, this.bLobeHi].forEach((m) => { m.castShadow = true; });
+
+    let rI = 0, dI = 0, mI = 0, hI = 0;
+    const d = this.dummy;
+    const set = (mesh, idx, x, y, z, sx, sy, sz, ry = 0) => {
+      d.position.set(x, y, z); d.rotation.set(0, ry, 0); d.scale.set(sx, sy, sz); d.updateMatrix();
+      mesh.setMatrixAt(idx, d.matrix);
+    };
+    trees.forEach((t, i) => {
+      const { x, z, s } = t;
+      set(this.bTrunkMesh, i, x, 0, z, s, s, s, i * 1.3);
+      for (let k = 0; k < ROOTS; k++) {
+        const a = (k / ROOTS) * Math.PI * 2 + i;
+        const rad = (2.1 + ((k * 7) % 5) * 0.45) * s;
+        const len = (3.3 + ((k * 3) % 4) * 0.35) * s;
+        set(this.bRootMesh, rI++, x + Math.cos(a) * rad, 3.9 * s, z + Math.sin(a) * rad, s, len, s);
+      }
+      for (let k = 0; k < 4; k++) {
+        const a = i * 1.7 + (k / 4) * Math.PI * 2;
+        set(this.bLobeDark, dI++, x + Math.cos(a) * 2.2 * s, (4.2 + (k % 2) * 0.35) * s, z + Math.sin(a) * 2.2 * s, 2.7 * s, 1.35 * s, 2.7 * s, a);
+      }
+      for (let k = 0; k < 3; k++) {
+        const a = i * 1.1 + (k / 3) * Math.PI * 2 + 0.5;
+        set(this.bLobeMid, mI++, x + Math.cos(a) * 1.4 * s, (5.3 + k * 0.2) * s, z + Math.sin(a) * 1.4 * s, 2.4 * s, 1.2 * s, 2.4 * s, a);
+      }
+      for (let k = 0; k < 2; k++) {
+        const a = i * 0.7 + k * Math.PI;
+        set(this.bLobeHi, hI++, x + Math.cos(a) * 0.6 * s, (6.4 + k * 0.25) * s, z + Math.sin(a) * 0.6 * s, 2.0 * s, 1.0 * s, 2.0 * s, a);
+      }
+    });
+    [this.bTrunkMesh, this.bRootMesh, this.bLobeDark, this.bLobeMid, this.bLobeHi].forEach((m) => {
       m.instanceMatrix.needsUpdate = true; this.scene.add(m);
     });
   }
 
+  /* ── Pines (Frozen Peaks biome only) ── */
   initPines() {
-    const count = PINE_LOCS.length;
+    const trees = [];
+    let guard = 0;
+    while (trees.length < 22 && guard++ < 300) {
+      const s = 0.85 + this.rng() * 0.4;
+      const spot = this.findSpot(30, 112, 2.4 * s, 10);
+      if (!spot) continue;
+      trees.push([spot[0], spot[1], s]);
+    }
+    const count = trees.length;
     this.pineTrunkMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.3, 0.45, 1.6, 6), new THREE.MeshLambertMaterial({ color: 0x5c3a21 }), count);
     this.pineCanopyMat = new THREE.MeshLambertMaterial({ color: 0x1e4e3d, flatShading: true });
     this.pineCanopyMesh = new THREE.InstancedMesh(new THREE.ConeGeometry(1.6, 1.8, 6), this.pineCanopyMat, count * 3);
     this.pineTrunkMesh.castShadow = true; this.pineCanopyMesh.castShadow = true;
     let fIdx = 0;
-    PINE_LOCS.forEach(([x, z, s], i) => {
+    trees.forEach(([x, z, s], i) => {
       this.dummy.position.set(x, 0.8 * s, z); this.dummy.rotation.set(0, (i * 1.3) % Math.PI, 0);
       this.dummy.scale.set(s, s, s); this.dummy.updateMatrix();
       this.pineTrunkMesh.setMatrixAt(i, this.dummy.matrix);
@@ -137,110 +243,196 @@ export class WorldEnvironment {
         this.dummy.updateMatrix(); this.pineCanopyMesh.setMatrixAt(fIdx++, this.dummy.matrix);
       });
     });
-    [this.pineTrunkMesh, this.pineCanopyMesh].forEach((m) => { m.instanceMatrix.needsUpdate = true; this.scene.add(m); });
-  }
-
-  /* ── Moss-Capped Megaliths & Boulders ── */
-  initMegaliths() {
-    const count = MEGALITH_LOCS.length, g = new THREE.DodecahedronGeometry(1.0, 0);
-    this.megalithMat = new THREE.MeshLambertMaterial({ color: 0x78828C, flatShading: true });
-    this.mossMat = new THREE.MeshLambertMaterial({ color: 0x65B82A, flatShading: true });
-    this.megMesh = new THREE.InstancedMesh(g, this.megalithMat, count);
-    this.megMossMesh = new THREE.InstancedMesh(g, this.mossMat, count);
-    this.megMesh.castShadow = true; this.megMossMesh.castShadow = true;
-
-    MEGALITH_LOCS.forEach(([x, z, s, rot], i) => {
-      this.dummy.position.set(x, s * 0.5, z); this.dummy.rotation.set(0.15, rot, 0.1);
-      this.dummy.scale.set(s * 0.7, s, s * 0.7); this.dummy.updateMatrix();
-      this.megMesh.setMatrixAt(i, this.dummy.matrix);
-      this.dummy.position.set(x, s * 0.72, z); this.dummy.scale.set(s * 0.65, s * 0.35, s * 0.65);
-      this.dummy.updateMatrix(); this.megMossMesh.setMatrixAt(i, this.dummy.matrix);
+    [this.pineTrunkMesh, this.pineCanopyMesh].forEach((m) => {
+      m.instanceMatrix.needsUpdate = true; m.visible = false; this.scene.add(m);
     });
-    [this.megMesh, this.megMossMesh].forEach((m) => { m.instanceMatrix.needsUpdate = true; this.scene.add(m); });
   }
 
+  /* ── Mossy boulder clusters + a few terracotta boulders ── */
   initRocks() {
-    const count = ROCK_LOCS.length, g = new THREE.DodecahedronGeometry(1.0, 0);
-    this.rockMat = new THREE.MeshLambertMaterial({ color: 0x78828C, flatShading: true });
-    this.rockMesh = new THREE.InstancedMesh(g, this.rockMat, count);
-    this.rockMossMesh = new THREE.InstancedMesh(g, this.mossMat, count);
-    this.rockMesh.castShadow = true; this.rockMossMesh.castShadow = true;
+    const clusters = [
+      [-62, -36, 7], [-30, -78, 6], [-18, -60, 5],           // NW, behind the banyans
+      [56, 62, 7], [70, 48, 6], [38, 80, 5],                 // SE
+      [-80, 22, 6], [-70, 70, 6], [84, -34, 6], [14, 92, 5],
+      [-92, -30, 5], [92, 30, 5], [30, -92, 5], [-28, 96, 5]
+    ];
+    const rocks = [];
+    clusters.forEach(([cx, cz, n]) => {
+      for (let k = 0; k < n; k++) {
+        const a = this.rng() * Math.PI * 2;
+        const d = this.rng() * 4.6;
+        const x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d;
+        const sc = 0.8 + this.rng() * 1.5;
+        if (!isClear(x, z, sc * 1.1, { rim: 6 })) continue;
+        rocks.push({ x, z, sc, rot: this.rng() * 3 });
+      }
+    });
+    for (let k = 0; k < 26; k++) {
+      const spot = this.findSpot(28, 112, 1.4, 20, { rim: 6 });
+      if (spot) rocks.push({ x: spot[0], z: spot[1], sc: 0.6 + this.rng() * 0.9, rot: this.rng() * 3 });
+    }
 
-    ROCK_LOCS.forEach(([x, z, sx, sy, sz, rot], i) => {
-      this.dummy.position.set(x, sy * 0.6, z); this.dummy.rotation.set(0.1, rot, 0.1);
-      this.dummy.scale.set(sx, sy, sz); this.dummy.updateMatrix();
+    const geo = new THREE.DodecahedronGeometry(1, 0);
+    this.rockMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
+    this.mossMat = new THREE.MeshLambertMaterial({ color: LAND.GRASS.moss, flatShading: true });
+    this.rockMesh = new THREE.InstancedMesh(geo, this.rockMat, rocks.length);
+    this.rockMossMesh = new THREE.InstancedMesh(geo, this.mossMat, rocks.length);
+    this.rockMesh.castShadow = true; this.rockMossMesh.castShadow = true;
+    this.rockCount = rocks.length;
+    const col = new THREE.Color();
+    rocks.forEach(({ x, z, sc, rot }, i) => {
+      this.dummy.position.set(x, sc * 0.62, z); this.dummy.rotation.set(0.1, rot, 0.08);
+      this.dummy.scale.set(sc * 1.05, sc * 0.9, sc); this.dummy.updateMatrix();
       this.rockMesh.setMatrixAt(i, this.dummy.matrix);
-      this.dummy.position.set(x, sy * 0.85, z); this.dummy.scale.set(sx * 0.95, sy * 0.35, sz * 0.95);
-      this.dummy.updateMatrix(); this.rockMossMesh.setMatrixAt(i, this.dummy.matrix);
+      col.setHex(LAND.GRASS.rock[i % 3]); this.rockMesh.setColorAt(i, col);
+      this.dummy.position.set(x, sc * 1.0, z); this.dummy.scale.set(sc * 0.92, sc * 0.4, sc * 0.9); this.dummy.updateMatrix();
+      this.rockMossMesh.setMatrixAt(i, this.dummy.matrix);
     });
     [this.rockMesh, this.rockMossMesh].forEach((m) => { m.instanceMatrix.needsUpdate = true; this.scene.add(m); });
+    if (this.rockMesh.instanceColor) this.rockMesh.instanceColor.needsUpdate = true;
+
+    // Warm brown boulders hugging the paths
+    const brown = [];
+    [[-8, -55], [8, 58], [-55, 8], [56, -8], [-8, 68], [9, -68], [-68, -8], [68, 9]].forEach(([x, z]) => {
+      for (let k = 0; k < 2; k++) {
+        const bx = x + (this.rng() - 0.5) * 3, bz = z + (this.rng() - 0.5) * 3;
+        if (Math.abs(bx) > PATH_HALF_W + 1.6 || Math.abs(bz) > PATH_HALF_W + 1.6) {
+          if (Math.hypot(bx, bz) < TORANA_R + 12) brown.push([bx, bz, 0.7 + this.rng() * 0.7]);
+        }
+      }
+    });
+    this.brownMat = new THREE.MeshLambertMaterial({ color: LAND.GRASS.brown, flatShading: true });
+    this.brownMesh = new THREE.InstancedMesh(geo, this.brownMat, Math.max(1, brown.length));
+    this.brownMesh.castShadow = true;
+    brown.forEach(([x, z, sc], i) => {
+      this.dummy.position.set(x, sc * 0.6, z); this.dummy.rotation.set(0.1, i, 0.05);
+      this.dummy.scale.set(sc * 0.9, sc * 1.1, sc * 0.8); this.dummy.updateMatrix();
+      this.brownMesh.setMatrixAt(i, this.dummy.matrix);
+    });
+    this.brownMesh.count = brown.length;
+    this.brownMesh.instanceMatrix.needsUpdate = true;
+    this.scene.add(this.brownMesh);
   }
 
-  /* ── Ground Fern Rosettes, Matka Clusters & Shadows ── */
+  /* ── Agave rosettes, clay matka pots (clustered at gates), and contact shadows ── */
   initScatter() {
-    // 1. Broad 6-leaf fern/agave rosettes (24 instances)
-    const fernGeo = new THREE.ConeGeometry(0.18, 0.65, 3);
-    const fernMat = new THREE.MeshLambertMaterial({ color: 0x3B8E22, flatShading: true });
-    const fernMesh = new THREE.InstancedMesh(fernGeo, fernMat, 24 * 6);
-    let fIdx = 0;
-    for (let i = 0; i < 24; i++) {
-      const a = (i / 24) * Math.PI * 2, d = 24 + ((i * 13) % 46);
-      const fx = Math.cos(a) * d, fz = Math.sin(a) * d;
-      for (let l = 0; l < 6; l++) {
-        const la = (l / 6) * Math.PI * 2;
-        this.dummy.position.set(fx + Math.cos(la) * 0.22, 0.2, fz + Math.sin(la) * 0.22);
-        this.dummy.rotation.set(0.35 * Math.sin(la), la, 0.35 * Math.cos(la));
-        this.dummy.scale.set(1, 1, 1); this.dummy.updateMatrix();
-        fernMesh.setMatrixAt(fIdx++, this.dummy.matrix);
-      }
+    // Agave: 9 outer leaves + 4 upright inner leaves merged into one geometry
+    const leaf = new THREE.ConeGeometry(0.17, 1.25, 4);
+    const leaves = [];
+    for (let l = 0; l < 9; l++) {
+      const a = (l / 9) * Math.PI * 2;
+      leaves.push(part(leaf, [Math.cos(a) * 0.2, 0.5, Math.sin(a) * 0.2], [Math.sin(a) * 0.95, 0, -Math.cos(a) * 0.95]));
     }
-    fernMesh.instanceMatrix.needsUpdate = true; this.scene.add(fernMesh);
+    for (let l = 0; l < 4; l++) {
+      const a = (l / 4) * Math.PI * 2 + 0.4;
+      leaves.push(part(leaf, [Math.cos(a) * 0.07, 0.62, Math.sin(a) * 0.07], [Math.sin(a) * 0.35, 0, -Math.cos(a) * 0.35]));
+    }
+    const agaveGeo = merge(leaves);
 
-    // 2. Terracotta Matka Pots (16 instances beside gates and steps)
-    const potMat = new THREE.MeshLambertMaterial({ color: 0xC85A32, flatShading: true });
-    const potMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.32, 6, 6), potMat, 16);
-    const potRimMesh = new THREE.InstancedMesh(new THREE.TorusGeometry(0.18, 0.06, 4, 8), potMat, 16);
+    const agaves = [];
+    const flank = (gx, gz, nx, nz) => {
+      for (const side of [-1, 1]) {
+        agaves.push([
+          gx + nx * (PATH_HALF_W + 2.6) * side + (this.rng() - 0.5),
+          gz + nz * (PATH_HALF_W + 2.6) * side + (this.rng() - 0.5),
+          1 + this.rng() * 0.4
+        ]);
+      }
+    };
+    [[0, -TORANA_R, 1, 0], [0, TORANA_R, 1, 0], [-TORANA_R, 0, 0, 1], [TORANA_R, 0, 0, 1]].forEach(([gx, gz, nx, nz]) => {
+      flank(gx, gz, nx, nz);
+      flank(gx * 0.94, gz * 0.94, nx, nz);
+    });
+    for (let i = 0; i < 40; i++) {
+      const spot = this.findSpot(26, 112, 1.1, 20, { rim: 5 });
+      if (spot) agaves.push([spot[0], spot[1], 0.85 + this.rng() * 0.5]);
+    }
+    this.agaveMat = new THREE.MeshLambertMaterial({ color: 0x35966A, flatShading: true });
+    const agaveMesh = new THREE.InstancedMesh(agaveGeo, this.agaveMat, agaves.length);
+    agaveMesh.castShadow = true;
+    agaves.forEach(([x, z, s], i) => {
+      this.dummy.position.set(x, 0, z); this.dummy.rotation.set(0, this.rng() * 6, 0);
+      this.dummy.scale.setScalar(s); this.dummy.updateMatrix();
+      agaveMesh.setMatrixAt(i, this.dummy.matrix);
+    });
+    agaveMesh.instanceMatrix.needsUpdate = true;
+    this.scene.add(agaveMesh);
+
+    // Clay pots: lathe profile, clustered by gates, pond edge and the Agni platform
+    const profile = [[0, 0], [0.26, 0], [0.4, 0.12], [0.46, 0.3], [0.38, 0.5], [0.2, 0.62], [0.26, 0.72], [0.22, 0.74]]
+      .map(([r, y]) => new THREE.Vector2(r, y));
+    const potGeo = new THREE.LatheGeometry(profile, 8);
+    this.potMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, side: THREE.DoubleSide });
+    const potSpots = [];
+    const cluster = (cx, cz, n, spread = 1.6) => {
+      for (let k = 0; k < n; k++) {
+        const x = cx + (this.rng() - 0.5) * spread * 2;
+        const z = cz + (this.rng() - 0.5) * spread * 2;
+        if (Math.abs(x) < PATH_HALF_W + 0.8 && Math.abs(z) < TORANA_R + 8) continue;
+        if (Math.abs(z) < PATH_HALF_W + 0.8 && Math.abs(x) < TORANA_R + 8) continue;
+        potSpots.push([x, z, 0.8 + this.rng() * 0.6]);
+      }
+    };
+    [[-8.5, -TORANA_R + 3], [8.5, -TORANA_R + 3], [-8.5, TORANA_R - 3], [8.5, TORANA_R - 3],
+      [-TORANA_R + 3, -8.5], [-TORANA_R + 3, 8.5], [TORANA_R - 3, -8.5], [TORANA_R - 3, 8.5]].forEach(([x, z]) => cluster(x, z, 4));
+    [[-27, -9], [27, 9], [-27, 9], [27, -9]].forEach(([x, z]) => cluster(x, z, 2, 1.0));
+    cluster(STEPWELL.x - 13, STEPWELL.z + 4, 3); cluster(STEPWELL.x + 12, STEPWELL.z - 6, 3);
+    cluster(26, -52, 3); cluster(52, -26, 3);
+    const potMesh = new THREE.InstancedMesh(potGeo, this.potMat, potSpots.length);
     potMesh.castShadow = true;
-    const matkaSpots = [[0,-17.5],[0,17.5],[-17.5,0],[17.5,0],[1.5,-22],[-1.5,-22],[1.5,22],[-1.5,22],[-22,1.5],[-22,-1.5],[22,1.5],[22,-1.5],[29,-35],[29,-37],[47,-35],[47,-37]];
-    matkaSpots.forEach(([mx, mz], i) => {
-      this.dummy.position.set(mx, 0.28, mz); this.dummy.scale.set(1, 1.15, 1); this.dummy.rotation.set(0, i * 0.5, 0); this.dummy.updateMatrix(); potMesh.setMatrixAt(i, this.dummy.matrix);
-      this.dummy.position.set(mx, 0.56, mz); this.dummy.rotation.set(Math.PI / 2, 0, 0); this.dummy.scale.set(1, 1, 1); this.dummy.updateMatrix(); potRimMesh.setMatrixAt(i, this.dummy.matrix);
+    const potCols = [0xC4602F, 0xAD4A22, 0xD0733A];
+    const col = new THREE.Color();
+    potSpots.forEach(([x, z, s], i) => {
+      this.dummy.position.set(x, 0, z); this.dummy.rotation.set(0, this.rng() * 6, 0);
+      this.dummy.scale.set(s, s * 1.1, s); this.dummy.updateMatrix();
+      potMesh.setMatrixAt(i, this.dummy.matrix);
+      col.setHex(potCols[i % 3]); potMesh.setColorAt(i, col);
     });
-    potMesh.instanceMatrix.needsUpdate = true; potRimMesh.instanceMatrix.needsUpdate = true;
-    this.scene.add(potMesh); this.scene.add(potRimMesh);
+    potMesh.instanceMatrix.needsUpdate = true;
+    if (potMesh.instanceColor) potMesh.instanceColor.needsUpdate = true;
+    this.scene.add(potMesh);
 
-    // 3. Ground Contact Shadows
-    const shadowItems = [
-      ...BANYAN_LOCS.map(([x, z, s]) => [x, z, s * 2.4, s * 2.4]),
-      ...PINE_LOCS.map(([x, z, s]) => [x, z, s * 1.5, s * 1.5]),
-      ...MEGALITH_LOCS.map(([x, z, s]) => [x, z, s * 1.1, s * 1.1]),
-      ...ROCK_LOCS.map(([x, z, sx, , sz]) => [x, z, sx * 1.1, sz * 1.1]),
-      ...matkaSpots.map(([mx, mz]) => [mx, mz, 0.45, 0.45])
-    ];
-    const shadowGeo = new THREE.CircleGeometry(1.0, 12).rotateX(-Math.PI / 2);
-    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.26, depthWrite: false });
-    this.shadowMesh = new THREE.InstancedMesh(shadowGeo, shadowMat, shadowItems.length);
-    shadowItems.forEach(([x, z, sx, sz], i) => {
-      this.dummy.position.set(x, 0.02, z); this.dummy.scale.set(sx, 1, sz);
-      this.dummy.updateMatrix(); this.shadowMesh.setMatrixAt(i, this.dummy.matrix);
-    });
-    this.shadowMesh.instanceMatrix.needsUpdate = true; this.scene.add(this.shadowMesh);
+    // Contact shadows: banyan shadows are separate so they hide with the trees in the snow biome
+    const makeShadows = (items) => {
+      const geo = new THREE.CircleGeometry(1.0, 12).rotateX(-Math.PI / 2);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false });
+      const mesh = new THREE.InstancedMesh(geo, mat, Math.max(1, items.length));
+      mesh.renderOrder = 30;
+      items.forEach(([x, z, sx, sz], i) => {
+        this.dummy.position.set(x, 0.05, z); this.dummy.rotation.set(0, 0, 0); this.dummy.scale.set(sx, 1, sz);
+        this.dummy.updateMatrix(); mesh.setMatrixAt(i, this.dummy.matrix);
+      });
+      mesh.count = items.length;
+      mesh.instanceMatrix.needsUpdate = true;
+      this.scene.add(mesh);
+      return mesh;
+    };
+    this.treeShadowMesh = makeShadows(this.banyanData.map(({ x, z, s }) => [x, z, s * 3.0, s * 3.0]));
+    this.shadowMesh = makeShadows([
+      ...potSpots.map(([x, z, s]) => [x, z, s * 0.55, s * 0.55]),
+      ...agaves.map(([x, z, s]) => [x, z, s * 0.9, s * 0.9])
+    ]);
   }
 
   applyBiome(biome) {
     const isSnow = biome && biome.id === 'SNOW';
-    const sHi = isSnow ? 0x64748B : 0xE6C28A;
-    const sSh = isSnow ? 0x334155 : 0xC49E66;
+    const L = isSnow ? LAND.SNOW : LAND.GRASS;
 
-    if (this.stepHiMat) this.stepHiMat.color.setHex(sHi);
-    if (this.stepShMat) this.stepShMat.color.setHex(sSh);
-    if (this.pondMat) this.pondMat.color.setHex(isSnow ? 0x60a5fa : 0x2B8CBE);
-    const stoneCol = isSnow ? 0x94a3b8 : 0x78828C;
-    if (this.rockMat) this.rockMat.color.setHex(stoneCol);
-    if (this.megalithMat) this.megalithMat.color.setHex(stoneCol);
-
-    [this.bTrunkMesh, this.bRootMesh, this.bLobeShMesh, this.bLobeHiMesh].forEach((m) => { if (m) m.visible = !isSnow; });
+    [this.bTrunkMesh, this.bRootMesh, this.bLobeDark, this.bLobeMid, this.bLobeHi, this.treeShadowMesh].forEach((m) => { if (m) m.visible = !isSnow; });
     [this.pineTrunkMesh, this.pineCanopyMesh].forEach((m) => { if (m) m.visible = isSnow; });
     if (this.pineCanopyMat) this.pineCanopyMat.color.setHex(isSnow ? 0x1e4e3d : 0x236b32);
+
+    this.treadMats.forEach((m, k) => m.color.setHex(k % 2 ? L.treadDark : L.treadLight));
+    this.riserMat.color.setHex(L.riser);
+    this.waterMat.color.setHex(L.water);
+    this.waterEdgeMat.color.setHex(L.waterEdge);
+    this.padMat.color.setHex(L.pad);
+    this.stoneMat.color.setHex(L.stone);
+    this.stoneDarkMat.color.setHex(L.stoneDark);
+    this.mossMat.color.setHex(L.moss);
+    this.brownMat.color.setHex(L.brown);
+    const col = new THREE.Color();
+    for (let i = 0; i < this.rockCount; i++) { col.setHex(L.rock[i % 3]); this.rockMesh.setColorAt(i, col); }
+    if (this.rockMesh.instanceColor) this.rockMesh.instanceColor.needsUpdate = true;
   }
 }

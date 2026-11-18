@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CollisionSystem } from './CollisionSystem.js';
+import { PAD_COORDS, SURYA_COORDS, BRAZIER_COORDS } from '../config/worldLayout.js';
 
 const PAD_RADIUS = 1.6;
 const PAD_COOLDOWN = 6.0;
@@ -113,9 +114,9 @@ export class ArenaInteractables {
 
   spawn() {
     this.cleanup();
-    const padPos = [{ x: 35, z: 0 }, { x: -35, z: 0 }, { x: 0, z: 35 }, { x: 0, z: -35 }];
-    const suryaPos = [{ x: 25, z: 25 }, { x: -25, z: 25 }, { x: 25, z: -25 }, { x: -25, z: -25 }];
-    const brazierPos = [{ x: -25, z: 50 }, { x: 55, z: -15 }, { x: -45, z: -45 }, { x: 25, z: -55 }];
+    const padPos = PAD_COORDS.map(([x, z]) => ({ x, z }));
+    const suryaPos = SURYA_COORDS.map(([x, z]) => ({ x, z }));
+    const brazierPos = BRAZIER_COORDS.map(([x, z]) => ({ x, z }));
 
     padPos.forEach(p => this.pads.push(buildPad(this.scene, p.x, p.z)));
     suryaPos.forEach(p => this.suryas.push(buildSurya(this.scene, p.x, p.z, this.obstacles)));
