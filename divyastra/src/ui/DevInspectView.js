@@ -88,17 +88,14 @@ export class DevInspectView {
       <div class="inspect-hud-panel inspect-hud-right">
         <div class="inspect-header"><span class="inspect-title">METRICS & LAYERS</span></div>
         <div class="inspect-stat-box">
-          <div class="inspect-stat-row"><span>Model Triangles:</span><span class="inspect-stat-val" id="inspect-tri-count">~2,150</span></div>
-          <div class="inspect-stat-row"><span>Material Calls:</span><span class="inspect-stat-val" id="inspect-mat-calls">6</span></div>
-          <div class="inspect-stat-row"><span>Scene Calls:</span><span class="inspect-stat-val" id="inspect-render-calls">0</span></div>
+          <div class="inspect-stat-row"><span>Triangles:</span><span class="inspect-stat-val" id="inspect-tri-count">~2,150</span></div>
+          <div class="inspect-stat-row"><span>Mat Calls:</span><span class="inspect-stat-val" id="inspect-mat-calls">6</span></div>
+          <div class="inspect-stat-row"><span>Draw Calls:</span><span class="inspect-stat-val" id="inspect-render-calls">0</span></div>
         </div>
         <div class="inspect-section"><span class="inspect-label">Map Layers</span>
-          <label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-ground" checked /> Ground & Paths</label>
-          <label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-veg" checked /> Banyans & Vegetation</label>
-          <label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-rocks" checked /> Megalith & Rocks</label>
-          <label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-interact" checked /> Hazards & Pillars</label>
-          <label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-bots" checked /> Fighter Bots</label>
-          <label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-shadows" checked /> Dynamic Shadows</label>
+          <label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-ground" checked /> Ground & Paths</label><label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-veg" checked /> Banyans & Veg</label>
+          <label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-rocks" checked /> Rocks & Megaliths</label><label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-interact" checked /> Hazards & Pillars</label>
+          <label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-bots" checked /> Fighter Bots</label><label class="inspect-checkbox-row"><input type="checkbox" id="layer-cb-shadows" checked /> Dynamic Shadows</label>
         </div>
         <button class="inspect-exit-btn" id="inspect-exit-btn">EXIT DEV VIEW</button>
       </div>`;
@@ -171,13 +168,17 @@ export class DevInspectView {
     bindLayer('layer-cb-veg', 'vegetation', (v) => {
       const env = this.sceneManager.worldEnv;
       [env?.bTrunkMesh, env?.bRootMesh, env?.bLobeShMesh, env?.bLobeHiMesh, env?.pineTrunkMesh, env?.pineCanopyMesh].forEach((m) => { if (m) m.visible = v; });
-      this.spawnManager.bushes?.forEach((b) => { if (b.mesh) b.mesh.visible = v; });
+      this.spawnManager.bushes?.forEach((b) => { if (b.group) b.group.visible = v; });
     });
     bindLayer('layer-cb-rocks', 'rocks', (v) => {
       const env = this.sceneManager.worldEnv;
       [env?.megMesh, env?.megMossMesh, env?.rockMesh, env?.rockMossMesh].forEach((m) => { if (m) m.visible = v; });
     });
-    bindLayer('layer-cb-interact', 'interactables', (v) => this.arenaInteractables?.items?.forEach((i) => { if (i.mesh) i.mesh.visible = v; }));
+    bindLayer('layer-cb-interact', 'interactables', (v) => {
+      const ai = this.arenaInteractables;
+      if (ai) [...(ai.pads || []), ...(ai.suryas || []), ...(ai.braziers || [])].forEach((i) => { if (i?.group) i.group.visible = v; });
+      [...(this.spawnManager.chests || []), ...(this.spawnManager.crystals || [])].forEach((p) => { if (p?.group) p.group.visible = v; });
+    });
     bindLayer('layer-cb-bots', 'bots', (v) => this.spawnManager.bots?.forEach((b) => { if (b.group) b.group.visible = v; }));
     bindLayer('layer-cb-shadows', 'shadows', (v) => {
       this.sceneManager.renderer.shadowMap.enabled = v;
@@ -188,16 +189,12 @@ export class DevInspectView {
   }
 
   toggle() { if (this.isOpen) this.close(); else this.open(); }
-
   open() {
     if (this.isOpen) return;
-    this.isOpen = true;
-    this.matchManager.isPaused = true;
+    this.isOpen = true; this.matchManager.isPaused = true;
     this.inspectHero = new DevInspectHero(this.sceneManager.scene);
-    this.cameraCtrl.bind();
-    this.cameraCtrl.focusOn(0, 6.5, 0, 9, 25);
-    this.overlay.style.display = 'block';
-    this.toggleBtn.style.display = 'block';
+    this.cameraCtrl.bind(); this.cameraCtrl.focusOn(0, 6.5, 0, 9, 25);
+    this.overlay.style.display = 'block'; this.toggleBtn.style.display = 'block';
     this.toggleBtn.textContent = '✖ CLOSE DEV VIEW';
     this.updateMetrics();
   }
@@ -213,17 +210,30 @@ export class DevInspectView {
       this.inspectHero.destroy();
       this.inspectHero = null;
     }
+    this.restoreLayers();
     this.overlay.style.display = 'none';
     this.toggleBtn.style.display = this.isDev ? 'block' : 'none';
     this.toggleBtn.textContent = '🔍 DEV VIEW / INSPECT';
   }
 
+  restoreLayers() {
+    this.sceneManager.floorMesh.visible = true;
+    const env = this.sceneManager.worldEnv, ai = this.arenaInteractables;
+    [env?.bTrunkMesh, env?.bRootMesh, env?.bLobeShMesh, env?.bLobeHiMesh, env?.pineTrunkMesh, env?.pineCanopyMesh, env?.megMesh, env?.megMossMesh, env?.rockMesh, env?.rockMossMesh].forEach((m) => { if (m) m.visible = true; });
+    this.spawnManager.bushes?.forEach((b) => { if (b.group) b.group.visible = true; });
+    if (ai) [...(ai.pads || []), ...(ai.suryas || []), ...(ai.braziers || [])].forEach((i) => { if (i?.group) i.group.visible = true; });
+    [...(this.spawnManager.bots || []), ...(this.spawnManager.chests || []), ...(this.spawnManager.crystals || [])].forEach((p) => { if (p?.group) p.group.visible = true; });
+    this.sceneManager.renderer.shadowMap.enabled = true;
+    if (this.sceneManager.dirLight) this.sceneManager.dirLight.castShadow = true;
+    this.overlay.querySelectorAll('.inspect-hud-right input[type="checkbox"]').forEach((cb) => { cb.checked = true; });
+  }
+
   updateMetrics() {
     if (!this.inspectHero) return;
     const { triangles, drawCalls } = this.inspectHero.getMetrics();
-    const triEl = this.overlay.querySelector('#inspect-tri-count'), matEl = this.overlay.querySelector('#inspect-mat-calls');
-    if (triEl) triEl.textContent = triangles.toLocaleString();
-    if (matEl) matEl.textContent = drawCalls;
+    const tri = this.overlay.querySelector('#inspect-tri-count'), mat = this.overlay.querySelector('#inspect-mat-calls');
+    if (tri) tri.textContent = triangles.toLocaleString();
+    if (mat) mat.textContent = drawCalls;
   }
 
   update(dt = 0.016) {
