@@ -1,4 +1,4 @@
-import { LEVEL_TABLE, GAME_TITLE } from '../config/constants.js';
+import { LEVEL_TABLE, GAME_TITLE, VALID_HERO_IDS } from '../config/constants.js';
 import { STAVES, UPGRADES } from '../core/MetaProgression.js';
 import { HeroSelectView } from './HeroSelectView.js';
 import { QuestView } from './QuestView.js';
@@ -103,7 +103,8 @@ export class UIManager {
     this.lobbyRankTitle.textContent = rank.title;
     this.lobbyRankTitle.style.color = rank.color;
 
-    const currentHeroId = localStorage.getItem('magica_selected_hero') || 'ignis';
+    const rawHeroId = localStorage.getItem('magica_selected_hero') || 'tapasvi';
+    const currentHeroId = VALID_HERO_IDS.includes(rawHeroId) ? rawHeroId : 'tapasvi';
     this.heroSelectView.render(currentHeroId);
     if (this.questView) this.questView.render();
     if (this.spellbookView) this.spellbookView.render();
@@ -138,7 +139,10 @@ export class UIManager {
     const elements = player.spellSlot ? player.spellSlot.elements : (spell.elements || []);
     const tierNames = { 0: 'Mushti', 1: 'Mantra', 2: 'Shastra', 3: 'Astra' };
     this.spellNameEl.textContent = spell.name || (spell.id === 'fist' ? 'Mushti' : 'Agni Bana');
-    this.spellTierEl.textContent = tierNames[spell.tier] || (spell.id === 'fist' ? 'Mushti' : `Tier ${spell.tier || 1}`);
+    const tier = spell.tier ?? 0;
+    const isMushti = tier === 0 || spell.id === 'fist';
+    this.spellTierEl.textContent = tierNames[tier] || `Tier ${tier}`;
+    this.spellTierEl.style.display = isMushti ? 'none' : 'inline-block';
     this.spellTierEl.style.color = `#${(spell.color || 0x38bdf8).toString(16).padStart(6, '0')}`;
 
     if (!elements || elements.length === 0) { this.spellChipsEl.innerHTML = ''; return; }
@@ -156,7 +160,7 @@ export class UIManager {
     if (this.leaderboard && isList) this.leaderboard.update(aliveCountOrActors, player, dt);
     if (this.topRightHUD) this.topRightHUD.update(player, isSafe);
     else if (this.zoneStatusEl) {
-      this.zoneStatusEl.textContent = isSafe ? 'Safe' : 'DANGER';
+      this.zoneStatusEl.textContent = isSafe ? 'Safe' : 'STORM';
       this.zoneStatusEl.style.color = isSafe ? '#b700ff' : '#ef4444';
     }
     const hpPct = Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100));

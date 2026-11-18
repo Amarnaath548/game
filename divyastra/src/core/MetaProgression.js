@@ -1,11 +1,11 @@
 const STORAGE_KEY = 'MAGICA_ROYALE_PROGRESSION_V1';
 
 export const RANKS = [
-  { minTrophies: 0, title: 'Apprentice Mage', color: '#94a3b8' },
-  { minTrophies: 100, title: 'Battle Evoker', color: '#38bdf8' },
-  { minTrophies: 300, title: 'Elemental Adept', color: '#10b981' },
-  { minTrophies: 600, title: 'Grand Sorcerer', color: '#f59e0b' },
-  { minTrophies: 1000, title: 'Archmage Sovereign', color: '#b700ff' }
+  { minTrophies: 0, title: 'Novice Seeker', color: '#94a3b8' },
+  { minTrophies: 100, title: 'Sadhaka', color: '#38bdf8' },
+  { minTrophies: 300, title: 'Tapasvi', color: '#10b981' },
+  { minTrophies: 600, title: 'Rishi', color: '#f59e0b' },
+  { minTrophies: 1000, title: 'Maharishi', color: '#b700ff' }
 ];
 
 export const STAVES = [

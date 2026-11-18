@@ -1,5 +1,5 @@
 import { ZoneSystem } from '../systems/ZoneSystem.js';
-import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE } from '../config/constants.js';
+import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE, VALID_HERO_IDS } from '../config/constants.js';
 import { getDevTools } from './DevTools.js';
 
 export class MatchManager {
@@ -35,7 +35,8 @@ export class MatchManager {
     const staff = this.meta.getSelectedStaff();
     const bonuses = this.meta.getMetaBonuses();
 
-    const selectedHeroId = localStorage.getItem('magica_selected_hero') || 'ignis';
+    const rawHeroId = localStorage.getItem('magica_selected_hero') || 'tapasvi';
+    const selectedHeroId = VALID_HERO_IDS.includes(rawHeroId) ? rawHeroId : 'tapasvi';
     const hero = HEROES.find((h) => h.id === selectedHeroId) || HEROES[0];
     if (this.player.hero?.id !== hero.id && this.player.rebuildHeroVisual) {
       this.player.rebuildHeroVisual(hero);

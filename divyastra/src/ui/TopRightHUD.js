@@ -45,7 +45,7 @@ export class TopRightHUD {
       }
     }
     if (this.zoneStatusEl && this.lastSafe !== isSafe) {
-      this.zoneStatusEl.textContent = isSafe ? 'Safe' : 'DANGER';
+      this.zoneStatusEl.textContent = isSafe ? 'Safe' : 'STORM';
       this.zoneStatusEl.style.color = isSafe ? '#a855f7' : '#ef4444';
       this.lastSafe = isSafe;
     }

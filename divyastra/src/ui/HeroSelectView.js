@@ -1,4 +1,4 @@
-import { HEROES } from '../config/constants.js';
+import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES } from '../config/constants.js';
 
 function getSilhouetteClass(hero) {
   const arch = (hero.archetype || hero.hatType || '').toLowerCase();
@@ -21,10 +21,16 @@ export class HeroSelectView {
     this.container.innerHTML = '';
 
     const savedUnlocked = localStorage.getItem('magica_unlocked_heroes');
-    const unlockedHeroes = savedUnlocked ? JSON.parse(savedUnlocked) : ['ignis', 'glacia', 'volt', 'tox'];
+    const rawUnlocked = savedUnlocked ? JSON.parse(savedUnlocked) : DEFAULT_UNLOCKED_HEROES;
+    // Filter out removed hero ids so old saves don't break
+    const unlockedHeroes = rawUnlocked.filter((id) => VALID_HERO_IDS.includes(id));
+    if (!unlockedHeroes.includes('tapasvi')) unlockedHeroes.push('tapasvi');
+
+    // Sanitise selected hero — fall back to 'tapasvi' if the saved id no longer exists
+    const safeSelected = VALID_HERO_IDS.includes(selectedHeroId) ? selectedHeroId : 'tapasvi';
 
     HEROES.forEach((hero) => {
-      const isSelected = hero.id === selectedHeroId;
+      const isSelected = hero.id === safeSelected;
       const isUnlocked = unlockedHeroes.includes(hero.id);
 
       const card = document.createElement('div');

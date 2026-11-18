@@ -64,15 +64,20 @@ export const BIOMES = {
 };
 
 export const HEROES = [
-  { id: 'ignis', name: 'Tapasvi', archetype: 'TAPASVI', bodyColor: 0xe06014, accentColor: 0xfbbf24, hatType: 'JATA', extra: 'UTTARIYA' },
-  { id: 'glacia', name: 'Glacia', archetype: 'JALA', bodyColor: 0x0284c7, accentColor: 0x99f6e4, hatType: 'TURBAN', extra: 'WAVE_PADS' },
-  { id: 'volt', name: 'Volt', archetype: 'AGNI', bodyColor: 0xd92638, accentColor: 0xf97316, hatType: 'FLAME_CREST', extra: 'MANTLE' },
-  { id: 'tox', name: 'Tox', archetype: 'PRITHVI', bodyColor: 0x166534, accentColor: 0xc2410c, hatType: 'CIRCLET', extra: 'ROCK_SHOULDERS' },
-  { id: 'nyx', name: 'Nyx', archetype: 'JALA', bodyColor: 0x312e81, accentColor: 0x38bdf8, hatType: 'TURBAN', extra: 'WAVE_PADS' },
-  { id: 'aegis', name: 'Aegis', archetype: 'PRITHVI', bodyColor: 0x475569, accentColor: 0xd97706, hatType: 'CIRCLET', extra: 'ROCK_SHOULDERS' },
-  { id: 'krag', name: 'Krag', archetype: 'AGNI', bodyColor: 0x1e293b, accentColor: 0xf59e0b, hatType: 'FLAME_CREST', extra: 'MANTLE' },
-  { id: 'aurelia', name: 'Aurelia', archetype: 'TAPASVI', bodyColor: 0x9f1239, accentColor: 0xfacc15, hatType: 'JATA', extra: 'UTTARIYA' }
+  { id: 'tapasvi', name: 'Tapasvi', archetype: 'TAPASVI', bodyColor: 0xe06014, accentColor: 0xfbbf24, hatType: 'JATA', extra: 'UTTARIYA' },
+  { id: 'agni', name: 'Agni Sadhaka', archetype: 'AGNI', bodyColor: 0xd92638, accentColor: 0xf97316, hatType: 'FLAME_CREST', extra: 'MANTLE' },
+  { id: 'jala', name: 'Jala Sadhaka', archetype: 'JALA', bodyColor: 0x0284c7, accentColor: 0x99f6e4, hatType: 'TURBAN', extra: 'WAVE_PADS' },
+  { id: 'prithvi', name: 'Prithvi Sadhaka', archetype: 'PRITHVI', bodyColor: 0x166534, accentColor: 0xc2410c, hatType: 'CIRCLET', extra: 'ROCK_SHOULDERS' }
 ];
+
+/** Safe hero lookup — falls back to HEROES[0] if id is not found (e.g. old saved id). */
+export function getHeroById(id) {
+  return HEROES.find((h) => h.id === id) || HEROES[0];
+}
+
+/** Valid hero ids and default unlocked set. */
+export const VALID_HERO_IDS = HEROES.map((h) => h.id);
+export const DEFAULT_UNLOCKED_HEROES = ['tapasvi'];
 
 export const ARENA = {
   RADIUS: 120,

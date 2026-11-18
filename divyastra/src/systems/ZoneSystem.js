@@ -11,13 +11,15 @@ export class ZoneSystem {
     this.centerZ = 0;
     this.isMatchOver = false;
 
-    // Visual Cylinder Forcefield
+    // Visual Cylinder Forcefield — rendered on the OUTSIDE of the boundary.
+    // Opacity ramps from ~0 (safe phase) up to 0.35 (storm phase) so the
+    // translucent band never makes the player feel they are inside the storm.
     const cylGeo = new THREE.CylinderGeometry(this.currentRadius, this.currentRadius, 18, 64, 1, true);
     this.cylMat = new THREE.MeshBasicMaterial({
       color: COLORS.STORM_RING,
       transparent: true,
-      opacity: 0.22,
-      side: THREE.DoubleSide,
+      opacity: 0.04,
+      side: THREE.BackSide, // only visible from inside looking out at the boundary wall
       depthWrite: false
     });
     this.forcefield = new THREE.Mesh(cylGeo, this.cylMat);
@@ -56,6 +58,12 @@ export class ZoneSystem {
     const scale = this.currentRadius / STORM_PHASES[0].startRadius;
     this.forcefield.scale.set(scale, 1, scale);
     this.groundRing.scale.set(scale, scale, 1);
+
+    // Ramp cylinder opacity: 0.04 when no damage (safe), up to 0.35 when storm is active
+    const stormStrength = currentPhase.tickDamage > 0
+      ? Math.min(1.0, currentPhase.tickDamage / 40)
+      : 0;
+    this.cylMat.opacity = THREE.MathUtils.lerp(0.04, 0.35, stormStrength);
 
     // Tick out-of-bounds damage (ONLY if phase has tickDamage > 0)
     if (currentPhase.tickDamage > 0) {
