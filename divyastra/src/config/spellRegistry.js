@@ -1,4 +1,6 @@
-import { SPELLS_T3 } from './spellRegistryT3.js';
+import { SCHOOLS, UPGRADES, SIDE_EFFECTS, resolveSpell } from './spellSchools.js';
+
+export { SCHOOLS, UPGRADES, SIDE_EFFECTS, resolveSpell };
 
 export const ELEMENTS = {
   EARTH: 'E',
@@ -44,178 +46,82 @@ export const FIST_SPELL = {
   color: 0xffaa44
 };
 
+// Tier 1 & Tier 2 Spells
 export const SPELLS_T1_T2 = {
-  // Tier 1 (1 Element) - Mantra
-  E: {
-    id: 'E',
-    tier: 1,
-    name: 'Shila Bana',
-    lore: 'Hardened earthen projectile hurled with piercing momentum',
-    elements: ['E'],
-    trajectory: 'LINEAR',
-    color: 0x8b5a2b,
-    damage: 42,
-    speed: 26,
-    range: 22,
-    radius: 0.6,
-    knockback: 4.0,
-    cooldown: 0.7
-  },
-  F: {
-    id: 'F',
-    tier: 1,
-    name: 'Agni Bana',
-    lore: 'Blazing arrow of consecrated fire that incinerates targets',
-    elements: ['F'],
-    trajectory: 'LINEAR',
-    color: 0xff5500,
-    damage: 48,
-    speed: 28,
-    range: 24,
-    radius: 0.55,
-    aoeRadius: 2.5,
-    burnDuration: 2.0,
-    burnDps: 8,
-    cooldown: 0.65
-  },
-  W: {
-    id: 'W',
-    tier: 1,
-    name: 'Jala Bana',
-    lore: 'Swift torrent dart that slows foes and revitalizes',
-    elements: ['W'],
-    trajectory: 'LINEAR',
-    color: 0x06b6d4,
-    damage: 38,
-    speed: 28,
-    range: 22,
-    radius: 0.5,
-    slowFactor: 0.25,
-    slowDuration: 1.5,
-    lifesteal: 0.2,
-    cooldown: 0.6
-  },
+  // Tier 1
+  E: resolveSpell(['E']),
+  F: resolveSpell(['F']),
+  W: resolveSpell(['W']),
 
-  // Tier 2 (2 Elements) - Shastra
-  E_E: {
-    id: 'E_E',
-    tier: 2,
-    name: 'Gada',
-    lore: 'Heavy primordial mace crushing enemies with thunderous impact',
-    elements: ['E', 'E'],
-    trajectory: 'LINEAR',
-    color: 0x785535,
-    damage: 65,
-    speed: 24,
-    range: 22,
-    radius: 0.8,
-    knockback: 6.0,
-    stunDuration: 0.75,
-    cooldown: 0.9
-  },
-  F_F: {
-    id: 'F_F',
-    tier: 2,
-    name: 'Agni Varsha',
-    lore: 'Scattering shower of burning sparks engulfing the battlefield',
-    elements: ['F', 'F'],
-    trajectory: 'SPREAD',
-    color: 0xf97316,
-    damage: 26,
-    projectiles: 3,
-    spreadAngle: 0.25,
-    speed: 32,
-    range: 22,
-    radius: 0.45,
-    aoeRadius: 2.0,
-    burnDuration: 2.0,
-    burnDps: 8,
-    cooldown: 0.85
-  },
-  W_W: {
-    id: 'W_W',
-    tier: 2,
-    name: 'Jala Dhara',
-    lore: 'Continuous cascade of pressurized water restoring vitality',
-    elements: ['W', 'W'],
-    trajectory: 'SPREAD',
-    color: 0x0284c7,
-    damage: 18,
-    projectiles: 4,
-    spreadAngle: 0.35,
-    speed: 30,
-    range: 20,
-    radius: 0.4,
-    slowFactor: 0.3,
-    slowDuration: 1.5,
-    lifesteal: 0.25,
-    cooldown: 0.75
-  },
-  E_F: {
-    id: 'E_F',
-    tier: 2,
-    name: 'Dronagiri',
-    lore: 'Cataclysmic molten peak lobbed from high above',
-    elements: ['E', 'F'],
-    trajectory: 'LOBBED',
-    color: 0xd946ef,
-    damage: 70,
-    speed: 22,
-    range: 24,
-    radius: 0.8,
-    aoeRadius: 4.5,
-    lobArcHeight: 4.0,
-    burnDuration: 2.0,
-    burnDps: 10,
-    cooldown: 1.05
-  },
-  E_W: {
-    id: 'E_W',
-    tier: 2,
-    name: 'Varuna Pasha',
-    lore: 'Ensnaring aquatic noose piercing and slowing all victims',
-    elements: ['E', 'W'],
-    trajectory: 'LINEAR',
-    color: 0x38bdf8,
-    damage: 52,
-    speed: 40,
-    range: 26,
-    radius: 0.45,
-    pierce: true,
-    slowFactor: 0.4,
-    slowDuration: 2.0,
-    cooldown: 0.8
-  },
-  F_W: {
-    id: 'F_W',
-    tier: 2,
-    name: 'Halahala',
-    lore: 'Lethal cosmic venom blanketing ground in caustic fumes',
-    elements: ['F', 'W'],
-    trajectory: 'LOBBED',
-    color: 0x10b981,
-    glowColor: 0x14b8a6,
-    damage: 30,
-    speed: 22,
-    range: 24,
-    radius: 0.6,
-    aoeRadius: 1.8,
-    lobArcHeight: 3.8,
-    hazardZone: { dps: 14, duration: 3.5, radius: 2.6, poison: true },
-    cooldown: 1.5
-  }
+  // Tier 2 - Upgrades
+  E_PARVAT: resolveSpell(['E', 'E'], 'PARVAT'),
+  E_KAVACHA: resolveSpell(['E', 'E'], 'KAVACHA'),
+  F_JWALA: resolveSpell(['F', 'F'], 'JWALA'),
+  F_DAHA: resolveSpell(['F', 'F'], 'DAHA'),
+  W_PRAVAHA: resolveSpell(['W', 'W'], 'PRAVAHA'),
+  W_HIMKANA: resolveSpell(['W', 'W'], 'HIMKANA'),
+
+  // Tier 2 - Cross-School Side Effects
+  E_LAVA: resolveSpell(['E', 'F']),
+  E_MUD: resolveSpell(['E', 'W']),
+  F_LAVA: resolveSpell(['F', 'E']),
+  F_STEAM: resolveSpell(['F', 'W']),
+  W_STEAM: resolveSpell(['W', 'F']),
+  W_MUD: resolveSpell(['W', 'E'])
+};
+
+// Tier 3 Spells
+export const SPELLS_T3 = {
+  // Pure Astras
+  E_ASTRA: resolveSpell(['E', 'E', 'E']),
+  F_ASTRA: resolveSpell(['F', 'F', 'F']),
+  W_ASTRA: resolveSpell(['W', 'W', 'W']),
+
+  // Astras with Side Effects
+  E_ASTRA_LAVA: resolveSpell(['E', 'E', 'F']),
+  E_ASTRA_MUD: resolveSpell(['E', 'E', 'W']),
+  F_ASTRA_LAVA: resolveSpell(['F', 'F', 'E']),
+  F_ASTRA_STEAM: resolveSpell(['F', 'F', 'W']),
+  W_ASTRA_STEAM: resolveSpell(['W', 'W', 'F']),
+  W_ASTRA_MUD: resolveSpell(['W', 'W', 'E'])
 };
 
 export const ALL_SPELLS = { ...SPELLS_T1_T2, ...SPELLS_T3 };
 
-export function getSpell(key) {
+export function getSpell(key, upgradeId = null) {
   if (!key) return null;
   if (key === 'fist') return FIST_SPELL;
-  if (Array.isArray(key)) {
-    key = key.slice().sort().join('_');
-  } else if (typeof key === 'string' && key.includes('_')) {
-    key = key.split('_').sort().join('_');
-  }
-  return SPELLS_T1_T2[key] || SPELLS_T3[key] || null;
-}
 
+  if (Array.isArray(key)) {
+    return resolveSpell(key, upgradeId);
+  }
+
+  if (typeof key !== 'string') return null;
+
+  // Direct lookup in registered spells
+  if (ALL_SPELLS[key]) return ALL_SPELLS[key];
+
+  // Old pure T3 aliases
+  if (key === 'E_E_E') return ALL_SPELLS.E_ASTRA;
+  if (key === 'F_F_F') return ALL_SPELLS.F_ASTRA;
+  if (key === 'W_W_W') return ALL_SPELLS.W_ASTRA;
+
+  // Old T2 same-school aliases
+  if (key === 'E_E') return ALL_SPELLS.E_PARVAT;
+  if (key === 'F_F') return ALL_SPELLS.F_JWALA;
+  if (key === 'W_W') return ALL_SPELLS.W_PRAVAHA;
+
+  // Parse letters e.g. 'F_W', 'E_F', 'E_F_W'
+  const parts = key.split('_').filter(Boolean);
+  if (parts.length > 0 && parts.every((p) => p === 'E' || p === 'F' || p === 'W')) {
+    return resolveSpell(parts, upgradeId);
+  }
+
+  // Fallback: match any element letters
+  const matched = key.match(/[EFW]/g);
+  if (matched && matched.length > 0) {
+    return resolveSpell(matched, upgradeId);
+  }
+
+  return null;
+}

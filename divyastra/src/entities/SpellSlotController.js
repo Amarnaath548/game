@@ -1,21 +1,37 @@
 import { getSpell, FIST_SPELL } from '../config/spellRegistry.js';
+import { resolveSpell } from '../config/spellSchools.js';
 
 export class SpellSlotController {
   constructor(startSpellKey = null) {
-    this.elements = [];
+    this.picks = [];
+    this.upgradeId = null;
     this.currentSpell = startSpellKey ? (getSpell(startSpellKey) || FIST_SPELL) : FIST_SPELL;
     this.cooldownTimer = 0;
   }
 
-  get activeSpell() {
-    return this.elements.length === 0 ? FIST_SPELL : this.currentSpell;
+  get elements() {
+    return this.picks;
   }
 
-  addElement(element) {
-    if (this.elements.length >= 3) return false;
-    this.elements.push(element);
-    const key = this.elements.slice().sort().join('_');
-    const nextSpell = getSpell(key);
+  set elements(val) {
+    this.picks = Array.isArray(val) ? val : [];
+  }
+
+  get activeSpell() {
+    return this.picks.length === 0 ? FIST_SPELL : this.currentSpell;
+  }
+
+  needsUpgradeChoice(element) {
+    return this.picks.length === 1 && this.picks[0] === element;
+  }
+
+  addElement(element, upgradeId = null) {
+    if (this.picks.length >= 3) return false;
+    this.picks.push(element);
+    if (upgradeId) {
+      this.upgradeId = upgradeId;
+    }
+    const nextSpell = resolveSpell(this.picks, this.upgradeId);
     if (nextSpell) {
       this.currentSpell = nextSpell;
     }
@@ -23,7 +39,8 @@ export class SpellSlotController {
   }
 
   reset(startSpellKey = null) {
-    this.elements = [];
+    this.picks = [];
+    this.upgradeId = null;
     this.currentSpell = startSpellKey ? (getSpell(startSpellKey) || FIST_SPELL) : FIST_SPELL;
     this.cooldownTimer = 0;
   }
@@ -65,6 +82,8 @@ export class SpellSlotController {
       originX,
       originZ,
       dragRatio: clampedDrag,
+      sideEffect: spell.sideEffect ? { ...spell.sideEffect } : null,
+      mods: spell.mods ? { ...spell.mods } : {},
       arc: spell.arc || 1.75,
       chainTargets: spell.chainTargets !== undefined ? spell.chainTargets : (spell.chainCount || 0),
       chainRange: spell.chainRange !== undefined ? spell.chainRange : (spell.chainRadius || 0),
