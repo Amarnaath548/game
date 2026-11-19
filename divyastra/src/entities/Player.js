@@ -30,6 +30,7 @@ export class Player extends Actor {
     this.perks = [];
     this.staffElement = null;
     this.cooldownMult = 1.0;
+    this.arcaneShieldTimer = 0;
 
     // Dash state
     this.dashTimer = 0;
@@ -100,9 +101,13 @@ export class Player extends Actor {
   set onTapasReadyCallback(cb) { if (this.tapas) this.tapas.onReady = cb; }
   get onTapasReadyCallback() { return this.tapas?.onReady; }
 
-  takeDamage(amount) {
+  takeDamage(amount, sourceSpell = null) {
     if (this.tapas) this.tapas.breakTapas();
-    const dealt = super.takeDamage(amount);
+    const hadShield = this.shieldActive;
+    const dealt = super.takeDamage(amount, sourceSpell);
+    if (hadShield && !this.shieldActive && this.perks.includes('ARCANE_SHIELD')) {
+      this.arcaneShieldTimer = 20.0;
+    }
     if (dealt > 0) this.onDamage?.(dealt);
     return dealt;
   }
@@ -132,7 +137,11 @@ export class Player extends Actor {
   applyPerk(perk) {
     this.perks.push(perk.id);
     if (perk.id === 'WINDWALKER') this.baseSpeed *= 1.2;
-    if (perk.id === 'ARCANE_SHIELD') this.shieldActive = true;
+    if (perk.id === 'ARCANE_SHIELD') {
+      this.shieldActive = true;
+      if (this.shieldMesh) this.shieldMesh.visible = true;
+      this.arcaneShieldTimer = 0;
+    }
   }
 
   update(dt, bushes = []) {
@@ -141,6 +150,20 @@ export class Player extends Actor {
         super.update(dt);
       }
       return;
+    }
+
+    if (this.perks.includes('ARCANE_SHIELD')) {
+      if (!this.shieldActive) {
+        if (this.arcaneShieldTimer > 0) {
+          this.arcaneShieldTimer -= dt;
+          if (this.arcaneShieldTimer <= 0) {
+            this.shieldActive = true;
+            if (this.shieldMesh) this.shieldMesh.visible = true;
+          }
+        }
+      } else if (this.shieldMesh && !this.shieldMesh.visible) {
+        this.shieldMesh.visible = true;
+      }
     }
 
     if (this.spellSlot) {

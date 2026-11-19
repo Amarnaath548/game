@@ -190,14 +190,12 @@ export class UIManager {
     if (player.spellSlot && (player.spellSlot.elements.length + this.pendingPicks) < 3) {
       this.pendingPicks++; this.elementPicker.pendingPicks = this.pendingPicks;
       if (!this.elementPicker.active && !this.elementPicker.timer) this.openNextElementPick(player);
-    } else { this.showPerkCards(level); }
+    } else { this.showPerkCards(level, player); }
   }
 
   openNextElementPick(player) {
     if (this.pendingPicks <= 0 || !player.spellSlot || player.spellSlot.elements.length >= 3) {
-      this.pendingPicks = 0;
-      this.elementPicker.pendingPicks = 0;
-      return;
+      this.pendingPicks = 0; this.elementPicker.pendingPicks = 0; return;
     }
     this.elementPicker.show(player, (element) => {
       this.onElementPicked?.(element);
@@ -212,14 +210,9 @@ export class UIManager {
         this.elementPicker.clearDelay();
         this.elementPicker.timer = setTimeout(() => {
           this.elementPicker.timer = null;
-          if (this.pendingPicks > 0 && player.spellSlot?.elements.length < 3) {
-            this.openNextElementPick(player);
-          }
+          if (this.pendingPicks > 0 && player.spellSlot?.elements.length < 3) this.openNextElementPick(player);
         }, 1500);
-      } else {
-        this.pendingPicks = 0;
-        this.elementPicker.pendingPicks = 0;
-      }
+      } else { this.pendingPicks = 0; this.elementPicker.pendingPicks = 0; }
     });
   }
 
@@ -228,8 +221,8 @@ export class UIManager {
     this.pendingPicks = 0;
   }
 
-  showPerkCards() {
-    renderPerkSelection(this.perkOverlay, this.onPerkSelected);
+  showPerkCards(level, player = null) {
+    renderPerkSelection(this.perkOverlay, this.onPerkSelected, player);
   }
 
   showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null, devCheated = false) {

@@ -69,6 +69,9 @@ export class MatchManager {
     this.player.kills = 0;
     this.player.gemsCollected = 0;
     this.player.perks = [];
+    this.player.shieldActive = false;
+    this.player.arcaneShieldTimer = 0;
+    if (this.player.shieldMesh) this.player.shieldMesh.visible = false;
     this.player.isDead = false;
     this.player.isDying = false;
     this.player.deathTimer = 0;

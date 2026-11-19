@@ -1,14 +1,11 @@
 import * as THREE from 'three';
 import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT, SEPARATION_FACTOR, AOE_SPLASH_DAMAGE_MULT } from '../config/constants.js';
-import { CollisionSystem } from '../systems/CollisionSystem.js'; import { SpellEffects } from '../systems/SpellEffects.js';
-import { HitFeedback } from '../systems/HitFeedback.js'; import { projectileDeflect, destroyProjectilesInCircle } from '../systems/ProjectileDeflect.js';
-import { damageObjectsInCircle } from './EnvironmentDamage.js'; import { resolveChain, spawnSubMunitions, resolveObeliskCollisions } from './CombatChain.js';
+import { CollisionSystem } from '../systems/CollisionSystem.js'; import { SpellEffects } from '../systems/SpellEffects.js'; import { HitFeedback } from '../systems/HitFeedback.js'; import { projectileDeflect, destroyProjectilesInCircle } from '../systems/ProjectileDeflect.js'; import { damageObjectsInCircle } from './EnvironmentDamage.js'; import { resolveChain, spawnSubMunitions, resolveObeliskCollisions } from './CombatChain.js';
 
 export class CombatResolver {
   constructor(deps) {
     Object.assign(this, deps);
-    this.astraVisuals = deps.astraVisuals || null;
-    this.arenaInteractables = deps.arenaInteractables || null;
+    this.astraVisuals = deps.astraVisuals || null; this.arenaInteractables = deps.arenaInteractables || null;
     this.hitFeedback = new HitFeedback({ sceneManager: deps.sceneManager, player: deps.player });
     this.spellEffects = deps.spellEffects || new SpellEffects(deps.sceneManager.scene, deps.particleSys, this.astraVisuals);
     this.spellEffects.resolver = this;
@@ -20,8 +17,7 @@ export class CombatResolver {
 
   showTelegraph(x, z, radius = 5.5, duration = 0.4, spellId = null) {
     if (spellId === 'F_W_W' && this.astraVisuals) return this.astraVisuals.spawnVajraTelegraph(x, z, radius, duration);
-    this.telegraphMesh.position.set(x, 0.05, z); this.telegraphMesh.scale.setScalar(radius / 5.5);
-    this.telegraphMesh.visible = true; this.telegraphTimer = duration;
+    this.telegraphMesh.position.set(x, 0.05, z); this.telegraphMesh.scale.setScalar(radius / 5.5); this.telegraphMesh.visible = true; this.telegraphTimer = duration;
   }
 
   executeCastPayload(payload, owner) {
@@ -30,7 +26,7 @@ export class CombatResolver {
     if (isP && this.player.staffElement && cfg.elements?.includes(this.player.staffElement)) cfg.damage = Math.round(cfg.damage * 1.12);
     if (isP && this.spellbookManager) { const sm = this.spellbookManager.getDamageMultiplier(cfg.id); if (sm > 1.0) cfg.damage = Math.round(cfg.damage * sm); }
     if (isP && this.player.perks.includes('SNIPER_VELOCITY')) { cfg.speed = (cfg.speed || 28) * 1.35; cfg.range = (cfg.range || 24) * 1.35; }
-    if (isP && this.player.perks.includes('GIANT_ARCANA')) { cfg.radius = (cfg.radius || 0.5) * 1.4; if (cfg.aoeRadius) cfg.aoeRadius *= 1.4; }
+    if (isP && this.player.perks.includes('GIANT_ARCANA')) { cfg.radius = (cfg.radius || (cfg.trajectory === 'RADIAL' ? 6.0 : 0.5)) * 1.4; if (cfg.aoeRadius) cfg.aoeRadius *= 1.4; }
     const sx = cfg.originX ?? owner.x, sz = cfg.originZ ?? owner.z;
 
     if (cfg.trajectory === 'MELEE') return this.executeMelee(cfg, owner);
@@ -47,6 +43,28 @@ export class CombatResolver {
       this.showTelegraph(tx, tz, cfg.aoeRadius || 4.0, delay, cfg.id);
       this.delayedStrikes.push({ ...cfg, targetX: tx, targetZ: tz, timer: delay, owner });
       return;
+    }
+    if (isP && this.player.perks.includes('TWIN_CAST') && (cfg.trajectory === 'LINEAR' || cfg.trajectory === 'LOBBED')) {
+      const px = -cfg.dirZ, pz = cfg.dirX, twinDmg = Math.max(1, Math.round(cfg.damage * 0.85));
+      [-0.8, 0.8].forEach((off) => {
+        const p = this.projectiles.find((proj) => !proj.active);
+        if (!p) return;
+        const pCfg = { ...cfg, damage: twinDmg };
+        if (cfg.trajectory === 'LOBBED') { pCfg.targetX = (cfg.targetX ?? (sx + cfg.dirX * (cfg.range || 20))) + px * off; pCfg.targetZ = (cfg.targetZ ?? (sz + cfg.dirZ * (cfg.range || 20))) + pz * off; }
+        p.spawn(sx + px * off + cfg.dirX * ((owner.radius || 1) + 0.35), sz + pz * off + cfg.dirZ * ((owner.radius || 1) + 0.35), cfg.dirX, cfg.dirZ, pCfg, owner);
+      });
+      return;
+    }
+    if (isP && this.player.perks.includes('TWIN_CAST') && cfg.trajectory === 'SPREAD') {
+      const now = performance.now();
+      if (now - (this._lastSpreadShot || 0) > 60) {
+        this._lastSpreadShot = now;
+        const aim = this.player.input?.aimDir || { x: cfg.dirX, z: cfg.dirZ }, baseAng = Math.atan2(aim.x, aim.z), spread = (cfg.spreadAngle || 0.35) * 0.75;
+        [-spread, spread].forEach((off) => {
+          const p = this.projectiles.find((proj) => !proj.active);
+          if (p) { const edx = Math.sin(baseAng + off), edz = Math.cos(baseAng + off); p.spawn(sx + edx * ((owner.radius || 1) + 0.35), sz + edz * ((owner.radius || 1) + 0.35), edx, edz, cfg, owner); }
+        });
+      }
     }
     const p = this.projectiles.find((proj) => !proj.active);
     if (p) p.spawn(sx + cfg.dirX * ((owner.radius || 1) + 0.35), sz + cfg.dirZ * ((owner.radius || 1) + 0.35), cfg.dirX, cfg.dirZ, cfg, owner);
@@ -67,8 +85,7 @@ export class CombatResolver {
     if (this.player.isDead || !this.player.spellSlot?.canCast()) return;
     this.player.spellSlot.startCooldown();
     if (this.player.cooldownMult) this.player.spellSlot.cooldownTimer *= this.player.cooldownMult;
-    this.player.shootCooldown = this.player.spellSlot.cooldownTimer;
-    this.player.triggerCastAnim?.();
+    this.player.shootCooldown = this.player.spellSlot.cooldownTimer; this.player.triggerCastAnim?.();
     const tapasBonus = this.player.consumeTapasBonus ? this.player.consumeTapasBonus() : 0;
     const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, input.aimDir, input.dragRatio || 1.0, 1.0 + tapasBonus);
     if (tapasBonus > 0) this.particleSys?.spawnBurst(this.player.x, 0.8, this.player.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
@@ -80,15 +97,11 @@ export class CombatResolver {
 
   botShoot(bot, aimX, aimZ) {
     if (bot.isDead || !bot.spellSlot) return;
-    bot.spellSlot.startCooldown();
-    bot.shootCooldown = bot.spellSlot.cooldownTimer;
-    bot.triggerCastAnim?.();
+    bot.spellSlot.startCooldown(); bot.shootCooldown = bot.spellSlot.cooldownTimer; bot.triggerCastAnim?.();
     const tapasBonus = bot.consumeTapasBonus ? bot.consumeTapasBonus() : 0;
     const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, { x: aimX, z: aimZ }, 1.0, 1.0 + tapasBonus);
     if (tapasBonus > 0) this.particleSys?.spawnBurst(bot.x, 0.8, bot.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
-    if (this.astraVisuals && payloads[0]?.tier === 3) {
-      if (Math.hypot(bot.x - this.player.x, bot.z - this.player.z) <= 30) this.astraVisuals.spawnAstraRing(bot.x, bot.z);
-    }
+    if (this.astraVisuals && payloads[0]?.tier === 3 && Math.hypot(bot.x - this.player.x, bot.z - this.player.z) <= 30) this.astraVisuals.spawnAstraRing(bot.x, bot.z);
     payloads.forEach((payload) => this.executeCastPayload(payload, bot));
   }
 
@@ -105,7 +118,9 @@ export class CombatResolver {
     if (owner?.isPlayer && this.player.perks.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) dmg = Math.round(dmg * 1.35);
     const dealt = target.takeDamage(dmg);
     if (owner?.isPlayer && dealt > 0 && this.questManager) this.questManager.record('damage', dealt);
-    if (cfg.lifesteal && dealt > 0 && owner?.heal) owner.heal(dealt * cfg.lifesteal);
+    let lifesteal = cfg.lifesteal || 0;
+    if (owner?.isPlayer && this.player.perks.includes('VAMPIRIC_SOUL')) lifesteal += 0.20;
+    if (lifesteal > 0 && dealt > 0 && owner?.heal) owner.heal(dealt * lifesteal);
     this.sound.playHit();
     const kx = dirX !== null ? dirX : target.x - hitX, kz = dirZ !== null ? dirZ : target.z - hitZ;
     target.applyKnockback(kx, kz, cfg.knockback || 2.5);
@@ -124,11 +139,7 @@ export class CombatResolver {
     if (cfg.hazardZone) this.spellEffects.spawnHazardZone(x, z, cfg, owner);
     if (cfg.onImpactSpawn) this.spawnSubMunitions(x, z, cfg, owner);
     const splashDmg = Math.round((cfg.damage || 0) * AOE_SPLASH_DAMAGE_MULT);
-    targets.forEach((o) => {
-      if (o !== directTarget && !o.isDead && o !== owner && Math.hypot(o.x - x, o.z - z) <= aoe) {
-        this.applySpellHit(o, { ...cfg, damage: splashDmg }, owner, x, z);
-      }
-    });
+    targets.forEach((o) => { if (o !== directTarget && !o.isDead && o !== owner && Math.hypot(o.x - x, o.z - z) <= aoe) this.applySpellHit(o, { ...cfg, damage: splashDmg }, owner, x, z); });
     const hitSet = hitObjects || new Set();
     if (directTarget) hitSet.add(directTarget);
     if (splashDmg > 0) damageObjectsInCircle(this, x, z, aoe, splashDmg, hitSet);
@@ -143,9 +154,7 @@ export class CombatResolver {
 
   handleKill(killer, victim, sourceSpellId = null) {
     this.sound.playExplosion();
-    if (Math.hypot(victim.x - this.player.x, victim.z - this.player.z) <= 30) {
-      this.particleSys.spawnBurst(victim.x, 0.8, victim.z, victim.hero?.bodyColor || 0xff0055, 14, 6, 1.2, victim.currentSpell?.elements || null);
-    }
+    if (Math.hypot(victim.x - this.player.x, victim.z - this.player.z) <= 30) this.particleSys.spawnBurst(victim.x, 0.8, victim.z, victim.hero?.bodyColor || 0xff0055, 14, 6, 1.2, victim.currentSpell?.elements || null);
     this.spawnManager.dropLoot(victim.x, victim.z, KILL_GEM_DROP, 0.6);
     if (!killer) return;
     killer.kills = (killer.kills || 0) + 1;
@@ -176,9 +185,7 @@ export class CombatResolver {
         if (!c.isDead && p.active && CollisionSystem.checkCircle(p.x, p.z, p.radius, c.x, c.z, c.radius)) {
           this.sound.playHit(); this.particleSys.spawnImpact(p.x, p.z, c.isMythic ? 0xf5b82e : 0x8b5a2b, 1.5);
           if (c.takeDamage(p.damage)) { this.sound.playExplosion(); this.spawnManager.dropLoot(c.x, c.z, c.isMythic ? 8 : 3, c.isMythic ? 1 : 0.35); }
-          if (p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn || p.spellConfig?.hazardZone) {
-            this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, c, tgts);
-          }
+          if (p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn || p.spellConfig?.hazardZone) this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, c, tgts);
           p.despawn();
         }
       }
@@ -209,11 +216,7 @@ export class CombatResolver {
       this.particleSys.spawnBurst(d.owner.x, 0.4, d.owner.z, d.config.color || 0x854d0e, 2, 4, 1.0, d.config.elements);
       if (d.config?.deflectsProjectiles) destroyProjectilesInCircle(d.owner.x, d.owner.z, (d.owner.radius || 1.0) + 1.2, d.owner, d.config, this.projectiles, this.particleSys, this.sound);
       const tgts = d.owner?.isPlayer ? bots : [this.player, ...bots.filter((b) => b !== d.owner)];
-      tgts.forEach((t) => {
-        if (!t.isDead && !d.hitTargets.has(t) && CollisionSystem.checkCircle(d.owner.x, d.owner.z, d.owner.radius + 0.5, t.x, t.z, t.radius)) {
-          d.hitTargets.add(t); this.applySpellHit(t, d.config, d.owner, d.owner.x, d.owner.z, d.dirX, d.dirZ);
-        }
-      });
+      tgts.forEach((t) => { if (!t.isDead && !d.hitTargets.has(t) && CollisionSystem.checkCircle(d.owner.x, d.owner.z, d.owner.radius + 0.5, t.x, t.z, t.radius)) { d.hitTargets.add(t); this.applySpellHit(t, d.config, d.owner, d.owner.x, d.owner.z, d.dirX, d.dirZ); } });
       damageObjectsInCircle(this, d.owner.x, d.owner.z, (d.owner.radius || 1.0) + 0.5, d.config.damage, d.hitTargets);
       if (d.elapsed >= d.duration) { d.owner.isInvulnerable = false; d.owner.spellDash = false; this.spellDashes.splice(i, 1); }
     }
@@ -237,9 +240,9 @@ export class CombatResolver {
 
   resolveChain(originX, originZ, cfg, owner, directTarget, targets) { resolveChain(this, originX, originZ, cfg, owner, directTarget, targets); }
   resolveObeliskCollisions(actor) { resolveObeliskCollisions(this, actor); }
-
   reset() {
-    this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this.spellDashes.forEach((d) => { if (d.owner) { d.owner.isInvulnerable = false; d.owner.spellDash = false; } }); this.spellDashes = [];
+    this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this._lastSpreadShot = 0;
+    this.spellDashes.forEach((d) => { if (d.owner) { d.owner.isInvulnerable = false; d.owner.spellDash = false; } }); this.spellDashes = [];
     if (this.spellEffects) this.spellEffects.reset(); if (this.astraVisuals) this.astraVisuals.reset();
     projectileDeflect.reset();
   }

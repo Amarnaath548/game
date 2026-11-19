@@ -182,7 +182,8 @@ function animate() {
 
   if (matchManager.matchActive) {
     sceneManager.checkPerformanceFallback(dt, particleSys);
-    input.update(player.group.position, spawnManager.bots, player.currentSpell.range);
+    const effectiveRange = (player.currentSpell?.range || 24) * (player.perks.includes('SNIPER_VELOCITY') ? 1.35 : 1.0);
+    input.update(player.group.position, spawnManager.bots, effectiveRange);
     if (input.moveDir.x !== 0 || input.moveDir.z !== 0) {
       tutorialHints.onMove();
     }
