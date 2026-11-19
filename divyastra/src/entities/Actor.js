@@ -24,7 +24,7 @@ export class Actor {
     this.spellDash = false;
 
     // Status effects
-    this.status = { chillTimer: 0, chillFactor: 1.0, burnTimer: 0, burnDps: 0, poisonTimer: 0, poisonDps: 0 };
+    this.status = { chillTimer: 0, chillFactor: 1.0, burnTimer: 0, burnDps: 0, poisonTimer: 0, poisonDps: 0, stunTimer: 0 };
 
     // Hero configuration
     this.hero = options.hero || (options.heroId ? HEROES.find(h => h.id === options.heroId) : null) || HEROES[0];
@@ -44,16 +44,8 @@ export class Actor {
     this.robeMat = this.bodyMat;
     this.hatMat = this.accentMat;
 
-    this.hitTimer = 0;
-    this.walkTime = 0;
-    this.wobbleZ = 0;
-    this.leanX = 0;
-    this.leanZ = 0;
-    this.punchTimer = 0;
-    this.castTimer = 0;
-    this.orbTimer = 0;
-    this.isDying = false;
-    this.deathTimer = 0;
+    this.hitTimer = 0; this.walkTime = 0; this.wobbleZ = 0; this.leanX = 0; this.leanZ = 0;
+    this.punchTimer = 0; this.castTimer = 0; this.orbTimer = 0; this.isDying = false; this.deathTimer = 0;
     this.rightArm = this.rightArm || this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.38) < 0.1);
     this.staffShaft = this.staffShaft || this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.68) < 0.1);
   }
@@ -65,10 +57,7 @@ export class Actor {
     this.robeMat = this.bodyMat; this.hatMat = this.accentMat;
   }
 
-  // Flash / fade every material of the hero model together (skin, sash, beads, cloth, glow...)
-  setHeroEmissive(hex) {
-    for (const m of this.heroMats || [this.bodyMat, this.accentMat]) m?.emissive?.setHex(hex);
-  }
+  setHeroEmissive(hex) { for (const m of this.heroMats || [this.bodyMat, this.accentMat]) m?.emissive?.setHex(hex); }
 
   setHeroOpacity(opacity) {
     const translucent = opacity < 1;
@@ -108,16 +97,16 @@ export class Actor {
     this.hp -= amount;
     this.hitTimer = 0.08;
     this.setHeroEmissive(0xffffff);
-
-    if (this.hp <= 0) {
-      this.hp = 0;
-      this.die();
-    }
+    if (this.hp <= 0) { this.hp = 0; this.die(); }
     return amount;
   }
 
-  applyChill(factor = 0.3, duration = 1.5) { this.status.chillTimer = duration; this.status.chillFactor = 1.0 - factor; }
-  applyBurn(dps = 10, duration = 2.0) { this.status.burnTimer = duration; this.status.burnDps = dps; }
+  applyChill(factor = 0.3, duration = 1.5) {
+    this.status.chillTimer = duration;
+    this.status.chillFactor = Math.max(0.3, 1.0 - factor);
+  }
+  applyStun(duration = 0.5) { this.status.stunTimer = duration; }
+  applyBurn(dps = 8, duration = 3.0) { this.status.burnTimer = duration; this.status.burnDps = dps; }
   applyPoison(dps = 8, duration = 4.0) { this.status.poisonTimer = duration; this.status.poisonDps = dps; }
   heal(amount) { if (!this.isDead) this.hp = Math.min(this.maxHp, this.hp + amount); }
 
@@ -142,8 +131,10 @@ export class Actor {
       return;
     }
 
-    if (this.hitTimer > 0 && (this.hitTimer -= dt) <= 0) {
-      this.setHeroEmissive(0x000000);
+    if (this.hitTimer > 0) {
+      if ((this.hitTimer -= dt) <= 0) this.setHeroEmissive(this.status.burnTimer > 0 ? 0xff5500 : 0x000000);
+    } else if (this.status.burnTimer > 0) {
+      this.setHeroEmissive(0xff5500);
     }
 
     if (this.punchTimer > 0) {
@@ -185,13 +176,25 @@ export class Actor {
       if (this.shieldMesh) this.shieldMesh.visible = false;
     }
 
-    if (this.status.chillTimer > 0) {
+    if (this.status.stunTimer > 0) {
+      this.status.stunTimer -= dt;
+      this.speed = 0;
+    } else if (this.status.chillTimer > 0) {
       this.status.chillTimer -= dt;
-      this.speed = this.baseSpeed * this.status.chillFactor;
-    } else { this.speed = this.baseSpeed; }
+      this.speed = Math.max(this.baseSpeed * 0.3, this.baseSpeed * this.status.chillFactor);
+    } else {
+      this.speed = this.baseSpeed;
+    }
 
-    if (this.status.burnTimer > 0) { this.status.burnTimer -= dt; this.takeDamage(this.status.burnDps * dt); }
-    if (this.status.poisonTimer > 0) { this.status.poisonTimer -= dt; this.takeDamage(this.status.poisonDps * dt); }
+    if (this.status.burnTimer > 0) {
+      this.status.burnTimer -= dt;
+      this.takeDamage(this.status.burnDps * dt);
+      if (this.status.burnTimer <= 0 && this.hitTimer <= 0) this.setHeroEmissive(0x000000);
+    }
+    if (this.status.poisonTimer > 0) {
+      this.status.poisonTimer -= dt;
+      this.takeDamage(this.status.poisonDps * dt);
+    }
 
     if (dt > 0.001) { this.vx = (this.x - this.lastX) / dt; this.vz = (this.z - this.lastZ) / dt; }
     this.lastX = this.x; this.lastZ = this.z;
@@ -208,9 +211,7 @@ export class Actor {
         this.leftLeg.rotation.x = Math.sin(this.walkTime) * 0.45;
         this.rightLeg.rotation.x = -Math.sin(this.walkTime) * 0.45;
       }
-      if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) {
-        this.leftArm.rotation.x = -Math.sin(this.walkTime) * 0.35;
-      }
+      if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) this.leftArm.rotation.x = -Math.sin(this.walkTime) * 0.35;
       const len = Math.hypot(moveX, moveZ);
       if (len > 0.01) {
         const nx = moveX / len, nz = moveZ / len, ang = this.visualMesh.rotation.y;
@@ -224,9 +225,7 @@ export class Actor {
         this.leftLeg.rotation.x = THREE.MathUtils.lerp(this.leftLeg.rotation.x, 0, 0.2);
         this.rightLeg.rotation.x = THREE.MathUtils.lerp(this.rightLeg.rotation.x, 0, 0.2);
       }
-      if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) {
-        this.leftArm.rotation.x = THREE.MathUtils.lerp(this.leftArm.rotation.x, 0, 0.2);
-      }
+      if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) this.leftArm.rotation.x = THREE.MathUtils.lerp(this.leftArm.rotation.x, 0, 0.2);
     }
     this.leanX = THREE.MathUtils.lerp(this.leanX || 0, targetLeanX, 0.15);
     this.leanZ = THREE.MathUtils.lerp(this.leanZ || 0, targetLeanZ, 0.15);
@@ -240,16 +239,11 @@ export class Actor {
     if (this.shieldMesh) this.shieldMesh.visible = false;
     for (const m of this.heroMats || []) m.transparent = true;
   }
-
   destroyVisuals() {
-    if (this.isPlayer) {
-      this.group.visible = false;
-      return;
-    }
+    if (this.isPlayer) { this.group.visible = false; return; }
     this.scene.remove(this.group);
     for (const m of this.heroMats || []) m.dispose();
     if (this.shieldMesh?.material) this.shieldMesh.material.dispose();
   }
-
   destroy() { this.isDead = true; this.isDying = false; this.destroyVisuals(); }
 }

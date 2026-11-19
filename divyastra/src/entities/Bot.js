@@ -104,7 +104,7 @@ export class Bot extends Actor {
   }
 
   dash(dirX, dirZ) {
-    if (this.dashCooldownTimer <= 0 && this.dashTimer <= 0) {
+    if (this.dashCooldownTimer <= 0 && this.dashTimer <= 0 && !(this.status?.stunTimer > 0)) {
       this.dashTimer = PLAYER_BASE.DASH_DURATION;
       this.dashCooldownTimer = PLAYER_BASE.DASH_COOLDOWN;
       this.isInvulnerable = true;

@@ -178,7 +178,7 @@ export class Player extends Actor {
     if (this.input.dashRequested) {
       this.input.dashRequested = false;
       const cooldown = this.perks.includes('WINDWALKER') ? Math.max(1.5, PLAYER_BASE.DASH_COOLDOWN - 1.0) : PLAYER_BASE.DASH_COOLDOWN;
-      if (this.dashCooldownTimer <= 0 && this.dashTimer <= 0) {
+      if (this.dashCooldownTimer <= 0 && this.dashTimer <= 0 && !(this.status?.stunTimer > 0)) {
         this.dashTimer = PLAYER_BASE.DASH_DURATION;
         this.dashCooldownTimer = cooldown;
         this.isInvulnerable = true;

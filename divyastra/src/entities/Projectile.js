@@ -71,7 +71,7 @@ export class Projectile {
 
     const sid = spellConfig.id || '';
     const isWater = sid.includes('W') || sid === 'CRYO';
-    const isLightning = sid.includes('F_W') || sid === 'ELECTRO';
+    const isLightning = sid === 'ELECTRO';
 
     if (isWater) {
       this.coreMesh.geometry = GEO_OCTA; this.shellMesh.geometry = GEO_OCTA;

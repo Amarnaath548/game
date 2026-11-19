@@ -6,7 +6,7 @@ export const UPGRADES = {
     DAHA: { id: 'DAHA', name: 'Daha', burnSpread: true, burnRadius: 5 }
   },
   W: {
-    PRAVAHA: { id: 'PRAVAHA', name: 'Pravaha', trajectory: 'WAVE', width: 5, knockback: 6 },
+    PRAVAHA: { id: 'PRAVAHA', name: 'Pravaha', trajectory: 'WAVE', width: 5, depth: 2.0, speed: 22, range: 16, knockback: 6 },
     HIMKANA: { id: 'HIMKANA', name: 'Himkana', slowFactor: 0.4, slowDuration: 2.5 }
   },
   E: {
@@ -38,8 +38,6 @@ export const SCHOOLS = {
       range: 22,
       radius: 0.7,
       knockback: 5.5,
-      slowFactor: 0.3,
-      slowDuration: 1.5,
       cooldown: 0.7
     },
     upgrades: UPGRADES.E,
@@ -60,7 +58,6 @@ export const SCHOOLS = {
       speed: 28,
       range: 24,
       radius: 0.55,
-      aoeRadius: 2.5,
       burnDuration: 3,
       burnDps: 8,
       cooldown: 0.65
@@ -84,9 +81,6 @@ export const SCHOOLS = {
       range: 22,
       radius: 0.5,
       knockback: 4.5,
-      slowFactor: 0.25,
-      slowDuration: 1.5,
-      lifesteal: 0.2,
       cooldown: 0.6
     },
     upgrades: UPGRADES.W,

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT, SEPARATION_FACTOR, AOE_SPLASH_DAMAGE_MULT } from '../config/constants.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js'; import { SpellEffects } from '../systems/SpellEffects.js'; import { HitFeedback } from '../systems/HitFeedback.js'; import { projectileDeflect, destroyProjectilesInCircle } from '../systems/ProjectileDeflect.js'; import { damageObjectsInCircle } from './EnvironmentDamage.js'; import { resolveChain, spawnSubMunitions, resolveObeliskCollisions } from './CombatChain.js';
+import { applySpellHit, detonateAoE, applyStatuses } from './SpellOnHit.js';
 
 export class CombatResolver {
   constructor(deps) {
@@ -16,7 +17,6 @@ export class CombatResolver {
   }
 
   showTelegraph(x, z, radius = 5.5, duration = 0.4, spellId = null) {
-    if (spellId === 'F_W_W' && this.astraVisuals) return this.astraVisuals.spawnVajraTelegraph(x, z, radius, duration);
     this.telegraphMesh.position.set(x, 0.05, z); this.telegraphMesh.scale.setScalar(radius / 5.5); this.telegraphMesh.visible = true; this.telegraphTimer = duration;
   }
 
@@ -27,6 +27,7 @@ export class CombatResolver {
     if (isP && this.spellbookManager) { const sm = this.spellbookManager.getDamageMultiplier(cfg.id); if (sm > 1.0) cfg.damage = Math.round(cfg.damage * sm); }
     if (isP && this.player.perks.includes('SNIPER_VELOCITY')) { cfg.speed = (cfg.speed || 28) * 1.35; cfg.range = (cfg.range || 24) * 1.35; }
     if (isP && this.player.perks.includes('GIANT_ARCANA')) { cfg.radius = (cfg.radius || (cfg.trajectory === 'RADIAL' ? 6.0 : 0.5)) * 1.4; if (cfg.aoeRadius) cfg.aoeRadius *= 1.4; }
+    if (cfg.selfShield && owner?.applyShield) owner.applyShield(cfg.selfShield, cfg.selfShieldDuration || 4.0);
     const sx = cfg.originX ?? owner.x, sz = cfg.originZ ?? owner.z;
 
     if (cfg.trajectory === 'MELEE') return this.executeMelee(cfg, owner);
@@ -82,7 +83,7 @@ export class CombatResolver {
   }
 
   playerShoot(input) {
-    if (this.player.isDead || !this.player.spellSlot?.canCast()) return;
+    if (this.player.isDead || !this.player.spellSlot?.canCast() || this.player.status?.stunTimer > 0) return;
     this.player.spellSlot.startCooldown();
     if (this.player.cooldownMult) this.player.spellSlot.cooldownTimer *= this.player.cooldownMult;
     this.player.shootCooldown = this.player.spellSlot.cooldownTimer; this.player.triggerCastAnim?.();
@@ -96,7 +97,7 @@ export class CombatResolver {
   }
 
   botShoot(bot, aimX, aimZ) {
-    if (bot.isDead || !bot.spellSlot) return;
+    if (bot.isDead || !bot.spellSlot || bot.status?.stunTimer > 0) return;
     bot.spellSlot.startCooldown(); bot.shootCooldown = bot.spellSlot.cooldownTimer; bot.triggerCastAnim?.();
     const tapasBonus = bot.consumeTapasBonus ? bot.consumeTapasBonus() : 0;
     const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, { x: aimX, z: aimZ }, 1.0, 1.0 + tapasBonus);
@@ -114,42 +115,15 @@ export class CombatResolver {
   spawnSubMunitions(x, z, cfg, owner) { spawnSubMunitions(this, x, z, cfg, owner); }
 
   applySpellHit(target, cfg, owner, hitX, hitZ, dirX = null, dirZ = null) {
-    let dmg = cfg.damage;
-    if (owner?.isPlayer && this.player.perks.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) dmg = Math.round(dmg * 1.35);
-    const dealt = target.takeDamage(dmg);
-    if (owner?.isPlayer && dealt > 0 && this.questManager) this.questManager.record('damage', dealt);
-    let lifesteal = cfg.lifesteal || 0;
-    if (owner?.isPlayer && this.player.perks.includes('VAMPIRIC_SOUL')) lifesteal += 0.20;
-    if (lifesteal > 0 && dealt > 0 && owner?.heal) owner.heal(dealt * lifesteal);
-    this.sound.playHit();
-    const kx = dirX !== null ? dirX : target.x - hitX, kz = dirZ !== null ? dirZ : target.z - hitZ;
-    target.applyKnockback(kx, kz, cfg.knockback || 2.5);
-    this.hitFeedback.apply(target, dealt, owner, kx, kz);
-    const tx = (target && target.x !== undefined) ? target.x : (hitX ?? 0), tz = (target && target.z !== undefined) ? target.z : (hitZ ?? 0);
-    this.damageNumbers.spawn(tx, tz, dealt, cfg.color || 0xff5500);
-    this.applyStatuses(target, cfg);
-    if (target.isDead) this.handleKill(owner, target, cfg.id);
+    applySpellHit(this, target, cfg, owner, hitX, hitZ, dirX, dirZ);
   }
 
   detonateAoE(x, z, cfg, owner, directTarget = null, targets = [], hitObjects = null) {
-    if (!cfg) return;
-    const aoe = cfg.aoeRadius || 3.5, sc = cfg.tier === 3 ? 1.4 : 1.0;
-    this.sound.playExplosion();
-    this.particleSys.spawnImpact(x, z, cfg.color || 0xff5500, (cfg.radius || 0.5) * sc, aoe * sc, cfg.elements);
-    if (cfg.hazardZone) this.spellEffects.spawnHazardZone(x, z, cfg, owner);
-    if (cfg.onImpactSpawn) this.spawnSubMunitions(x, z, cfg, owner);
-    const splashDmg = Math.round((cfg.damage || 0) * AOE_SPLASH_DAMAGE_MULT);
-    targets.forEach((o) => { if (o !== directTarget && !o.isDead && o !== owner && Math.hypot(o.x - x, o.z - z) <= aoe) this.applySpellHit(o, { ...cfg, damage: splashDmg }, owner, x, z); });
-    const hitSet = hitObjects || new Set();
-    if (directTarget) hitSet.add(directTarget);
-    if (splashDmg > 0) damageObjectsInCircle(this, x, z, aoe, splashDmg, hitSet);
+    detonateAoE(this, x, z, cfg, owner, directTarget, targets, hitObjects);
   }
 
   applyStatuses(target, cfg) {
-    if (cfg.freezeDuration || cfg.stunDuration) target.applyChill(1.0, cfg.freezeDuration || cfg.stunDuration);
-    else if (cfg.slowFactor) target.applyChill(cfg.slowFactor, cfg.slowDuration || 1.5);
-    if (cfg.burnDuration) target.applyBurn(cfg.burnDps || 8, cfg.burnDuration);
-    if (cfg.id === 'VENOM' || cfg.id === 'F_W' || cfg.poison) target.applyPoison(cfg.dps || 10, cfg.duration || 3.5);
+    applyStatuses(target, cfg, this.particleSys);
   }
 
   handleKill(killer, victim, sourceSpellId = null) {

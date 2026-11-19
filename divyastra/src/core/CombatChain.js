@@ -17,7 +17,7 @@ export function spawnSubMunitions(resolver, x, z, cfg, owner) {
     if (!p) break;
     const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
     p.spawn(x, z, Math.sin(angle), Math.cos(angle), {
-      id: cfg.id || 'E_F_F', color: cfg.color || 0xf43f5e, damage: Math.round((cfg.damage || 50) * 0.45),
+      id: cfg.id || 'SUB_MUNITION', color: cfg.color || 0xf43f5e, damage: Math.round((cfg.damage || 50) * 0.45),
       speed: 18, range: 4.5 + Math.random() * 2.0, radius: 0.35, aoeRadius: 2.2, lobArcHeight: 1.8,
       burnDuration: 1.5, burnDps: 6, elements: cfg.elements
     }, owner);

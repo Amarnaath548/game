@@ -67,7 +67,6 @@ export class SpellEffects {
     r.duration = 0.42; r.elapsed = 0; r.config = config; r.owner = owner;
     r.hitTargets.clear(); r.mat.color.setHex(config.color || 0xffffff);
     r.mesh.position.set(x, 0.08, z); r.mesh.scale.set(0.1, 1, 0.1); r.mesh.visible = true;
-    if (config.id === 'E_F_W' && this.astraVisuals) this.astraVisuals.spawnSpiral(x, z);
     if (this.particleSys) this.particleSys.spawnBurst(x, 0.5, z, config.color, 12, 6);
     if (config.deflectsProjectiles) projectileDeflect.addBarrier(x, z, config, owner, r);
   }
@@ -96,7 +95,7 @@ export class SpellEffects {
     hz.dps = cfg.dps || 22; hz.duration = cfg.duration || 3.5;
     hz.elapsed = 0; hz.tickTimer = 0; hz.bubbleTimer = 0;
     hz.config = config; hz.owner = owner;
-    hz.isPoison = !!(cfg.poison || config.id === 'F_W');
+    hz.isPoison = !!(cfg.poison || config.poison);
     hz.mat.color.setHex(config.color || 0xca8a04);
     hz.mesh.position.set(x, 0.03, z);
     hz.mesh.scale.set(hz.radius, 1, hz.radius);
