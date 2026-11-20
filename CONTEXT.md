@@ -35,6 +35,7 @@
 - `divyastra/src/systems/ParticleSystem.js`: GPU instanced particle pool and burst effects.
 - `divyastra/src/systems/ZoneSystem.js`: Shrinking storm cylinder, perimeter ring, tick damage.
 - `divyastra/src/ui/UIManager.js`: 3-tab lobby UI (Heroes/Staves/Upgrades), HUD, 8-spell key shortcuts.
+- `divyastra/src/ui/PickFlow.js`: Sequential element and upgrade level-up pick flow coordinator.
 - `divyastra/src/ui/Banners.js`: Animated multi-kill banners (Double, Triple, Rampage) and zone transition toasts.
 - `divyastra/src/ui/HeroSelectView.js`: Lobby hero roster grid view with CSS-rendered blocky previews and unlock/select states.
 - `divyastra/src/ui/FloatingBarSystem.js`: 2D overhead projected health bars and Lv N tags for bots.

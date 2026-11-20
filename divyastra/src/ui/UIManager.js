@@ -4,8 +4,7 @@ import { HeroSelectView } from './HeroSelectView.js';
 import { QuestView } from './QuestView.js';
 import { renderPerkSelection } from '../core/SpellAccess.js';
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
-import { ElementPicker } from './ElementPicker.js';
-import { UpgradePicker } from './UpgradePicker.js';
+import { PickFlow } from './PickFlow.js';
 import { SpellbookView } from './SpellbookView.js';
 import { Leaderboard } from './Leaderboard.js';
 import { TopRightHUD } from './TopRightHUD.js';
@@ -25,9 +24,10 @@ export class UIManager {
     this.aliveCountEl = get('alive-count'); this.zoneStatusEl = get('zone-status'); this.hpFillEl = get('hp-fill'); this.xpFillEl = get('xp-fill'); this.lvlTextEl = get('player-lvl-text'); this.hpTextEl = get('player-hp-text');
     this.perkOverlay = get('perk-overlay'); this.endModal = get('end-modal'); this.endTitle = get('end-title'); this.endSubtitle = get('end-subtitle'); this.rewardTrophy = get('reward-trophy'); this.rewardGold = get('reward-gold'); this.modalLobbyBtn = get('modal-lobby-btn'); this.modalPlayAgainBtn = get('modal-play-again-btn');
 
-    this.elementPicker = new ElementPicker(this.perkOverlay);
-    this.upgradePicker = new UpgradePicker(this.perkOverlay);
-    this.pendingPicks = 0;
+    this.pickFlow = new PickFlow(this);
+    this.elementPicker = this.pickFlow.elementPicker;
+    this.upgradePicker = this.pickFlow.upgradePicker;
+
     this.leaderboard = new Leaderboard(get('leaderboard')); this.topRightHUD = new TopRightHUD(get('top-right-hud'));
     this.spellIndicator = new SpellIndicator(get('spell-indicator'));
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange?.(h));
@@ -40,6 +40,9 @@ export class UIManager {
 
     this.initLobbyEvents(); this.initSpellPanel(); this.initCastButton(); this.initKeyboardShortcuts(); this.renderLobby();
   }
+
+  get pendingPicks() { return this.pickFlow.pendingPicks; }
+  set pendingPicks(val) { this.pickFlow.pendingPicks = val; }
 
   initLobbyEvents() {
     const fsBtn = document.getElementById('fullscreen-btn');
@@ -55,7 +58,7 @@ export class UIManager {
     this.playMatchBtn.addEventListener('click', startMatchUI);
     this.modalPlayAgainBtn.addEventListener('click', () => { this.endModal.style.display = 'none'; startMatchUI(); });
     this.modalLobbyBtn.addEventListener('click', () => {
-      this.elementPicker.hide(); this.upgradePicker?.hide(); this.pendingPicks = 0; this.leaderboard?.reset(); this.topRightHUD?.reset(); this.spellIndicator?.reset();
+      this.pickFlow.reset(); this.leaderboard?.reset(); this.topRightHUD?.reset(); this.spellIndicator?.reset();
       document.body.classList.remove('in-match'); this.endModal.style.display = 'none'; this.hud.style.display = 'none';
       this.lobbyScreen.style.display = 'flex'; this.renderLobby(); this.onReturnToLobby?.();
     });
@@ -206,45 +209,18 @@ export class UIManager {
 
   showLevelUp(player, level) {
     if (this.banners) this.banners.showLevelUp(level);
-    if (player.spellSlot && (player.spellSlot.elements.length + this.pendingPicks) < 3) {
-      this.pendingPicks++; this.elementPicker.pendingPicks = this.pendingPicks;
-      if (!this.elementPicker.active && !this.elementPicker.timer) this.openNextElementPick(player);
+    if (player.spellSlot && (player.spellSlot.elements.length + this.pickFlow.pendingPicks) < 3) {
+      this.pickFlow.pendingPicks++; this.pickFlow.elementPicker.pendingPicks = this.pickFlow.pendingPicks;
+      if (!this.pickFlow.elementPicker.active && !this.pickFlow.elementPicker.timer) this.pickFlow.openNextElementPick(player);
     } else { this.showPerkCards(level, player); }
   }
 
   openNextElementPick(player) {
-    if (this.pendingPicks <= 0 || !player.spellSlot || player.spellSlot.elements.length >= 3) {
-      this.pendingPicks = 0; this.elementPicker.pendingPicks = 0; return;
-    }
-    this.elementPicker.show(player, (element) => {
-      this.onElementPicked?.(element);
-      const commitPick = (upgradeId = null) => {
-        this.pendingPicks = Math.max(0, this.pendingPicks - 1);
-        this.elementPicker.pendingPicks = this.pendingPicks;
-        player.spellSlot.addElement(element, upgradeId);
-        player.setSpell(player.spellSlot.currentSpell.id);
-        this.updateSpellPanel(player);
-        if (this.spellbookManager) this.spellbookManager.recordSpellReached(player.currentSpell.id, this.meta);
-        if (player.currentSpell.tier === 3 && this.questManager) this.questManager.record('reachT3', 1);
-        if (this.pendingPicks > 0 && player.spellSlot.elements.length < 3) {
-          this.elementPicker.clearDelay();
-          this.elementPicker.timer = setTimeout(() => {
-            this.elementPicker.timer = null;
-            if (this.pendingPicks > 0 && player.spellSlot?.elements.length < 3) this.openNextElementPick(player);
-          }, 1500);
-        } else { this.pendingPicks = 0; this.elementPicker.pendingPicks = 0; }
-      };
-
-      if (player.spellSlot?.needsUpgradeChoice(element)) {
-        this.upgradePicker.show(element, (upgradeId) => commitPick(upgradeId));
-      } else {
-        commitPick(null);
-      }
-    });
+    this.pickFlow.openNextElementPick(player);
   }
 
   reset() {
-    this.elementPicker?.hide(); this.upgradePicker?.hide(); this.pendingPicks = 0;
+    this.pickFlow?.reset();
   }
 
   showPerkCards(level, player = null) {
@@ -252,7 +228,7 @@ export class UIManager {
   }
 
   showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null, devCheated = false) {
-    this.elementPicker.hide(); this.upgradePicker?.hide(); this.pendingPicks = 0;
+    this.pickFlow.reset();
     const results = devCheated ? { trophyChange: 0, newTrophies: this.meta.data.trophies, goldEarned: 0, newGold: this.meta.data.gold } : this.meta.applyMatchResults(place);
     this.endModal.style.display = 'flex';
     const heroName = player?.hero?.name || 'Archmage', kills = player?.kills || 0;

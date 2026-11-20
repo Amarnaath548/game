@@ -46,10 +46,10 @@ export class ElementPicker {
 
     const pickerWrapper = document.createElement('div');
     pickerWrapper.id = 'element-picker-wrapper';
-    pickerWrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:auto;z-index:40;';
+    pickerWrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;z-index:40;transform:translateY(40px);';
 
     const header = document.createElement('div');
-    header.style.cssText = 'color:#f8fafc;font-size:14px;font-weight:900;text-shadow:0 2px 4px #000;letter-spacing:1px;text-transform:uppercase;';
+    header.style.cssText = 'color:#f8fafc;font-size:13px;font-weight:900;text-shadow:0 2px 4px #000;letter-spacing:1px;text-transform:uppercase;';
     const queueNotice = this.pendingPicks > 1 ? ` &bull; <span style="color:#38bdf8;">(+${this.pendingPicks - 1} QUEUED)</span>` : '';
     header.innerHTML = `SANKALPA - CHOOSE YOUR ELEMENT${queueNotice} &bull; <span id="picker-timer-text" style="color:#fbbf24;">5s</span>`;
     pickerWrapper.appendChild(header);

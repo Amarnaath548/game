@@ -61,10 +61,10 @@ export class UpgradePicker {
 
     const wrapper = document.createElement('div');
     wrapper.id = 'upgrade-picker-wrapper';
-    wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:auto;z-index:40;';
+    wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;z-index:40;transform:translateY(40px);';
 
     const header = document.createElement('div');
-    header.style.cssText = 'color:#f8fafc;font-size:14px;font-weight:900;text-shadow:0 2px 4px #000;letter-spacing:1px;text-transform:uppercase;';
+    header.style.cssText = 'color:#f8fafc;font-size:13px;font-weight:900;text-shadow:0 2px 4px #000;letter-spacing:1px;text-transform:uppercase;';
     header.innerHTML = `${schoolName} UPGRADE &bull; <span id="upgrade-timer-text" style="color:#fbbf24;">5s</span>`;
     wrapper.appendChild(header);
 
