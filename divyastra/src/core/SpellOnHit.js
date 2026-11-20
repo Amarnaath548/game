@@ -1,7 +1,7 @@
 import { AOE_SPLASH_DAMAGE_MULT } from '../config/constants.js';
 import { damageObjectsInCircle } from './EnvironmentDamage.js';
 
-export function applyStatuses(target, cfg, particleSys = null) {
+export function applyStatuses(target, cfg, particleSys = null, owner = null) {
   if (!target || target.isDead) return;
   if (cfg.stunDuration || cfg.freezeDuration) {
     const dur = cfg.stunDuration || cfg.freezeDuration;
@@ -11,11 +11,11 @@ export function applyStatuses(target, cfg, particleSys = null) {
     target.applyChill?.(cfg.slowFactor, cfg.slowDuration || 1.5);
   }
   if (cfg.burnDuration) {
-    target.applyBurn?.(cfg.burnDps || 8, cfg.burnDuration);
+    target.applyBurn?.(cfg.burnDps || 8, cfg.burnDuration, owner, cfg.id);
     if (particleSys) particleSys.spawnBurst(target.x, 0.8, target.z, 0xff5500, 6, 3, 0.7, 'EMBER');
   }
   if (cfg.poison || cfg.id === 'VENOM') {
-    target.applyPoison?.(cfg.dps || 10, cfg.duration || 3.5);
+    target.applyPoison?.(cfg.dps || 10, cfg.duration || 3.5, owner, cfg.id);
   }
 }
 
@@ -27,13 +27,14 @@ export function applyBurnSpread(target, cfg, owner, allActors = [], particleSys 
   for (const enemy of allActors) {
     if (enemy === target || enemy === owner || enemy.isDead) continue;
     if (Math.hypot(enemy.x - target.x, enemy.z - target.z) <= radius) {
-      enemy.applyBurn?.(dps, duration);
+      enemy.applyBurn?.(dps, duration, owner, cfg.id);
       if (particleSys) particleSys.spawnBurst(enemy.x, 0.8, enemy.z, 0xff5500, 5, 3, 0.7, 'EMBER');
     }
   }
 }
 
 export function applySpellHit(resolver, target, cfg, owner, hitX, hitZ, dirX = null, dirZ = null) {
+  target.onDeath = (killer, spellId) => resolver.handleKill(killer, target, spellId);
   let dmg = cfg.damage || 0;
   if (owner?.isPlayer && resolver.player?.perks?.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) {
     dmg = Math.round(dmg * 1.35);
@@ -57,12 +58,15 @@ export function applySpellHit(resolver, target, cfg, owner, hitX, hitZ, dirX = n
   const tz = target.z !== undefined ? target.z : (hitZ ?? 0);
   if (resolver.damageNumbers) resolver.damageNumbers.spawn(tx, tz, dealt, cfg.color || 0xff5500);
 
-  applyStatuses(target, cfg, resolver.particleSys);
+  applyStatuses(target, cfg, resolver.particleSys, owner);
 
   const actors = resolver.spawnManager ? [resolver.player, ...resolver.spawnManager.bots] : [];
   applyBurnSpread(target, cfg, owner, actors, resolver.particleSys);
 
-  if (target.isDead) resolver.handleKill(owner, target, cfg.id);
+  if (target.isDead && !target._killCredited) {
+    target._killCredited = true;
+    resolver.handleKill(owner, target, cfg.id);
+  }
 }
 
 export function detonateAoE(resolver, x, z, cfg, owner, directTarget = null, targets = [], hitObjects = null) {

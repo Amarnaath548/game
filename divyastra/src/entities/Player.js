@@ -51,20 +51,23 @@ export class Player extends Actor {
     this.aimLine.position.y = 0.05; this.aimLine.renderOrder = 5;
     this.group.add(this.aimLine);
 
+    const aimCircleGeo = new THREE.RingGeometry(0.96, 1.0, 32); aimCircleGeo.rotateX(-Math.PI / 2);
+    this.aimCircleMat = new THREE.MeshBasicMaterial({ color: COLORS.AIM_LASER, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false });
+    this.aimCircle = new THREE.Mesh(aimCircleGeo, this.aimCircleMat);
+    this.aimCircle.position.y = 0.05; this.aimCircle.renderOrder = 5; this.aimCircle.visible = false;
+    this.group.add(this.aimCircle);
+
     // Player Marker
     this.markerTime = 0;
     const ringGeo = new THREE.RingGeometry(1.25, 1.48, 32); ringGeo.rotateX(-Math.PI / 2);
     this.markerRingMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false });
     this.markerRing = new THREE.Mesh(ringGeo, this.markerRingMat);
-    this.markerRing.position.y = 0.05; this.markerRing.renderOrder = 5;
-    this.group.add(this.markerRing);
+    this.markerRing.position.y = 0.05; this.markerRing.renderOrder = 5; this.group.add(this.markerRing);
 
-    const glowGeo = new THREE.RingGeometry(1.05, 1.75, 32);
-    glowGeo.rotateX(-Math.PI / 2);
+    const glowGeo = new THREE.RingGeometry(1.05, 1.75, 32); glowGeo.rotateX(-Math.PI / 2);
     this.markerGlowMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false });
     this.markerGlow = new THREE.Mesh(glowGeo, this.markerGlowMat);
-    this.markerGlow.position.y = 0.048; this.markerGlow.renderOrder = 5;
-    this.group.add(this.markerGlow);
+    this.markerGlow.position.y = 0.048; this.markerGlow.renderOrder = 5; this.group.add(this.markerGlow);
 
     const arrowGeo = new THREE.ConeGeometry(0.32, 0.58, 4);
     arrowGeo.rotateX(Math.PI);
@@ -207,7 +210,16 @@ export class Player extends Actor {
     const aimAngle = Math.atan2(this.input.aimDir.x, this.input.aimDir.z);
     this.visualMesh.rotation.y = aimAngle;
     this.aimLine.rotation.y = aimAngle;
-    this.aimLine.visible = this.input.isAiming || !this.input.usingTouch;
+    const isRadial = this.currentSpell?.trajectory === 'RADIAL', isGiant = this.perks?.includes('GIANT_ARCANA');
+    const showAim = this.input.isAiming || !this.input.usingTouch;
+    if (isRadial) {
+      const rad = (this.currentSpell?.radius || 6.0) * (isGiant ? 1.4 : 1.0);
+      this.aimCircle.scale.set(rad, 1, rad);
+      this.aimCircleMat.color.setHex(this.currentSpell?.color || COLORS.AIM_LASER);
+      this.aimCircle.visible = showAim; this.aimLine.visible = false;
+    } else {
+      this.aimCircle.visible = false; this.aimLine.visible = showAim;
+    }
 
     const isMoving = Math.hypot(this.input.moveDir.x, this.input.moveDir.z) > 0.05 || this.dashTimer > 0;
     this.setWobble(isMoving && this.dashTimer <= 0, dt, this.input.moveDir.x, this.input.moveDir.z, this.dashTimer > 0);
@@ -220,11 +232,9 @@ export class Player extends Actor {
 
     this.markerTime += dt;
     const pulse = 1.0 + Math.sin(this.markerTime * 4.5) * 0.08;
-    this.markerRing.scale.set(pulse, 1, pulse);
-    this.markerGlow.scale.set(pulse, 1, pulse);
+    this.markerRing.scale.set(pulse, 1, pulse); this.markerGlow.scale.set(pulse, 1, pulse);
     this.markerRingMat.opacity = (0.75 + Math.sin(this.markerTime * 4.5) * 0.15) * targetOpacity;
-    this.markerGlowMat.opacity = 0.5 * targetOpacity;
-    this.markerArrowMat.opacity = targetOpacity;
+    this.markerGlowMat.opacity = 0.5 * targetOpacity; this.markerArrowMat.opacity = targetOpacity;
     this.markerArrow.position.y = 3.6 + Math.sin(this.markerTime * 4.0) * 0.12;
     this.markerArrow.rotation.y += dt * 1.5;
 

@@ -21,12 +21,14 @@ export class SpellIndicator {
       <div id="spell-ind-cd" class="spell-ind-cd">
         <div id="spell-ind-orb" class="spell-ind-orb">
           <span id="spell-ind-icon">✨</span>
+          <span id="spell-ind-radius" class="spell-ind-radius" style="position:absolute;bottom:-2px;right:-2px;font-size:9px;font-weight:900;color:#fff;background:rgba(0,0,0,0.7);padding:0 3px;border-radius:4px;display:none;"></span>
         </div>
       </div>
     `;
     this.cdEl = this.container.querySelector('#spell-ind-cd');
     this.orbEl = this.container.querySelector('#spell-ind-orb');
     this.iconEl = this.container.querySelector('#spell-ind-icon');
+    this.radiusEl = this.container.querySelector('#spell-ind-radius');
 
     this.badgeRow = document.getElementById('perk-badge-row');
     if (!this.badgeRow && this.container?.parentNode) {
@@ -65,6 +67,16 @@ export class SpellIndicator {
       this.lastScale = targetScale;
       this.container.style.transform = isGiant ? 'scale(1.25)' : 'none';
       this.container.style.transformOrigin = 'center center';
+    }
+
+    if (this.radiusEl) {
+      if (spell.trajectory === 'RADIAL') {
+        const rad = ((spell.radius || 6.0) * (isGiant ? 1.4 : 1.0)).toFixed(1);
+        this.radiusEl.textContent = `r:${rad}`;
+        this.radiusEl.style.display = 'block';
+      } else {
+        this.radiusEl.style.display = 'none';
+      }
     }
 
     if (this.badgeRow) {

@@ -197,6 +197,6 @@ export function resolveSpell(picks, upgradeId = null) {
     mods: {},
     elements: [...validPicks],
     id: sideEffect ? `${mainSchool}_ASTRA_${sideEffect.id}` : `${mainSchool}_ASTRA`,
-    name: baseT3.name || 'Astra'
+    name: sideEffect ? `${baseT3.name || 'Astra'} . ${sideEffect.name}` : (baseT3.name || 'Astra')
   };
 }

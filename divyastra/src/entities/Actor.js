@@ -21,10 +21,9 @@ export class Actor {
     this.kbTimer = 0; this.kbVx = 0; this.kbVz = 0;
     this.lastX = this.x; this.lastZ = this.z;
     this.vx = 0; this.vz = 0;
-    this.spellDash = false;
-
-    // Status effects
-    this.status = { chillTimer: 0, chillFactor: 1.0, burnTimer: 0, burnDps: 0, poisonTimer: 0, poisonDps: 0, stunTimer: 0 };
+    this.spellDash = false; this.damageTakenMult = 1.0; this.damageTakenTimer = 0;
+    this.onDeath = null; this._killCredited = false;
+    this.status = { chillTimer: 0, chillFactor: 1.0, burnTimer: 0, burnDps: 0, poisonTimer: 0, poisonDps: 0, stunTimer: 0, dotOwner: null, dotSpellId: null };
 
     // Hero configuration
     this.hero = options.hero || (options.heroId ? HEROES.find(h => h.id === options.heroId) : null) || HEROES[0];
@@ -68,46 +67,57 @@ export class Actor {
     }
   }
 
+  applyDamageReduction(mult = 0.7, duration = 4.0) {
+    this.damageTakenMult = mult; this.damageTakenTimer = duration;
+    if (this.shieldMesh) {
+      this.shieldMesh.visible = true;
+      if (this.shieldMesh.material) { this.shieldMesh.material.color.setHex(0x8b5a2b); this.shieldMesh.material.opacity = 0.45; }
+    }
+  }
+
   applyShield(amount = 80, duration = 3.0) {
-    this.shieldHp = amount;
-    this.shieldTimer = duration;
-    this.shieldActive = true;
-    if (this.shieldMesh) this.shieldMesh.visible = true;
+    this.shieldHp = amount; this.shieldTimer = duration; this.shieldActive = true;
+    if (this.shieldMesh) {
+      this.shieldMesh.visible = true;
+      if (this.shieldMesh.material) { this.shieldMesh.material.color.setHex(0x38bdf8); this.shieldMesh.material.opacity = 0.45; }
+    }
   }
 
   takeDamage(amount, sourceSpell = null) {
     if (this.isDead || this.isInvulnerable) return 0;
+    if (this.damageTakenTimer > 0) amount *= this.damageTakenMult;
 
     if (this.shieldActive && this.shieldHp > 0) {
-      if (this.shieldHp >= amount) {
-        this.shieldHp -= amount;
-        return 0;
-      }
-      const remaining = amount - this.shieldHp;
-      this.shieldHp = 0;
-      this.shieldActive = false;
-      if (this.shieldMesh) this.shieldMesh.visible = false;
-      amount = remaining;
+      if (this.shieldHp >= amount) { this.shieldHp -= amount; return 0; }
+      const rem = amount - this.shieldHp; this.shieldHp = 0; this.shieldActive = false;
+      if (this.shieldMesh && this.damageTakenTimer <= 0) this.shieldMesh.visible = false;
+      amount = rem;
     } else if (this.shieldActive) {
       this.shieldActive = false;
-      if (this.shieldMesh) this.shieldMesh.visible = false;
+      if (this.shieldMesh && this.damageTakenTimer <= 0) this.shieldMesh.visible = false;
       return 0;
     }
 
-    this.hp -= amount;
-    this.hitTimer = 0.08;
-    this.setHeroEmissive(0xffffff);
-    if (this.hp <= 0) { this.hp = 0; this.die(); }
+    this.hp -= amount; this.hitTimer = 0.08; this.setHeroEmissive(0xffffff);
+    if (this.hp <= 0) {
+      this.hp = 0; this.die();
+      if (!this._killCredited && this.onDeath && this.status.dotOwner) {
+        this._killCredited = true; this.onDeath(this.status.dotOwner, this.status.dotSpellId);
+      }
+    }
     return amount;
   }
 
-  applyChill(factor = 0.3, duration = 1.5) {
-    this.status.chillTimer = duration;
-    this.status.chillFactor = Math.max(0.3, 1.0 - factor);
-  }
+  applyChill(factor = 0.3, duration = 1.5) { this.status.chillTimer = duration; this.status.chillFactor = Math.max(0.3, 1.0 - factor); }
   applyStun(duration = 0.5) { this.status.stunTimer = duration; }
-  applyBurn(dps = 8, duration = 3.0) { this.status.burnTimer = duration; this.status.burnDps = dps; }
-  applyPoison(dps = 8, duration = 4.0) { this.status.poisonTimer = duration; this.status.poisonDps = dps; }
+  applyBurn(dps = 8, duration = 3.0, owner = null, spellId = null) {
+    this.status.burnTimer = duration; this.status.burnDps = dps;
+    if (owner) { this.status.dotOwner = owner; this.status.dotSpellId = spellId; }
+  }
+  applyPoison(dps = 8, duration = 4.0, owner = null, spellId = null) {
+    this.status.poisonTimer = duration; this.status.poisonDps = dps;
+    if (owner) { this.status.dotOwner = owner; this.status.dotSpellId = spellId; }
+  }
   heal(amount) { if (!this.isDead) this.hp = Math.min(this.maxHp, this.hp + amount); }
 
   triggerCastAnim() { this.castTimer = 0.23; this.orbTimer = 0.2; }
@@ -137,19 +147,9 @@ export class Actor {
       this.setHeroEmissive(0xff5500);
     }
 
-    if (this.punchTimer > 0) {
-      this.punchTimer -= dt;
-      if (this.rightArm) this.rightArm.rotation.x = -1.2;
-      if (this.staffShaft && this.staffShaft.parent === this.visualMesh) this.staffShaft.rotation.x = -1.2;
-    } else if (this.castTimer > 0) {
-      this.castTimer -= dt;
-      const rotX = this.castTimer > 0.15 ? 0.25 : 0.25 * (this.castTimer / 0.15);
-      if (this.rightArm) this.rightArm.rotation.x = rotX;
-      if (this.staffShaft && this.staffShaft.parent === this.visualMesh) this.staffShaft.rotation.x = rotX;
-    } else {
-      if (this.rightArm && this.rightArm.rotation.x !== 0) this.rightArm.rotation.x = 0;
-      if (this.staffShaft && this.staffShaft.parent === this.visualMesh && this.staffShaft.rotation.x !== 0) this.staffShaft.rotation.x = 0;
-    }
+    const armRotX = this.punchTimer > 0 ? ((this.punchTimer -= dt), -1.2) : (this.castTimer > 0 ? ((this.castTimer -= dt), this.castTimer > 0.15 ? 0.25 : 0.25 * (this.castTimer / 0.15)) : 0);
+    if (this.rightArm) this.rightArm.rotation.x = armRotX;
+    if (this.staffShaft && this.staffShaft.parent === this.visualMesh) this.staffShaft.rotation.x = armRotX;
 
     const tier = this.spellSlot?.elements?.length || this.spellSlot?.activeSpell?.tier || 0;
     updateTierVisuals(this, tier, dt);
@@ -158,10 +158,8 @@ export class Actor {
     if (this.orbTimer > 0) {
       this.orbTimer -= dt;
       if (this.staffOrb) {
-        const p = 1.0 - (this.orbTimer / 0.2);
-        const pulse = this.orbTimer > 0 ? (1.0 + 0.35 * Math.sin(Math.max(0, Math.min(1, p)) * Math.PI)) : 1.0;
-        const sc = (this.tierBaseScale || 1.0) * pulse;
-        this.staffOrb.scale.set(sc, sc, sc);
+        const pulse = 1.0 + 0.35 * Math.sin(Math.max(0, Math.min(1, 1.0 - this.orbTimer / 0.2)) * Math.PI);
+        this.staffOrb.scale.setScalar((this.tierBaseScale || 1.0) * pulse);
       }
     }
 
@@ -173,27 +171,29 @@ export class Actor {
 
     if (this.shieldTimer > 0 && (this.shieldTimer -= dt) <= 0) {
       this.shieldActive = false; this.shieldHp = 0;
-      if (this.shieldMesh) this.shieldMesh.visible = false;
+      if (this.shieldMesh && this.damageTakenTimer <= 0) this.shieldMesh.visible = false;
+    }
+
+    if (this.damageTakenTimer > 0 && (this.damageTakenTimer -= dt) <= 0) {
+      this.damageTakenMult = 1.0;
+      if (!this.shieldActive && this.shieldMesh) {
+        this.shieldMesh.visible = false;
+        if (this.shieldMesh.material) { this.shieldMesh.material.color.setHex(0x38bdf8); this.shieldMesh.material.opacity = 0.45; }
+      }
     }
 
     if (this.status.stunTimer > 0) {
-      this.status.stunTimer -= dt;
-      this.speed = 0;
+      this.status.stunTimer -= dt; this.speed = 0;
     } else if (this.status.chillTimer > 0) {
-      this.status.chillTimer -= dt;
-      this.speed = Math.max(this.baseSpeed * 0.3, this.baseSpeed * this.status.chillFactor);
-    } else {
-      this.speed = this.baseSpeed;
-    }
+      this.status.chillTimer -= dt; this.speed = Math.max(this.baseSpeed * 0.3, this.baseSpeed * this.status.chillFactor);
+    } else { this.speed = this.baseSpeed; }
 
     if (this.status.burnTimer > 0) {
-      this.status.burnTimer -= dt;
-      this.takeDamage(this.status.burnDps * dt);
+      this.status.burnTimer -= dt; this.takeDamage(this.status.burnDps * dt);
       if (this.status.burnTimer <= 0 && this.hitTimer <= 0) this.setHeroEmissive(0x000000);
     }
     if (this.status.poisonTimer > 0) {
-      this.status.poisonTimer -= dt;
-      this.takeDamage(this.status.poisonDps * dt);
+      this.status.poisonTimer -= dt; this.takeDamage(this.status.poisonDps * dt);
     }
 
     if (dt > 0.001) { this.vx = (this.x - this.lastX) / dt; this.vz = (this.z - this.lastZ) / dt; }
@@ -208,8 +208,7 @@ export class Actor {
       this.visualMesh.position.y = Math.abs(Math.sin(this.walkTime)) * 0.28;
       this.wobbleZ = Math.sin(this.walkTime) * 0.08;
       if (this.leftLeg && this.rightLeg) {
-        this.leftLeg.rotation.x = Math.sin(this.walkTime) * 0.45;
-        this.rightLeg.rotation.x = -Math.sin(this.walkTime) * 0.45;
+        this.leftLeg.rotation.x = Math.sin(this.walkTime) * 0.45; this.rightLeg.rotation.x = -Math.sin(this.walkTime) * 0.45;
       }
       if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) this.leftArm.rotation.x = -Math.sin(this.walkTime) * 0.35;
       const len = Math.hypot(moveX, moveZ);

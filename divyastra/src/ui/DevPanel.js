@@ -96,8 +96,6 @@ export class DevPanel {
       if (z.currentPhaseIndex < STORM_PHASES.length - 1) {
         z.currentPhaseIndex++; z.phaseTime = 0;
         z.currentRadius = STORM_PHASES[z.currentPhaseIndex].startRadius;
-        const sc = z.currentRadius / STORM_PHASES[0].startRadius;
-        z.forcefield.scale.set(sc, 1, sc); z.groundRing.scale.set(sc, sc, 1);
       }
     });
     button('Jump to final zone', () => {
@@ -105,8 +103,6 @@ export class DevPanel {
       const z = this.matchManager.zoneSys;
       z.currentPhaseIndex = STORM_PHASES.length - 1; z.phaseTime = 0;
       z.currentRadius = STORM_PHASES[z.currentPhaseIndex].startRadius;
-      const sc = z.currentRadius / STORM_PHASES[0].startRadius;
-      z.forcefield.scale.set(sc, 1, sc); z.groundRing.scale.set(sc, sc, 1);
     });
     toggle('Pause zone', () => this.dev.pauseZone, (v) => { this.dev.pauseZone = v; });
 

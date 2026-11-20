@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT, SEPARATION_FACTOR, AOE_SPLASH_DAMAGE_MULT } from '../config/constants.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js'; import { SpellEffects } from '../systems/SpellEffects.js'; import { HitFeedback } from '../systems/HitFeedback.js'; import { projectileDeflect, destroyProjectilesInCircle } from '../systems/ProjectileDeflect.js'; import { damageObjectsInCircle } from './EnvironmentDamage.js'; import { resolveChain, spawnSubMunitions, resolveObeliskCollisions } from './CombatChain.js';
 import { applySpellHit, detonateAoE, applyStatuses } from './SpellOnHit.js';
+import { SideEffectZones } from '../systems/SideEffectZones.js';
 
 export class CombatResolver {
   constructor(deps) {
@@ -10,6 +11,7 @@ export class CombatResolver {
     this.hitFeedback = new HitFeedback({ sceneManager: deps.sceneManager, player: deps.player });
     this.spellEffects = deps.spellEffects || new SpellEffects(deps.sceneManager.scene, deps.particleSys, this.astraVisuals);
     this.spellEffects.resolver = this;
+    this.sideEffectZones = new SideEffectZones(deps.sceneManager.scene, deps.particleSys);
     this.delayedStrikes = []; this.spellDashes = [];
     const tgGeo = new THREE.RingGeometry(5.0, 5.5, 32); tgGeo.rotateX(-Math.PI / 2);
     this.telegraphMesh = new THREE.Mesh(tgGeo, new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
@@ -27,6 +29,7 @@ export class CombatResolver {
     if (isP && this.spellbookManager) { const sm = this.spellbookManager.getDamageMultiplier(cfg.id); if (sm > 1.0) cfg.damage = Math.round(cfg.damage * sm); }
     if (isP && this.player.perks.includes('SNIPER_VELOCITY')) { cfg.speed = (cfg.speed || 28) * 1.35; cfg.range = (cfg.range || 24) * 1.35; }
     if (isP && this.player.perks.includes('GIANT_ARCANA')) { cfg.radius = (cfg.radius || (cfg.trajectory === 'RADIAL' ? 6.0 : 0.5)) * 1.4; if (cfg.aoeRadius) cfg.aoeRadius *= 1.4; }
+    if (cfg.damageReduction && owner?.applyDamageReduction) owner.applyDamageReduction(cfg.damageTakenMult ?? 0.7, cfg.damageTakenDuration ?? 4.0);
     if (cfg.selfShield && owner?.applyShield) owner.applyShield(cfg.selfShield, cfg.selfShieldDuration || 4.0);
     const sx = cfg.originX ?? owner.x, sz = cfg.originZ ?? owner.z;
 
@@ -37,7 +40,10 @@ export class CombatResolver {
       if (this.sound) this.sound.playDash();
       return;
     }
-    if (cfg.trajectory === 'RADIAL') return this.spellEffects.spawnRadial(sx, sz, cfg, owner);
+    if (cfg.trajectory === 'RADIAL') {
+      if (cfg.sideEffect) this.sideEffectZones.spawnZone(sx, sz, cfg.sideEffect, owner, cfg.id, 1.5);
+      return this.spellEffects.spawnRadial(sx, sz, cfg, owner);
+    }
     if (cfg.trajectory === 'WAVE') return this.spellEffects.spawnWave(sx, sz, cfg.dirX, cfg.dirZ, cfg, owner);
     if (cfg.trajectory === 'INSTANT_STRIKE' || cfg.strikeDelay > 0) {
       const tx = cfg.targetX ?? (sx + (cfg.dirX || 0) * (cfg.range || 20)), tz = cfg.targetZ ?? (sz + (cfg.dirZ || 1) * (cfg.range || 20)), delay = cfg.strikeDelay || 0.45;
@@ -146,8 +152,11 @@ export class CombatResolver {
       p.update(dt, allActors);
       if (p.active && p.spellConfig?.deflectsProjectiles) destroyProjectilesInCircle(p.x, p.z, p.radius, p.owner, p.spellConfig, this.projectiles, this.particleSys, this.sound);
       const tgts = (p.owner === this.player || !!p.owner?.isPlayer) ? bots : [this.player, ...bots.filter((b) => b !== p.owner)];
-      if (!p.active && p.reachedMaxRange && (p.lobHeight > 0 || p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn)) {
-        return this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, null, tgts);
+      if (!p.active && p.reachedMaxRange) {
+        if (p.spellConfig?.sideEffect) this.sideEffectZones?.spawnZone(p.x, p.z, p.spellConfig.sideEffect, p.owner, p.spellConfig.id);
+        if (p.lobHeight > 0 || p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn) {
+          return this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, null, tgts);
+        }
       }
       if (!p.active) return;
       // Surya Mirror reflection check
@@ -159,6 +168,7 @@ export class CombatResolver {
         if (!c.isDead && p.active && CollisionSystem.checkCircle(p.x, p.z, p.radius, c.x, c.z, c.radius)) {
           this.sound.playHit(); this.particleSys.spawnImpact(p.x, p.z, c.isMythic ? 0xf5b82e : 0x8b5a2b, 1.5);
           if (c.takeDamage(p.damage)) { this.sound.playExplosion(); this.spawnManager.dropLoot(c.x, c.z, c.isMythic ? 8 : 3, c.isMythic ? 1 : 0.35); }
+          if (p.spellConfig?.sideEffect) this.sideEffectZones?.spawnZone(p.x, p.z, p.spellConfig.sideEffect, p.owner, p.spellConfig.id);
           if (p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn || p.spellConfig?.hazardZone) this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, c, tgts);
           p.despawn();
         }
@@ -173,6 +183,7 @@ export class CombatResolver {
           if (p.hitTargets?.has(t)) continue;
           p.hitTargets?.add(t);
           this.applySpellHit(t, p.spellConfig, p.owner, p.x, p.z, p.vx, p.vz);
+          if (p.spellConfig?.sideEffect) this.sideEffectZones?.spawnZone(p.x, p.z, p.spellConfig.sideEffect, p.owner, p.spellConfig.id);
           if (p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn || p.spellConfig?.hazardZone) this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, t, tgts);
           const chains = p.spellConfig?.chainTargets || (p.spellConfig?.id === 'ELECTRO' ? 2 : 0);
           if (chains > 0) this.resolveChain(t.x, t.z, p.spellConfig, p.owner, t, tgts);
@@ -207,6 +218,7 @@ export class CombatResolver {
         if (s.chainTargets > 0) this.resolveChain(s.targetX, s.targetZ, s, s.owner, null, tgts);
       }
     }
+    if (this.sideEffectZones) this.sideEffectZones.update(dt, allActors, this);
     this.spellEffects.update(dt, allActors, (target, cfg, owner, hx, hz, dx, dz) => this.applySpellHit(target, cfg, owner, hx, hz, dx, dz));
     projectileDeflect.update(dt, this.projectiles, this.particleSys, this.sound);
     this.updateProjectiles(dt, allActors, chests, crystals, bots);
@@ -217,6 +229,7 @@ export class CombatResolver {
   reset() {
     this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this._lastSpreadShot = 0;
     this.spellDashes.forEach((d) => { if (d.owner) { d.owner.isInvulnerable = false; d.owner.spellDash = false; } }); this.spellDashes = [];
+    if (this.sideEffectZones) this.sideEffectZones.reset();
     if (this.spellEffects) this.spellEffects.reset(); if (this.astraVisuals) this.astraVisuals.reset();
     projectileDeflect.reset();
   }
