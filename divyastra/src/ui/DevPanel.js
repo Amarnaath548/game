@@ -67,8 +67,8 @@ export class DevPanel {
     // 4: Spell picker
     const selRow = row('Spell: ');
     const sel = document.createElement('select');
-    sel.style.cssText = 'font:10px monospace;background:#1e293b;color:#fff;border:1px solid #475569;max-width:130px;';
-    sel.innerHTML = '<option value="fist">fist</option>' + Object.keys(ALL_SPELLS).map((k) => `<option value="${k}">${k}</option>`).join('');
+    sel.style.cssText = 'font:10px monospace;background:#1e293b;color:#fff;border:1px solid #475569;max-width:180px;';
+    sel.innerHTML = '<option value="fist">fist - Mushti</option>' + Object.entries(ALL_SPELLS).map(([k, sp]) => `<option value="${k}">${k} - ${sp?.name || k}</option>`).join('');
     sel.onchange = () => { this.dev.markCheat(); this.player.setSpell(sel.value); };
     selRow.appendChild(sel);
 

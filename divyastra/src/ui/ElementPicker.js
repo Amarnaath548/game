@@ -1,4 +1,4 @@
-import { ELEMENTS, ELEMENT_NAMES, ELEMENT_COLORS, getSpell } from '../config/spellRegistry.js';
+import { ELEMENTS, ELEMENT_NAMES, ELEMENT_COLORS, resolveSpell } from '../config/spellRegistry.js';
 
 export class ElementPicker {
   constructor(overlayContainer) {
@@ -58,9 +58,13 @@ export class ElementPicker {
     cardsRow.style.cssText = 'display:flex;gap:12px;';
 
     elements.forEach((elem, index) => {
-      const nextKey = [...currentElems, elem].sort().join('_');
-      const nextSpell = getSpell(nextKey);
-      const spellName = nextSpell ? nextSpell.name : 'Unknown';
+      let previewText = '';
+      if (currentElems.length === 1 && currentElems[0] === elem) {
+        previewText = 'Choose an upgrade next';
+      } else {
+        const nextSpell = resolveSpell([...currentElems, elem]);
+        previewText = nextSpell ? nextSpell.name : 'Unknown';
+      }
       const colorHex = `#${(ELEMENT_COLORS[elem] || 0x38bdf8).toString(16).padStart(6, '0')}`;
 
       const card = document.createElement('div');
@@ -70,7 +74,7 @@ export class ElementPicker {
         <div style="font-size:11px;font-weight:800;color:#94a3b8;">(${index + 1}) PICK</div>
         <div style="font-size:22px;">${icons[elem]}</div>
         <div style="font-size:14px;font-weight:900;color:${colorHex};">${ELEMENT_NAMES[elem]}</div>
-        <div style="font-size:10px;font-weight:700;color:#cbd5e1;line-height:1.2;">&rarr; <b>${spellName}</b></div>
+        <div style="font-size:10px;font-weight:700;color:#cbd5e1;line-height:1.2;">&rarr; <b>${previewText}</b></div>
       `;
 
       card.addEventListener('click', (e) => {

@@ -4,6 +4,7 @@ import { PLAYER_BASE, ARENA, LEVEL_TABLE, HEROES } from '../config/constants.js'
 import { BotBrain } from './BotBrain.js';
 import { SpellSlotController } from './SpellSlotController.js';
 import { TapasComponent } from './TapasComponent.js';
+import { UPGRADES } from '../config/spellSchools.js';
 
 export class Bot extends Actor {
   constructor(scene, x, z, id = 1, hero = null) {
@@ -75,13 +76,31 @@ export class Bot extends Actor {
 
   pickElementalUpgrade() {
     if (!this.spellSlot || this.spellSlot.elements.length >= 3) return;
-    const fireW = this.personality.aggression * 2.5;
-    const waterW = this.personality.caution * 2.5;
-    const earthW = Math.max(0.6, 2.4 - Math.abs(this.personality.aggression - this.personality.caution));
-    const total = fireW + waterW + earthW;
-    const roll = Math.random() * total;
-    const picked = roll < fireW ? 'F' : (roll < fireW + waterW ? 'W' : 'E');
-    this.spellSlot.addElement(picked);
+    let picked;
+    if (this.spellSlot.elements.length === 0) {
+      const fireW = this.personality.aggression * 2.5;
+      const waterW = this.personality.caution * 2.5;
+      const earthW = Math.max(0.6, 2.4 - Math.abs(this.personality.aggression - this.personality.caution));
+      const total = fireW + waterW + earthW;
+      const roll = Math.random() * total;
+      picked = roll < fireW ? 'F' : (roll < fireW + waterW ? 'W' : 'E');
+    } else {
+      const firstSchool = this.spellSlot.elements[0];
+      if (Math.random() < 0.8) {
+        picked = firstSchool;
+      } else {
+        const others = ['E', 'F', 'W'].filter((s) => s !== firstSchool);
+        picked = others[Math.floor(Math.random() * others.length)];
+      }
+    }
+    let upgradeId = null;
+    if (this.spellSlot.needsUpgradeChoice(picked)) {
+      const schoolUpgrades = Object.keys(UPGRADES[picked] || {});
+      if (schoolUpgrades.length > 0) {
+        upgradeId = schoolUpgrades[Math.floor(Math.random() * schoolUpgrades.length)];
+      }
+    }
+    this.spellSlot.addElement(picked, upgradeId);
     if (this.staffOrbMat && this.currentSpell) {
       this.staffOrbMat.color.setHex(this.currentSpell.color);
     }

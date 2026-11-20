@@ -5,6 +5,7 @@ import { QuestView } from './QuestView.js';
 import { renderPerkSelection } from '../core/SpellAccess.js';
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
 import { ElementPicker } from './ElementPicker.js';
+import { UpgradePicker } from './UpgradePicker.js';
 import { SpellbookView } from './SpellbookView.js';
 import { Leaderboard } from './Leaderboard.js';
 import { TopRightHUD } from './TopRightHUD.js';
@@ -24,7 +25,9 @@ export class UIManager {
     this.aliveCountEl = get('alive-count'); this.zoneStatusEl = get('zone-status'); this.hpFillEl = get('hp-fill'); this.xpFillEl = get('xp-fill'); this.lvlTextEl = get('player-lvl-text'); this.hpTextEl = get('player-hp-text');
     this.perkOverlay = get('perk-overlay'); this.endModal = get('end-modal'); this.endTitle = get('end-title'); this.endSubtitle = get('end-subtitle'); this.rewardTrophy = get('reward-trophy'); this.rewardGold = get('reward-gold'); this.modalLobbyBtn = get('modal-lobby-btn'); this.modalPlayAgainBtn = get('modal-play-again-btn');
 
-    this.elementPicker = new ElementPicker(this.perkOverlay); this.pendingPicks = 0;
+    this.elementPicker = new ElementPicker(this.perkOverlay);
+    this.upgradePicker = new UpgradePicker(this.perkOverlay);
+    this.pendingPicks = 0;
     this.leaderboard = new Leaderboard(get('leaderboard')); this.topRightHUD = new TopRightHUD(get('top-right-hud'));
     this.spellIndicator = new SpellIndicator(get('spell-indicator'));
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange?.(h));
@@ -52,7 +55,7 @@ export class UIManager {
     this.playMatchBtn.addEventListener('click', startMatchUI);
     this.modalPlayAgainBtn.addEventListener('click', () => { this.endModal.style.display = 'none'; startMatchUI(); });
     this.modalLobbyBtn.addEventListener('click', () => {
-      this.elementPicker.hide(); this.pendingPicks = 0; this.leaderboard?.reset(); this.topRightHUD?.reset(); this.spellIndicator?.reset();
+      this.elementPicker.hide(); this.upgradePicker?.hide(); this.pendingPicks = 0; this.leaderboard?.reset(); this.topRightHUD?.reset(); this.spellIndicator?.reset();
       document.body.classList.remove('in-match'); this.endModal.style.display = 'none'; this.hud.style.display = 'none';
       this.lobbyScreen.style.display = 'flex'; this.renderLobby(); this.onReturnToLobby?.();
     });
@@ -70,8 +73,9 @@ export class UIManager {
   initSpellPanel() {
     const bar = document.getElementById('spell-bar');
     if (!bar) return;
-    bar.innerHTML = `<div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(15,23,42,0.92);border:2px solid #3b4262;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Agni Bana</span><span id="spell-tier-label" style="font-size:10px;font-weight:800;background:#334155;color:#38bdf8;padding:1px 6px;border-radius:999px;">Mantra</span><span id="tapas-indicator" style="display:none;font-size:9px;font-weight:900;background:#f59e0b;color:#0f172a;padding:1px 5px;border-radius:4px;box-shadow:0 0 8px #f59e0b;">TAPAS +40%</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
+    bar.innerHTML = `<div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(15,23,42,0.92);border:2px solid #3b4262;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Agni Bana</span><span id="spell-side-tag" style="display:none;font-size:9px;font-weight:900;padding:1px 5px;border-radius:4px;letter-spacing:0.5px;"></span><span id="spell-tier-label" style="display:none;font-size:10px;font-weight:800;background:#334155;color:#38bdf8;padding:1px 6px;border-radius:999px;">Astra</span><span id="tapas-indicator" style="display:none;font-size:9px;font-weight:900;background:#f59e0b;color:#0f172a;padding:1px 5px;border-radius:4px;box-shadow:0 0 8px #f59e0b;">TAPAS +40%</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
     this.spellNameEl = document.getElementById('spell-name-label');
+    this.spellSideTagEl = document.getElementById('spell-side-tag');
     this.spellTierEl = document.getElementById('spell-tier-label');
     this.spellChipsEl = document.getElementById('spell-chips-box');
     this.tapasIndicatorEl = document.getElementById('tapas-indicator');
@@ -80,18 +84,15 @@ export class UIManager {
   initCastButton() {
     if (document.getElementById('cast-btn') || !this.hud) return;
     const castBtn = document.createElement('div');
-    castBtn.id = 'cast-btn';
-    castBtn.style.display = 'none';
+    castBtn.id = 'cast-btn'; castBtn.style.display = 'none';
     castBtn.innerHTML = `<svg viewBox="0 0 68 68"><circle id="cast-cd-ring" cx="34" cy="34" r="30"></circle></svg>`;
-    this.hud.appendChild(castBtn);
-    this.castCdRing = document.getElementById('cast-cd-ring');
+    this.hud.appendChild(castBtn); this.castCdRing = document.getElementById('cast-cd-ring');
   }
 
   initKeyboardShortcuts() {
     window.addEventListener('keydown', (e) => {
       if (this.perkOverlay.style.display === 'flex' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
-        const idx = parseInt(e.code.replace('Digit', ''), 10) - 1;
-        this.perkOverlay.querySelectorAll('.perk-card')[idx]?.click();
+        this.perkOverlay.querySelectorAll('.perk-card')[parseInt(e.code.replace('Digit', ''), 10) - 1]?.click();
       }
     });
   }
@@ -135,15 +136,33 @@ export class UIManager {
 
   updateSpellPanel(player) {
     if (!this.spellNameEl) return;
-    const spell = player.currentSpell;
+    const spell = player.currentSpell || {};
     const elements = player.spellSlot ? player.spellSlot.elements : (spell.elements || []);
-    const tierNames = { 0: 'Mushti', 1: 'Mantra', 2: 'Shastra', 3: 'Astra' };
-    this.spellNameEl.textContent = spell.name || (spell.id === 'fist' ? 'Mushti' : 'Agni Bana');
     const tier = spell.tier ?? 0;
-    const isMushti = tier === 0 || spell.id === 'fist';
-    this.spellTierEl.textContent = tierNames[tier] || `Tier ${tier}`;
-    this.spellTierEl.style.display = isMushti ? 'none' : 'inline-block';
-    this.spellTierEl.style.color = `#${(spell.color || 0x38bdf8).toString(16).padStart(6, '0')}`;
+    this.spellNameEl.textContent = spell.name || (spell.id === 'fist' ? 'Mushti' : 'Agni Bana');
+    const schoolColor = spell.school && ELEMENT_COLORS[spell.school] ? ELEMENT_COLORS[spell.school] : (spell.color || 0x38bdf8);
+    const colorHex = `#${schoolColor.toString(16).padStart(6, '0')}`;
+    this.spellNameEl.style.color = colorHex;
+
+    if (this.spellTierEl) {
+      this.spellTierEl.textContent = 'Astra';
+      this.spellTierEl.style.display = tier === 3 ? 'inline-block' : 'none';
+      this.spellTierEl.style.color = colorHex;
+    }
+
+    if (this.spellSideTagEl) {
+      const side = spell.sideEffect;
+      if (side && side.id) {
+        const sideId = side.id.toUpperCase();
+        const sideColors = { LAVA: { bg: '#c2410c', text: '#ffedd5', border: '#f97316' }, STEAM: { bg: '#e2e8f0', text: '#0f172a', border: '#ffffff' }, MUD: { bg: '#5c3a21', text: '#fef3c7', border: '#8b5a2b' } };
+        const cfg = sideColors[sideId] || { bg: '#334155', text: '#fff', border: '#64748b' };
+        this.spellSideTagEl.textContent = sideId; this.spellSideTagEl.style.background = cfg.bg;
+        this.spellSideTagEl.style.color = cfg.text; this.spellSideTagEl.style.border = `1px solid ${cfg.border}`;
+        this.spellSideTagEl.style.display = 'inline-block';
+      } else {
+        this.spellSideTagEl.style.display = 'none';
+      }
+    }
 
     if (!elements || elements.length === 0) { this.spellChipsEl.innerHTML = ''; return; }
     const icons = { E: '🪨', F: '🔥', W: '💧' };
@@ -199,26 +218,33 @@ export class UIManager {
     }
     this.elementPicker.show(player, (element) => {
       this.onElementPicked?.(element);
-      this.pendingPicks = Math.max(0, this.pendingPicks - 1);
-      this.elementPicker.pendingPicks = this.pendingPicks;
-      player.spellSlot.addElement(element);
-      player.setSpell(player.spellSlot.currentSpell.id);
-      this.updateSpellPanel(player);
-      if (this.spellbookManager) this.spellbookManager.recordSpellReached(player.currentSpell.id, this.meta);
-      if (player.currentSpell.tier === 3 && this.questManager) this.questManager.record('reachT3', 1);
-      if (this.pendingPicks > 0 && player.spellSlot.elements.length < 3) {
-        this.elementPicker.clearDelay();
-        this.elementPicker.timer = setTimeout(() => {
-          this.elementPicker.timer = null;
-          if (this.pendingPicks > 0 && player.spellSlot?.elements.length < 3) this.openNextElementPick(player);
-        }, 1500);
-      } else { this.pendingPicks = 0; this.elementPicker.pendingPicks = 0; }
+      const commitPick = (upgradeId = null) => {
+        this.pendingPicks = Math.max(0, this.pendingPicks - 1);
+        this.elementPicker.pendingPicks = this.pendingPicks;
+        player.spellSlot.addElement(element, upgradeId);
+        player.setSpell(player.spellSlot.currentSpell.id);
+        this.updateSpellPanel(player);
+        if (this.spellbookManager) this.spellbookManager.recordSpellReached(player.currentSpell.id, this.meta);
+        if (player.currentSpell.tier === 3 && this.questManager) this.questManager.record('reachT3', 1);
+        if (this.pendingPicks > 0 && player.spellSlot.elements.length < 3) {
+          this.elementPicker.clearDelay();
+          this.elementPicker.timer = setTimeout(() => {
+            this.elementPicker.timer = null;
+            if (this.pendingPicks > 0 && player.spellSlot?.elements.length < 3) this.openNextElementPick(player);
+          }, 1500);
+        } else { this.pendingPicks = 0; this.elementPicker.pendingPicks = 0; }
+      };
+
+      if (player.spellSlot?.needsUpgradeChoice(element)) {
+        this.upgradePicker.show(element, (upgradeId) => commitPick(upgradeId));
+      } else {
+        commitPick(null);
+      }
     });
   }
 
   reset() {
-    this.elementPicker?.hide();
-    this.pendingPicks = 0;
+    this.elementPicker?.hide(); this.upgradePicker?.hide(); this.pendingPicks = 0;
   }
 
   showPerkCards(level, player = null) {
@@ -226,7 +252,7 @@ export class UIManager {
   }
 
   showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null, devCheated = false) {
-    this.elementPicker.hide(); this.pendingPicks = 0;
+    this.elementPicker.hide(); this.upgradePicker?.hide(); this.pendingPicks = 0;
     const results = devCheated ? { trophyChange: 0, newTrophies: this.meta.data.trophies, goldEarned: 0, newGold: this.meta.data.gold } : this.meta.applyMatchResults(place);
     this.endModal.style.display = 'flex';
     const heroName = player?.hero?.name || 'Archmage', kills = player?.kills || 0;

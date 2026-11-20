@@ -16,10 +16,14 @@ export class SideEffectZones {
         transparent: true,
         opacity: 0.6,
         side: THREE.DoubleSide,
-        depthWrite: false
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
       });
       const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.y = 0.035;
+      mesh.position.y = 0.25;
+      mesh.renderOrder = 4;
       mesh.visible = false;
       this.scene.add(mesh);
       this.zones.push({
@@ -76,7 +80,8 @@ export class SideEffectZones {
     zItem.baseOpacity = op;
     zItem.mat.color.setHex(col);
     zItem.mat.opacity = op;
-    zItem.mesh.position.set(x, 0.035, z);
+    zItem.mesh.position.set(x, 0.25, z);
+    zItem.mesh.renderOrder = 4;
     zItem.mesh.scale.set(zItem.radius, 1, zItem.radius);
     zItem.mesh.visible = true;
 

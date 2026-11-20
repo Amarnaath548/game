@@ -33,11 +33,23 @@ export class SpellbookManager {
 
   getEntry(spellKey) {
     if (!spellKey) return null;
-    const cleanKey = Array.isArray(spellKey) ? spellKey.slice().sort().join('_') : spellKey.split('_').sort().join('_');
-    if (!this.data[cleanKey]) {
-      this.data[cleanKey] = { stars: 0, kills: 0, reached: false, claimedMilestones: [] };
+    let key = spellKey;
+    if (Array.isArray(spellKey)) {
+      const sp = getSpell(spellKey);
+      key = sp ? sp.id : spellKey.join('_');
+    } else if (typeof spellKey === 'string' && !ALL_SPELLS[spellKey]) {
+      const sp = getSpell(spellKey);
+      if (sp) key = sp.id;
     }
-    return this.data[cleanKey];
+    if (!this.data[key]) {
+      this.data[key] = { stars: 0, kills: 0, reached: false, claimedMilestones: [] };
+    }
+    const entry = this.data[key];
+    if (typeof entry.stars !== 'number' || isNaN(entry.stars)) entry.stars = 0;
+    if (typeof entry.kills !== 'number' || isNaN(entry.kills)) entry.kills = 0;
+    if (typeof entry.reached !== 'boolean') entry.reached = false;
+    if (!Array.isArray(entry.claimedMilestones)) entry.claimedMilestones = [];
+    return entry;
   }
 
   onMatchStart() {
@@ -92,7 +104,8 @@ export class SpellbookManager {
 
   getDamageMultiplier(spellKey) {
     const entry = this.getEntry(spellKey);
-    return 1.0 + (entry ? entry.stars * 0.05 : 0);
+    const stars = (entry && typeof entry.stars === 'number' && !isNaN(entry.stars)) ? entry.stars : 0;
+    return 1.0 + stars * 0.05;
   }
 
   getNextMilestone(kills) {

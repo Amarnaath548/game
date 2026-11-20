@@ -117,7 +117,7 @@ export class TutorialHints {
 
   onLevelUp() {
     if (!this.active || this.skipped || this.shown.levelUp) return;
-    this._enqueue('levelUp', 'Pick an element. Combine them to unlock new spells');
+    this._enqueue('levelUp', 'Pick a school. Pick the same one twice for an upgrade, or mix to add Lava, Steam or Mud');
   }
 
   onElementPicked() {
