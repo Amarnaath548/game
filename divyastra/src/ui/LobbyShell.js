@@ -1,38 +1,29 @@
 import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES } from '../config/constants.js';
 import { LEVELS } from '../config/levels.js';
 import { loadAndTrimHero, getHeroSrc } from './HeroImageTrim.js';
+import { StaffChip } from './StaffChip.js';
 
-const HERO_IMG = {
-  tapasvi: 'hero_tapasvi.webp',
-  jala: 'hero_jala.webp',
-  prithvi: 'hero_prithvi.webp',
-  agni: 'hero_agni.png'
-};
+const HERO_IMG = { tapasvi: 'hero_tapasvi.webp', jala: 'hero_jala.webp', prithvi: 'hero_prithvi.webp', agni: 'hero_agni.png' };
 
 export class LobbyShell {
   constructor(uiManager, campaignManager, meta) {
-    this.ui = uiManager;
-    this.campaign = campaignManager;
-    this.meta = meta;
-    this.toastTimer = null;
+    this.ui = uiManager; this.campaign = campaignManager; this.meta = meta;
+    this.toastTimer = null; this.animTimer = null; this.isAnimating = false;
+    this.queuedDir = null; this.activeLayerIdx = 0;
 
-    this.stage = document.getElementById('lobby-stage');
-    this.preloader = document.getElementById('lobby-preloader');
-    this.heroImg = document.getElementById('lobby-hero-img');
-    this.heroLockBadge = document.getElementById('lobby-hero-lock');
-    this.sheetOverlay = document.getElementById('lobby-sheet-overlay');
-    this.sheetTitle = document.getElementById('lobby-sheet-title');
-    this.nextLevelNameEl = document.getElementById('lobby-next-level-name');
-    this.nextMapThumb = document.getElementById('lobby-next-map-thumb');
-    this.settingsPopover = document.getElementById('settings-popover');
-    this.toastEl = document.getElementById('lobby-toast');
+    const get = (id) => document.getElementById(id);
+    this.stage = get('lobby-stage'); this.preloader = get('lobby-preloader');
+    this.heroLayers = [get('lobby-hero-img-0'), get('lobby-hero-img-1')];
+    this.heroLockBadge = get('lobby-hero-lock'); this.heroMeta = get('lobby-hero-meta');
+    this.heroName = get('lobby-hero-name'); this.heroSchool = get('lobby-hero-school');
+    this.sheetOverlay = get('lobby-sheet-overlay'); this.sheetTitle = get('lobby-sheet-title');
+    this.nextLevelNameEl = get('lobby-next-level-name'); this.nextMapThumb = get('lobby-next-map-thumb');
+    this.settingsPopover = get('settings-popover'); this.toastEl = get('lobby-toast');
 
     this.displayedHeroId = this.getSelectedHeroId();
     this.lastUnlockedHeroId = this.displayedHeroId;
-    this.initScaling();
-    this.preloadImages();
-    this.bindEvents();
-    this.render();
+    this.staffChip = new StaffChip(this.meta, () => this.openPanel('staves'));
+    this.initScaling(); this.preloadImages(); this.bindEvents(); this.render();
   }
 
   initScaling() {
@@ -48,41 +39,32 @@ export class LobbyShell {
 
   preloadImages() {
     const images = [
-      './lobby/bg_lobby.webp', './lobby/pedestal.png',
-      './lobby/icon_trophy.png', './lobby/icon_gold.png', './lobby/icon_gem.png',
-      './lobby/icon_quests.png', './lobby/icon_granth.png', './lobby/icon_settings.png',
-      './lobby/icon_heroes.png', './lobby/icon_staves.png', './lobby/icon_upgrades.png',
-      './lobby/map_grass.png', './lobby/map_snow.png'
+      './lobby/bg_lobby.webp', './lobby/pedestal.png', './lobby/icon_trophy.png',
+      './lobby/icon_gold.png', './lobby/icon_gem.png', './lobby/icon_quests.png',
+      './lobby/icon_granth.png', './lobby/icon_settings.png', './lobby/icon_heroes.png',
+      './lobby/icon_staves.png', './lobby/icon_upgrades.png', './lobby/map_grass.png', './lobby/map_snow.png'
     ];
-
-    let bgLoaded = false;
-    let initialHeroLoaded = false;
+    let bgLoaded = false; let heroesPreloaded = false;
     const checkCritical = () => {
-      if (bgLoaded && initialHeroLoaded && this.preloader) {
-        this.preloader.classList.add('hidden');
-      }
+      if (bgLoaded && heroesPreloaded && this.preloader) this.preloader.classList.add('hidden');
     };
-
     const bg = new Image();
-    bg.onload = () => { bgLoaded = true; checkCritical(); };
-    bg.onerror = () => { bgLoaded = true; checkCritical(); };
+    bg.onload = bg.onerror = () => { bgLoaded = true; checkCritical(); };
     bg.src = './lobby/bg_lobby.webp';
 
-    const initialHero = HERO_IMG[this.displayedHeroId] || HERO_IMG.tapasvi;
-    loadAndTrimHero(this.displayedHeroId, initialHero).then((src) => {
-      initialHeroLoaded = true;
-      if (this.heroImg) this.heroImg.src = src;
+    Promise.all(Object.entries(HERO_IMG).map(async ([id, file]) => {
+      try {
+        const src = await loadAndTrimHero(id, file);
+        const img = new Image();
+        img.src = src;
+        await img.decode();
+      } catch (_) {}
+    })).then(() => {
+      heroesPreloaded = true;
+      this.updateHeroDisplay();
       checkCritical();
     });
-
-    Object.entries(HERO_IMG).forEach(([id, file]) => {
-      if (id !== this.displayedHeroId) loadAndTrimHero(id, file);
-    });
-
-    images.slice(2).forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
+    images.slice(2).forEach((src) => { const img = new Image(); img.src = src; });
     setTimeout(() => { this.preloader?.classList.add('hidden'); }, 1200);
   }
 
@@ -95,36 +77,21 @@ export class LobbyShell {
         this.settingsPopover.style.display = isHidden ? 'flex' : 'none';
       });
       document.addEventListener('click', (e) => {
-        if (!this.settingsPopover.contains(e.target) && e.target !== gearBtn) {
-          this.settingsPopover.style.display = 'none';
-        }
+        if (!this.settingsPopover.contains(e.target) && e.target !== gearBtn) this.settingsPopover.style.display = 'none';
       });
     }
-
     document.querySelectorAll('[data-panel]').forEach((btn) => {
       btn.addEventListener('click', () => this.openPanel(btn.dataset.panel));
     });
-
-    const closeBtn = document.getElementById('lobby-sheet-close');
-    if (closeBtn) closeBtn.addEventListener('click', () => this.closePanel());
+    document.getElementById('lobby-sheet-close')?.addEventListener('click', () => this.closePanel());
     if (this.sheetOverlay) {
-      this.sheetOverlay.addEventListener('click', (e) => {
-        if (e.target === this.sheetOverlay) this.closePanel();
-      });
+      this.sheetOverlay.addEventListener('click', (e) => { if (e.target === this.sheetOverlay) this.closePanel(); });
     }
-
-    const prevBtn = document.getElementById('hero-cycle-prev');
-    const nextBtn = document.getElementById('hero-cycle-next');
-    if (prevBtn) prevBtn.addEventListener('click', () => this.cycleHero(-1));
-    if (nextBtn) nextBtn.addEventListener('click', () => this.cycleHero(1));
-
+    document.getElementById('hero-cycle-prev')?.addEventListener('click', () => this.cycleHero(-1));
+    document.getElementById('hero-cycle-next')?.addEventListener('click', () => this.cycleHero(1));
     if (this.heroLockBadge) {
-      this.heroLockBadge.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.unlockCurrentHero();
-      });
+      this.heroLockBadge.addEventListener('click', (e) => { e.stopPropagation(); this.unlockCurrentHero(); });
     }
-
     document.querySelectorAll('.bottom-tab-btn').forEach((tab) => {
       tab.addEventListener('click', () => this.showToast('Coming soon'));
     });
@@ -132,8 +99,7 @@ export class LobbyShell {
 
   getUnlockedHeroes() {
     const saved = localStorage.getItem('magica_unlocked_heroes');
-    const raw = saved ? JSON.parse(saved) : DEFAULT_UNLOCKED_HEROES;
-    const unlocked = raw.filter((id) => VALID_HERO_IDS.includes(id));
+    const unlocked = (saved ? JSON.parse(saved) : DEFAULT_UNLOCKED_HEROES).filter((id) => VALID_HERO_IDS.includes(id));
     if (!unlocked.includes('tapasvi')) unlocked.push('tapasvi');
     return unlocked;
   }
@@ -144,22 +110,65 @@ export class LobbyShell {
     return (VALID_HERO_IDS.includes(raw) && unlocked.includes(raw)) ? raw : unlocked[0];
   }
 
-  cycleHero(dir) {
+  async cycleHero(dir) {
+    if (this.isAnimating) {
+      this.queuedDir = dir;
+      return;
+    }
     let idx = HEROES.findIndex((h) => h.id === this.displayedHeroId);
     if (idx === -1) idx = 0;
     idx = (idx + dir + HEROES.length) % HEROES.length;
     const nextHero = HEROES[idx];
-    this.displayedHeroId = nextHero.id;
+    const isUnlocked = this.getUnlockedHeroes().includes(nextHero.id);
 
-    const unlocked = this.getUnlockedHeroes();
-    const isUnlocked = unlocked.includes(nextHero.id);
+    const heroFile = HERO_IMG[nextHero.id] || HERO_IMG.tapasvi;
+    const heroSrc = getHeroSrc(nextHero.id, heroFile);
+    const currentLayer = this.heroLayers[this.activeLayerIdx];
+    const nextLayer = this.heroLayers[1 - this.activeLayerIdx];
+    if (!currentLayer || !nextLayer) {
+      this.displayedHeroId = nextHero.id;
+      this.updateHeroDisplay();
+      return;
+    }
+
+    nextLayer.src = heroSrc;
+    try { await nextLayer.decode(); } catch (_) {}
+
+    this.isAnimating = true;
+    this.displayedHeroId = nextHero.id;
     if (isUnlocked) {
       localStorage.setItem('magica_selected_hero', nextHero.id);
       this.lastUnlockedHeroId = nextHero.id;
       this.ui?.onHeroChange?.(nextHero);
       this.ui?.heroSelectView?.render(nextHero.id);
     }
-    this.updateHeroDisplay();
+    if (this.heroLockBadge) this.heroLockBadge.style.display = isUnlocked ? 'none' : 'block';
+    if (this.heroMeta) {
+      this.heroMeta.classList.add('fading');
+      setTimeout(() => {
+        if (this.heroName) this.heroName.textContent = nextHero.name;
+        if (this.heroSchool) this.heroSchool.textContent = nextHero.archetype || 'SEEKER';
+        this.heroMeta.classList.remove('fading');
+      }, 120);
+    }
+
+    const outClass = dir > 0 ? 'slide-out-left' : 'slide-out-right';
+    const inClass = dir > 0 ? 'slide-in-right' : 'slide-in-left';
+    currentLayer.className = `lobby-hero-img ${outClass}`;
+    nextLayer.className = `lobby-hero-img ${inClass}${isUnlocked ? '' : ' locked-dim'}`;
+
+    clearTimeout(this.animTimer);
+    this.animTimer = setTimeout(() => {
+      currentLayer.className = 'lobby-hero-img';
+      nextLayer.className = `lobby-hero-img active${isUnlocked ? '' : ' locked-dim'}`;
+      this.activeLayerIdx = 1 - this.activeLayerIdx;
+      this.isAnimating = false;
+      if (this.queuedDir !== null) {
+        const queued = this.queuedDir;
+        this.queuedDir = null;
+        this.cycleHero(queued);
+      }
+    }, 220);
   }
 
   unlockCurrentHero() {
@@ -175,6 +184,7 @@ export class LobbyShell {
       this.lastUnlockedHeroId = hero.id;
       this.ui?.renderLobby();
       this.ui?.onHeroChange?.(hero);
+      this.updateHeroDisplay();
       this.showToast(`Unlocked ${hero.name}!`);
     } else {
       this.showToast('Need 150 Gold to unlock');
@@ -187,17 +197,16 @@ export class LobbyShell {
     const heroFile = HERO_IMG[hero.id] || HERO_IMG.tapasvi;
     const heroSrc = getHeroSrc(hero.id, heroFile);
 
-    if (this.heroImg) {
-      this.heroImg.classList.add('fading');
-      setTimeout(() => {
-        this.heroImg.src = heroSrc;
-        this.heroImg.classList.toggle('locked-dim', !isUnlocked);
-        this.heroImg.classList.remove('fading');
-      }, 150);
+    const activeLayer = this.heroLayers[this.activeLayerIdx];
+    const hiddenLayer = this.heroLayers[1 - this.activeLayerIdx];
+    if (activeLayer) {
+      activeLayer.src = heroSrc;
+      activeLayer.className = `lobby-hero-img active${isUnlocked ? '' : ' locked-dim'}`;
     }
-    if (this.heroLockBadge) {
-      this.heroLockBadge.style.display = isUnlocked ? 'none' : 'block';
-    }
+    if (hiddenLayer) hiddenLayer.className = 'lobby-hero-img';
+    if (this.heroLockBadge) this.heroLockBadge.style.display = isUnlocked ? 'none' : 'block';
+    if (this.heroName) this.heroName.textContent = hero.name;
+    if (this.heroSchool) this.heroSchool.textContent = hero.archetype || 'SEEKER';
   }
 
   updateNextLevelDisplay() {
@@ -209,16 +218,11 @@ export class LobbyShell {
     }
     const isSnow = nextLvl.biome === 'SNOW';
     this.nextLevelNameEl.textContent = isSnow ? 'FROZEN PEAKS' : 'GRASS PLAINS';
-    if (this.nextMapThumb) {
-      this.nextMapThumb.src = isSnow ? './lobby/map_snow.png' : './lobby/map_grass.png';
-    }
+    if (this.nextMapThumb) this.nextMapThumb.src = isSnow ? './lobby/map_snow.png' : './lobby/map_grass.png';
   }
 
   openPanel(panelKey) {
-    const titleMap = {
-      heroes: 'HEROES', staves: 'STAVES', upgrades: 'UPGRADES',
-      quests: 'DAILY QUESTS', spellbook: 'THE GRANTH'
-    };
+    const titleMap = { heroes: 'HEROES', staves: 'STAVES', upgrades: 'UPGRADES', quests: 'DAILY QUESTS', spellbook: 'THE GRANTH' };
     if (this.sheetTitle) this.sheetTitle.textContent = titleMap[panelKey] || 'MENU';
     document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
     document.getElementById(`tab-${panelKey}`)?.classList.add('active');
@@ -241,8 +245,5 @@ export class LobbyShell {
 
   stopHeroShowcase() {}
   startHeroShowcase() {}
-  render() {
-    this.updateHeroDisplay();
-    this.updateNextLevelDisplay();
-  }
+  render() { this.updateHeroDisplay(); this.staffChip?.update(); this.updateNextLevelDisplay(); }
 }

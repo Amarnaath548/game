@@ -92,8 +92,19 @@
         <img src="./lobby/pedestal.png" class="lobby-pedestal-img" alt="Pedestal" />
         <div id="hero-glow-pulse" class="hero-glow-layer"></div>
         <div class="hero-contact-shadow"></div>
+        <div id="lobby-hero-meta" class="lobby-hero-meta">
+          <div class="lobby-hero-title-row">
+            <div id="lobby-hero-name" class="lobby-hero-name">Tapasvi</div>
+            <div id="lobby-staff-chip" class="lobby-staff-chip" role="button" tabindex="0" title="Equipped Staff">
+              <img id="lobby-staff-chip-icon" class="lobby-staff-chip-icon" src="./lobby/staff_agni.webp" alt="Staff" />
+              <span id="lobby-staff-chip-perk" class="lobby-staff-chip-perk">+12% Damage for Agni spells</span>
+            </div>
+          </div>
+          <div id="lobby-hero-school" class="lobby-hero-school">TAPASVI</div>
+        </div>
         <div id="lobby-hero-avatar-box" class="lobby-hero-wrapper">
-          <img id="lobby-hero-img" src="./lobby/hero_tapasvi.webp" class="lobby-hero-img" alt="Selected Hero" />
+          <img id="lobby-hero-img-0" class="lobby-hero-img active" src="./lobby/hero_tapasvi.webp" alt="Selected Hero" />
+          <img id="lobby-hero-img-1" class="lobby-hero-img" src="./lobby/hero_tapasvi.webp" alt="Selected Hero" />
         </div>
         <button id="hero-cycle-prev" class="hero-chevron-btn hero-btn-prev" aria-label="Previous Hero"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5 L8 12 L15 19" fill="none" stroke="#ffd166" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <button id="hero-cycle-next" class="hero-chevron-btn hero-btn-next" aria-label="Next Hero"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 5 L16 12 L9 19" fill="none" stroke="#ffd166" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -210,14 +221,8 @@
 
     <div id="left-zone" class="touch-zone"></div>
     <div id="right-zone" class="touch-zone"></div>
-
-    <div id="left-base" class="joystick-base">
-      <div id="left-knob" class="joystick-knob"></div>
-    </div>
-    <div id="right-base" class="joystick-base">
-      <div id="right-knob" class="joystick-knob"></div>
-    </div>
-
+    <div id="left-base" class="joystick-base"><div id="left-knob" class="joystick-knob"></div></div>
+    <div id="right-base" class="joystick-base"><div id="right-knob" class="joystick-knob"></div></div>
     <div id="dash-btn">DASH</div>
   </div>
 

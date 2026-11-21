@@ -57,7 +57,9 @@ export class MatchManager {
     if (this.ui) {
       this.ui.updateSpellPanel(this.player);
     }
-    this.player.robeMat.color.setHex(staff.robeColor);
+    if (this.player.staffAccentMat && staff?.colorHex !== undefined) {
+      this.player.staffAccentMat.color.setHex(staff.colorHex);
+    }
 
     this.player.maxHp = PLAYER_BASE.MAX_HP + bonuses.bonusHp;
     this.player.hp = this.player.maxHp;

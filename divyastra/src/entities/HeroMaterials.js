@@ -58,5 +58,6 @@ export const GEO_CACHE = {
   wedgeFoot: new THREE.BoxGeometry(0.11, 0.07, 0.22),
   staffShaft: new THREE.CylinderGeometry(0.03, 0.035, 1.55, 8),
   staffOrb: new THREE.IcosahedronGeometry(0.11, 1),
+  staffAccentRing: new THREE.CylinderGeometry(0.052, 0.052, 0.04, 8),
   shield: new THREE.SphereGeometry(1.6, 12, 12)
 };

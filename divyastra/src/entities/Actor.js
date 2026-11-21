@@ -56,11 +56,11 @@ export class Actor {
     this.robeMat = this.bodyMat; this.hatMat = this.accentMat;
   }
 
-  setHeroEmissive(hex) { for (const m of this.heroMats || [this.bodyMat, this.accentMat]) m?.emissive?.setHex(hex); }
+  setHeroEmissive(hex) { for (const m of this.visualMats || this.heroMats || [this.bodyMat, this.accentMat]) m?.emissive?.setHex(hex); }
 
   setHeroOpacity(opacity) {
     const translucent = opacity < 1;
-    for (const m of this.heroMats || [this.bodyMat, this.accentMat, this.staffOrbMat]) {
+    for (const m of this.visualMats || this.heroMats || [this.bodyMat, this.accentMat, this.staffOrbMat]) {
       if (!m) continue;
       m.transparent = translucent || !!m.userData?.keepTransparent;
       m.opacity = opacity;
@@ -236,12 +236,12 @@ export class Actor {
     if (this.isDead) return;
     this.isDead = true; this.isDying = true; this.deathTimer = 0.35;
     if (this.shieldMesh) this.shieldMesh.visible = false;
-    for (const m of this.heroMats || []) m.transparent = true;
+    for (const m of this.visualMats || this.heroMats || []) m.transparent = true;
   }
   destroyVisuals() {
     if (this.isPlayer) { this.group.visible = false; return; }
     this.scene.remove(this.group);
-    for (const m of this.heroMats || []) m.dispose();
+    for (const m of this.visualMats || this.heroMats || []) m.dispose();
     if (this.shieldMesh?.material) this.shieldMesh.material.dispose();
   }
   destroy() { this.isDead = true; this.isDying = false; this.destroyVisuals(); }

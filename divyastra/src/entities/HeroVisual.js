@@ -112,6 +112,11 @@ export function buildHeroVisual(actor, hero) {
   actor.staffOrb.position.set(0, 0.88, 0);
   staffGroup.add(actor.staffOrb);
 
+  actor.staffAccentMat = mk(0xffd166);
+  const staffAccentMesh = addMesh(staffGroup, GEO_CACHE.staffAccentRing, actor.staffAccentMat);
+  staffAccentMesh.position.set(0, 0.76, 0);
+  actor.staffAccentMesh = staffAccentMesh;
+
   actor.rightArm.add(staffGroup);
   actor.staffGroup = staffGroup;
 
@@ -128,8 +133,9 @@ export function buildHeroVisual(actor, hero) {
   actor.visualMesh.add(actor.shieldMesh);
 
   actor.heroMats = [
-    bodyMat, accentMat, skinMat, hairMat, beadMat, clayMat, clothMat, woodMat, glowMat, actor.staffOrbMat
+    bodyMat, accentMat, skinMat, hairMat, beadMat, clayMat, clothMat, woodMat, glowMat, actor.staffOrbMat, actor.staffAccentMat
   ];
+  actor.visualMats = actor.heroMats;
 }
 
 function getArchetypeFromLegacy(hatType) {
