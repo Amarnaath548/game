@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="./src/style.css" />
   <link rel="stylesheet" href="./src/hud.css" />
   <link rel="stylesheet" href="./src/lobby.css" />
+  <link rel="stylesheet" href="./src/panels.css" />
 </head>
 <body>
   <!-- LOBBY SCREEN (Fixed 1024x572 Design Stage) -->
@@ -123,7 +124,10 @@
       <div class="lobby-sheet-card">
         <div class="lobby-sheet-header">
           <h2 id="lobby-sheet-title" class="sheet-title">HEROES</h2>
-          <button id="lobby-sheet-close" class="sheet-close-btn" aria-label="Close">✕</button>
+          <div class="sheet-header-right">
+            <div id="panel-gold-pill" class="panel-gold-pill"><img src="./lobby/icon_gold.png" alt="Gold" class="panel-gold-icon" /><span id="sheet-gold-val" class="panel-gold-val">0</span></div>
+            <button id="lobby-sheet-close" class="sheet-close-btn" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="6" y1="18" x2="18" y2="6"></line></svg></button>
+          </div>
         </div>
         <div class="lobby-sheet-content">
           <div id="tab-heroes" class="tab-panel"><div id="heroes-container" class="heroes-grid"></div></div>
@@ -235,14 +239,7 @@
 
   <!-- DEBUG & ROTATE OVERLAYS -->
   <div id="debug-overlay"></div>
-  <div id="rotate-device-overlay">
-    <div class="rotate-card">
-      <div class="rotate-icon">📱 ↷</div>
-      <div class="rotate-title">Rotate Your Phone</div>
-      <div class="rotate-sub">Divyastra plays in landscape mode</div>
-    </div>
-  </div>
-
+  <div id="rotate-device-overlay"><div class="rotate-card"><div class="rotate-icon">📱 ↷</div><div class="rotate-title">Rotate Your Phone</div><div class="rotate-sub">Divyastra plays in landscape mode</div></div></div>
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>

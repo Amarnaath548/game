@@ -1,6 +1,7 @@
 import { LEVEL_TABLE, GAME_TITLE, VALID_HERO_IDS } from '../config/constants.js';
-import { STAVES, UPGRADES } from '../core/MetaProgression.js';
+import { UPGRADES } from '../core/MetaProgression.js';
 import { HeroSelectView } from './HeroSelectView.js';
+import { StavesView } from './StavesView.js';
 import { QuestView } from './QuestView.js';
 import { renderPerkSelection } from '../core/SpellAccess.js';
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
@@ -37,6 +38,7 @@ export class UIManager {
       this.lobbyShell?.updateHeroDisplay();
       this.onHeroChange?.(h);
     });
+    this.stavesView = new StavesView(this.stavesContainer, this.meta, () => this.renderLobby());
     if (this.questManager) this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
     if (this.spellbookContainer && this.spellbookManager) this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
     if (this.campaignManager) this.levelSelectView = new LevelSelectView(this.campaignManager, {
@@ -118,23 +120,13 @@ export class UIManager {
     const gemsEl = document.getElementById('lobby-gems'); if (gemsEl) gemsEl.textContent = this.meta.gems ?? 0;
     const rawHeroId = localStorage.getItem('magica_selected_hero') || 'tapasvi';
     this.heroSelectView.render(VALID_HERO_IDS.includes(rawHeroId) ? rawHeroId : 'tapasvi');
+    const sheetGold = document.getElementById('sheet-gold-val');
+    if (sheetGold) sheetGold.textContent = this.meta.data.gold;
     if (this.questView) this.questView.render();
     if (this.spellbookView) this.spellbookView.render();
     if (this.lobbyArenaLabel && this.sceneManager) this.lobbyArenaLabel.textContent = `ARENA: ${this.sceneManager.getNextBiomeName()}`;
     this.lobbyShell?.render();
-
-    this.stavesContainer.innerHTML = '';
-    STAVES.forEach((staff) => {
-      const isUnlocked = this.meta.data.unlockedStaves.includes(staff.id), isSelected = this.meta.data.selectedStaffId === staff.id;
-      const card = document.createElement('div'); card.className = `staff-card ${isSelected ? 'selected' : ''}`;
-      const btnHtml = isSelected ? `<button class="staff-action-btn btn-equipped">EQUIPPED</button>` : isUnlocked ? `<button class="staff-action-btn btn-select">EQUIP</button>` : `<button class="staff-action-btn btn-unlock" ${this.meta.data.gold >= staff.cost ? '' : 'disabled'}>UNLOCK (${staff.cost} 🪙)</button>`;
-      card.innerHTML = `<div><div class="staff-name" style="color: #${staff.colorHex.toString(16).padStart(6, '0')}">${staff.name}</div><div class="staff-desc">${staff.perkDesc}</div></div>${btnHtml}`;
-      card.querySelector('button').addEventListener('click', (e) => {
-        e.stopPropagation(); if (isSelected) return;
-        if (isUnlocked) { this.meta.selectStaff(staff.id); this.renderLobby(); } else if (this.meta.unlockStaff(staff.id)) { this.renderLobby(); }
-      });
-      this.stavesContainer.appendChild(card);
-    });
+    this.stavesView?.render();
 
     this.upgradesContainer.innerHTML = '';
     UPGRADES.forEach((upg) => {
