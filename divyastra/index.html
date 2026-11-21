@@ -13,89 +13,109 @@
   <link rel="stylesheet" href="./src/lobby.css" />
 </head>
 <body>
-  <!-- LOBBY SCREEN (Mobile Landscape Home Screen) -->
+  <!-- LOBBY SCREEN (Fixed 1024x572 Design Stage) -->
   <div id="lobby-screen">
-    <!-- BACKGROUND ATMOSPHERE (CSS + SVG) -->
-    <div class="lobby-bg">
-      <svg class="lobby-bg-svg" viewBox="0 0 844 390" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0,345 L844,345 L844,390 L0,390 Z" fill="#24130d" /><path d="M0,355 L844,355 L844,390 L0,390 Z" fill="#180c08" />
-        <polygon points="0,320 200,320 220,345 0,345" fill="#2d1710" /><polygon points="0,295 150,295 170,320 0,320" fill="#351c14" /><polygon points="0,270 100,270 120,295 0,295" fill="#3f2219" />
-        <rect x="25" y="240" width="34" height="30" fill="#28140e" /><rect x="30" y="80" width="24" height="160" fill="#301811" /><polygon points="22,80 62,80 56,100 28,100" fill="#3a1d15" /><rect x="18" y="65" width="48" height="15" rx="3" fill="#25120c" />
-        <rect x="80" y="250" width="30" height="20" fill="#28140e" /><rect x="85" y="120" width="20" height="130" fill="#301811" /><polygon points="78,120 112,120 107,138 83,138" fill="#3a1d15" /><rect x="74" y="108" width="40" height="12" rx="2" fill="#25120c" />
-        <path d="M740,345 Q730,260 700,200 Q760,220 790,170 Q820,240 844,345 Z" fill="#23120c" />
-        <circle cx="700" cy="120" r="75" fill="#20100a" /><circle cx="770" cy="85" r="85" fill="#1b0d08" /><circle cx="820" cy="135" r="70" fill="#22110b" /><circle cx="650" cy="135" r="50" fill="#25130d" /><ellipse cx="740" cy="65" rx="90" ry="50" fill="#1e0e09" />
-        <path d="M660,135 Q655,230 650,345" stroke="#1d0d08" stroke-width="3" fill="none" /><path d="M680,145 Q685,240 682,345" stroke="#25120b" stroke-width="2.5" fill="none" /><path d="M715,155 Q710,250 712,345" stroke="#1f0f09" stroke-width="3.5" fill="none" /><path d="M735,175 Q740,260 738,345" stroke="#28140c" stroke-width="3" fill="none" /><path d="M635,145 Q645,220 640,300" stroke="#22110a" stroke-width="2" fill="none" /><path d="M770,165 Q765,250 768,345" stroke="#1a0c07" stroke-width="3" fill="none" />
-      </svg>
-      <div class="torch-stand torch-left"><div class="torch-bowl"></div><div class="torch-flame"></div></div>
-      <div class="torch-stand torch-right"><div class="torch-bowl"></div><div class="torch-flame"></div></div>
-      <div class="lobby-vignette"></div>
-      <div class="dust-speck speck-1"></div><div class="dust-speck speck-2"></div><div class="dust-speck speck-3"></div><div class="dust-speck speck-4"></div>
-      <div class="dust-speck speck-5"></div><div class="dust-speck speck-6"></div><div class="dust-speck speck-7"></div><div class="dust-speck speck-8"></div>
+    <!-- PRELOADER -->
+    <div id="lobby-preloader" class="lobby-preloader">
+      <div class="preloader-logo">DIVYASTRA</div>
     </div>
 
-    <!-- TOP BAR (56px) -->
-    <header class="lobby-top-bar">
-      <div class="game-logo lobby-logo">DIVYASTRA</div>
-      <div class="lobby-top-center">
-        <div class="lobby-trophy-badge cur-pill">🏆 <span id="lobby-rank-title" class="rank-title">Novice Seeker</span> <span id="lobby-trophies" class="trophy-val">0</span></div>
-        <div class="lobby-gold-pill cur-pill">🪙 <span id="lobby-gold" class="gold-val">100</span></div>
-      </div>
-      <div class="lobby-top-actions">
-        <button id="btn-open-quests" class="lobby-top-btn" data-panel="quests">QUESTS<span id="quests-badge" class="tab-badge"></span></button>
-        <button id="btn-open-granth" class="lobby-top-btn" data-panel="spellbook">GRANTH</button>
+    <!-- FULLSCREEN BACKGROUND (object-fit: cover behind stage) -->
+    <div class="lobby-bg-cover">
+      <img src="./lobby/bg_lobby.webp" alt="Lobby Background" class="lobby-bg-img" />
+    </div>
+
+    <!-- FIXED 1024x572 DESIGN STAGE -->
+    <div id="lobby-stage" class="lobby-stage">
+      <!-- 1. TOP BAR (y: 0-68) -->
+      <header class="lobby-top-bar">
+        <div class="lobby-logo">DIVYASTRA</div>
+        <div class="lobby-trophy-badge">
+          <img src="./lobby/icon_trophy.png" class="bar-icon" alt="Trophies" />
+          <div class="trophy-info">
+            <span class="bar-label">LEADERS/TROPHIES</span>
+            <span class="bar-value"><span id="lobby-rank-title">Novice Seeker</span> (<span id="lobby-trophies">0</span>)</span>
+          </div>
+        </div>
+        <div class="lobby-pill lobby-gold-pill">
+          <img src="./lobby/icon_gold.png" class="bar-icon" alt="Gold" />
+          <span id="lobby-gold" class="gold-val">100</span>
+        </div>
+        <div class="lobby-pill lobby-gems-pill">
+          <img src="./lobby/icon_gem.png" class="bar-icon" alt="Gems" />
+          <span id="lobby-gems" class="gems-val">0</span>
+        </div>
+        <button id="btn-open-quests" class="lobby-action-btn quests-btn" data-panel="quests">
+          <img src="./lobby/icon_quests.png" class="btn-icon" alt="Quests" />
+          <span>QUESTS</span>
+          <span id="quests-badge" class="badge-red-excl">!</span>
+        </button>
+        <button id="btn-open-granth" class="lobby-action-btn granth-btn" data-panel="spellbook">
+          <img src="./lobby/icon_granth.png" class="btn-icon" alt="Granth" />
+          <span>GRANTH</span>
+          <span id="granth-badge" class="badge-red-dot" style="display:none;"></span>
+        </button>
         <div class="settings-wrap">
-          <button id="settings-gear-btn" class="settings-gear-btn" title="Settings" aria-label="Settings">⚙️</button>
+          <button id="settings-gear-btn" class="settings-gear-btn" aria-label="Settings">
+            <img src="./lobby/icon_settings.png" class="gear-img" alt="Settings" />
+            <span class="gear-sub">SETTINGS</span>
+          </button>
           <div id="settings-popover" class="settings-popover" style="display:none;">
             <div class="popover-row"><span>Audio</span><button id="mute-btn" class="fs-btn" title="Toggle Sound">🔊</button></div>
             <div class="popover-row"><span>Display</span><button id="fullscreen-btn" class="fs-btn" title="Toggle Fullscreen">⛶</button></div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <!-- MAIN BODY -->
-    <main class="lobby-main-body">
-      <!-- LEFT COLUMN (3 square buttons) -->
+      <!-- 2. LEFT COLUMN (3 Plaques, x: 28-200) -->
       <aside class="lobby-left-col">
-        <button class="lobby-nav-btn" data-panel="heroes"><span class="nav-icon">🧙</span><span class="nav-label">HEROES</span></button>
-        <button class="lobby-nav-btn" data-panel="staves"><span class="nav-icon">🪄</span><span class="nav-label">STAVES</span></button>
-        <button class="lobby-nav-btn" data-panel="upgrades"><span class="nav-icon">⚡</span><span class="nav-label">UPGRADES</span></button>
+        <button class="lobby-plaque-btn plaque-heroes" data-panel="heroes">
+          <span class="plaque-dot dot-green"></span>
+          <div class="plaque-art"><img src="./lobby/icon_heroes.png" alt="Heroes" /></div>
+          <div class="plaque-label">HEROES</div>
+        </button>
+        <button class="lobby-plaque-btn plaque-staves" data-panel="staves">
+          <span class="plaque-dot dot-green"></span>
+          <div class="plaque-art"><img src="./lobby/icon_staves.png" alt="Staves" /></div>
+          <div class="plaque-label">STAVES</div>
+        </button>
+        <button class="lobby-plaque-btn plaque-upgrades" data-panel="upgrades">
+          <span class="plaque-dot dot-red"></span>
+          <div class="plaque-art"><img src="./lobby/icon_upgrades.png" alt="Upgrades" /></div>
+          <div class="plaque-label">UPGRADES</div>
+        </button>
       </aside>
 
-      <!-- CENTER PEDESTAL & HERO -->
-      <section class="lobby-center-stage">
-        <button id="hero-cycle-prev" class="hero-cycle-arrow" aria-label="Previous Hero">◀</button>
-        <div class="lobby-hero-pedestal-wrap">
-          <div class="lobby-hero-showcase">
-            <div id="lobby-hero-avatar-box" class="lobby-hero-avatar-box"></div>
-            <div class="lobby-pedestal"><div class="pedestal-ring"></div><div class="pedestal-disc top"></div><div class="pedestal-disc mid"></div><div class="pedestal-disc base"></div></div>
-          </div>
-          <div class="lobby-hero-info">
-            <div id="lobby-hero-name" class="lobby-hero-name">Tapasvi</div>
-            <div id="lobby-hero-school" class="lobby-hero-school">Seeker</div>
-          </div>
+      <!-- 3. CENTER PEDESTAL & HERO (x: 390-640, hero ~535) -->
+      <section class="lobby-center-showcase">
+        <img src="./lobby/pedestal.png" class="lobby-pedestal-img" alt="Pedestal" />
+        <div id="hero-glow-pulse" class="hero-glow-layer"></div>
+        <div id="lobby-hero-avatar-box" class="lobby-hero-wrapper">
+          <img id="lobby-hero-img" src="./lobby/hero_tapasvi.png" class="lobby-hero-img" alt="Selected Hero" />
         </div>
-        <button id="hero-cycle-next" class="hero-cycle-arrow" aria-label="Next Hero">▶</button>
+        <button id="hero-cycle-prev" class="hero-chevron-btn hero-btn-prev" aria-label="Previous Hero">‹</button>
+        <button id="hero-cycle-next" class="hero-chevron-btn hero-btn-next" aria-label="Next Hero">›</button>
+        <button id="lobby-hero-lock" class="hero-lock-badge" style="display:none;">🔒 UNLOCK (150 🪙)</button>
       </section>
 
-      <!-- BOTTOM-RIGHT PLAY ACTION -->
-      <aside class="lobby-action-box">
-        <button id="play-match-btn" class="play-pulse-btn">PLAY</button>
-        <div class="lobby-next-level">
-          NEXT: <span id="lobby-next-level-name">Awakening</span>
-          <span id="lobby-next-biome-chip" class="biome-chip grass">Grass</span>
+      <!-- 4. PLAY PANEL (Bottom-Right, x: 750-1024, y: 420-572) -->
+      <aside class="lobby-play-panel">
+        <button id="play-match-btn" class="play-btn-large">PLAY</button>
+        <div class="next-level-row">
+          <span class="next-level-text">NEXT: <span id="lobby-next-level-name">GRASS PLAINS</span></span>
+          <img id="lobby-next-map-thumb" src="./lobby/map_grass.png" class="next-map-thumb" alt="Map" />
         </div>
         <span id="lobby-arena-label" class="arena-label" style="display:none;"></span>
       </aside>
-    </main>
 
-    <!-- BOTTOM ROW (4 MODE TABS) -->
-    <nav class="lobby-bottom-nav">
-      <button class="lobby-mode-tab active" data-mode="campaign">CAMPAIGN</button>
-      <button class="lobby-mode-tab" data-mode="endless">ENDLESS <span class="tag-soon">SOON</span></button>
-      <button class="lobby-mode-tab" data-mode="shop">SHOP <span class="tag-soon">SOON</span></button>
-      <button class="lobby-mode-tab" data-mode="battlepass">BATTLE PASS <span class="tag-soon">SOON</span></button>
-    </nav>
+      <!-- 5. BOTTOM TABS (x: 24-690, y: 520-572) -->
+      <nav class="lobby-bottom-tabs">
+        <button class="bottom-tab-btn active" data-tab="shop">SHOP</button>
+        <button class="bottom-tab-btn" data-tab="clan">CLAN</button>
+        <button class="bottom-tab-btn" data-tab="arsenal">ARSENAL</button>
+        <button class="bottom-tab-btn" data-tab="battlepass">BATTLE PASS</button>
+      </nav>
+    </div>
 
     <!-- FULLSCREEN OVERLAY SHEET FOR PANELS -->
     <div id="lobby-sheet-overlay" class="lobby-sheet-overlay" style="display:none;">
@@ -105,21 +125,11 @@
           <button id="lobby-sheet-close" class="sheet-close-btn" aria-label="Close">✕</button>
         </div>
         <div class="lobby-sheet-content">
-          <div id="tab-heroes" class="tab-panel">
-            <div id="heroes-container" class="heroes-grid"></div>
-          </div>
-          <div id="tab-spellbook" class="tab-panel">
-            <div id="spellbook-container" class="spellbook-list" style="overflow-y: auto; max-height: 100%; padding: 4px 6px;"></div>
-          </div>
-          <div id="tab-staves" class="tab-panel">
-            <div id="staves-container" class="staves-grid"></div>
-          </div>
-          <div id="tab-upgrades" class="tab-panel">
-            <div id="upgrades-container" class="upgrade-list"></div>
-          </div>
-          <div id="tab-quests" class="tab-panel">
-            <div id="quests-container" class="quests-list"></div>
-          </div>
+          <div id="tab-heroes" class="tab-panel"><div id="heroes-container" class="heroes-grid"></div></div>
+          <div id="tab-spellbook" class="tab-panel"><div id="spellbook-container" class="spellbook-list" style="overflow-y: auto; max-height: 100%; padding: 4px 6px;"></div></div>
+          <div id="tab-staves" class="tab-panel"><div id="staves-container" class="staves-grid"></div></div>
+          <div id="tab-upgrades" class="tab-panel"><div id="upgrades-container" class="upgrade-list"></div></div>
+          <div id="tab-quests" class="tab-panel"><div id="quests-container" class="quests-list"></div></div>
         </div>
       </div>
     </div>

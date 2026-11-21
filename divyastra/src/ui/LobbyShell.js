@@ -1,6 +1,5 @@
 import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES } from '../config/constants.js';
 import { LEVELS } from '../config/levels.js';
-import { getSilhouetteClass } from './HeroSelectView.js';
 
 export class LobbyShell {
   constructor(uiManager, campaignManager, meta) {
@@ -8,19 +7,72 @@ export class LobbyShell {
     this.campaign = campaignManager;
     this.meta = meta;
     this.toastTimer = null;
+
+    this.stage = document.getElementById('lobby-stage');
+    this.preloader = document.getElementById('lobby-preloader');
+    this.heroImg = document.getElementById('lobby-hero-img');
+    this.heroLockBadge = document.getElementById('lobby-hero-lock');
     this.sheetOverlay = document.getElementById('lobby-sheet-overlay');
     this.sheetTitle = document.getElementById('lobby-sheet-title');
-    this.avatarBox = document.getElementById('lobby-hero-avatar-box');
-    this.heroNameEl = document.getElementById('lobby-hero-name');
-    this.heroSchoolEl = document.getElementById('lobby-hero-school');
     this.nextLevelNameEl = document.getElementById('lobby-next-level-name');
-    this.nextBiomeChipEl = document.getElementById('lobby-next-biome-chip');
-    this.toastEl = document.getElementById('lobby-toast');
+    this.nextMapThumb = document.getElementById('lobby-next-map-thumb');
     this.settingsPopover = document.getElementById('settings-popover');
-    this._bindEvents();
+    this.toastEl = document.getElementById('lobby-toast');
+
+    this.displayedHeroId = this.getSelectedHeroId();
+    this.lastUnlockedHeroId = this.displayedHeroId;
+
+    this.initScaling();
+    this.preloadImages();
+    this.bindEvents();
+    this.render();
   }
 
-  _bindEvents() {
+  initScaling() {
+    const scale = () => {
+      if (!this.stage) return;
+      const s = Math.min(window.innerWidth / 1024, window.innerHeight / 572);
+      this.stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+    };
+    scale();
+    window.addEventListener('resize', scale);
+    window.addEventListener('orientationchange', scale);
+  }
+
+  preloadImages() {
+    const images = [
+      './lobby/bg_lobby.webp', './lobby/pedestal.png',
+      `./lobby/hero_${this.displayedHeroId}.png`,
+      './lobby/icon_trophy.png', './lobby/icon_gold.png', './lobby/icon_gem.png',
+      './lobby/icon_quests.png', './lobby/icon_granth.png', './lobby/icon_settings.png',
+      './lobby/icon_heroes.png', './lobby/icon_staves.png', './lobby/icon_upgrades.png',
+      './lobby/map_grass.png', './lobby/map_snow.png'
+    ];
+    let loadedCritical = 0;
+    const onCriticalLoad = () => {
+      loadedCritical++;
+      if (loadedCritical >= 2 && this.preloader) {
+        this.preloader.classList.add('hidden');
+      }
+    };
+    const bg = new Image();
+    bg.onload = onCriticalLoad;
+    bg.onerror = onCriticalLoad;
+    bg.src = './lobby/bg_lobby.webp';
+
+    const hero = new Image();
+    hero.onload = onCriticalLoad;
+    hero.onerror = onCriticalLoad;
+    hero.src = `./lobby/hero_${this.displayedHeroId}.png`;
+
+    images.slice(3).forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+    setTimeout(() => { this.preloader?.classList.add('hidden'); }, 1200);
+  }
+
+  bindEvents() {
     const gearBtn = document.getElementById('settings-gear-btn');
     if (gearBtn && this.settingsPopover) {
       gearBtn.addEventListener('click', (e) => {
@@ -41,7 +93,6 @@ export class LobbyShell {
 
     const closeBtn = document.getElementById('lobby-sheet-close');
     if (closeBtn) closeBtn.addEventListener('click', () => this.closePanel());
-
     if (this.sheetOverlay) {
       this.sheetOverlay.addEventListener('click', (e) => {
         if (e.target === this.sheetOverlay) this.closePanel();
@@ -53,15 +104,15 @@ export class LobbyShell {
     if (prevBtn) prevBtn.addEventListener('click', () => this.cycleHero(-1));
     if (nextBtn) nextBtn.addEventListener('click', () => this.cycleHero(1));
 
-    document.querySelectorAll('.lobby-mode-tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        const mode = tab.dataset.mode;
-        if (mode === 'campaign') {
-          if (this.ui?.levelSelectView) this.ui.levelSelectView.show();
-        } else {
-          this.showToast('Coming soon');
-        }
+    if (this.heroLockBadge) {
+      this.heroLockBadge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.unlockCurrentHero();
       });
+    }
+
+    document.querySelectorAll('.bottom-tab-btn').forEach((tab) => {
+      tab.addEventListener('click', () => this.showToast('Coming soon'));
     });
   }
 
@@ -80,43 +131,57 @@ export class LobbyShell {
   }
 
   cycleHero(dir) {
-    const unlocked = this.getUnlockedHeroes();
-    if (!unlocked.length) return;
-    const cur = this.getSelectedHeroId();
-    let idx = unlocked.indexOf(cur);
+    let idx = HEROES.findIndex((h) => h.id === this.displayedHeroId);
     if (idx === -1) idx = 0;
-    idx = (idx + dir + unlocked.length) % unlocked.length;
-    const nextId = unlocked[idx];
-    localStorage.setItem('magica_selected_hero', nextId);
+    idx = (idx + dir + HEROES.length) % HEROES.length;
+    const nextHero = HEROES[idx];
+    this.displayedHeroId = nextHero.id;
 
-    const hero = HEROES.find((h) => h.id === nextId);
-    if (hero) {
-      this.updateHeroDisplay();
-      if (this.ui?.onHeroChange) this.ui.onHeroChange(hero);
-      if (this.ui?.heroSelectView) this.ui.heroSelectView.render(nextId);
+    const unlocked = this.getUnlockedHeroes();
+    const isUnlocked = unlocked.includes(nextHero.id);
+    if (isUnlocked) {
+      localStorage.setItem('magica_selected_hero', nextHero.id);
+      this.lastUnlockedHeroId = nextHero.id;
+      this.ui?.onHeroChange?.(nextHero);
+      this.ui?.heroSelectView?.render(nextHero.id);
+    }
+    this.updateHeroDisplay();
+  }
+
+  unlockCurrentHero() {
+    const hero = HEROES.find((h) => h.id === this.displayedHeroId);
+    if (!hero) return;
+    if (this.meta.data.gold >= 150) {
+      this.meta.data.gold -= 150;
+      this.meta.save();
+      const unlocked = this.getUnlockedHeroes();
+      if (!unlocked.includes(hero.id)) unlocked.push(hero.id);
+      localStorage.setItem('magica_unlocked_heroes', JSON.stringify(unlocked));
+      localStorage.setItem('magica_selected_hero', hero.id);
+      this.lastUnlockedHeroId = hero.id;
+      this.ui?.renderLobby();
+      this.ui?.onHeroChange?.(hero);
+      this.showToast(`Unlocked ${hero.name}!`);
+    } else {
+      this.showToast('Need 150 Gold to unlock');
     }
   }
 
   updateHeroDisplay() {
-    const curId = this.getSelectedHeroId();
-    const hero = HEROES.find((h) => h.id === curId) || HEROES[0];
-    if (!hero || !this.avatarBox) return;
+    const hero = HEROES.find((h) => h.id === this.displayedHeroId) || HEROES[0];
+    const isUnlocked = this.getUnlockedHeroes().includes(hero.id);
 
-    const bodyHex = '#' + hero.bodyColor.toString(16).padStart(6, '0');
-    const accentHex = '#' + hero.accentColor.toString(16).padStart(6, '0');
-    const silClass = getSilhouetteClass(hero);
-
-    this.avatarBox.innerHTML = `
-      <div class="hero-avatar ${silClass} center-hero-scale" style="--accent: ${accentHex}; --body: ${bodyHex};">
-        <div class="avatar-headgear"></div>
-        <div class="hero-head"><div class="hero-nose"></div></div>
-        <div class="hero-body" style="background: ${bodyHex}; border-color: ${accentHex};"></div>
-        <div class="avatar-orb" style="background: ${accentHex};"></div>
-      </div>
-    `;
-
-    if (this.heroNameEl) this.heroNameEl.textContent = hero.name;
-    if (this.heroSchoolEl) this.heroSchoolEl.textContent = (hero.archetype || 'SEEKER').toUpperCase();
+    if (this.heroImg) {
+      this.heroImg.classList.add('fading');
+      setTimeout(() => {
+        this.heroImg.src = `./lobby/hero_${hero.id}.png`;
+        this.heroImg.classList.toggle('locked-dim', !isUnlocked);
+        this.heroImg.classList.remove('fading');
+      }, 150);
+    }
+    if (this.heroLockBadge) {
+      this.heroLockBadge.style.display = isUnlocked ? 'none' : 'block';
+    }
   }
 
   updateNextLevelDisplay() {
@@ -126,26 +191,21 @@ export class LobbyShell {
       const found = LEVELS.find((l) => this.campaign.isUnlocked(l.id) && this.campaign.getStars(l.id) < 3);
       if (found) nextLvl = found;
     }
-    this.nextLevelNameEl.textContent = nextLvl.name;
-    if (this.nextBiomeChipEl) {
-      const isSnow = nextLvl.biome === 'SNOW';
-      this.nextBiomeChipEl.textContent = isSnow ? 'Snow' : 'Grass';
-      this.nextBiomeChipEl.className = `biome-chip ${isSnow ? 'snow' : 'grass'}`;
+    const isSnow = nextLvl.biome === 'SNOW';
+    this.nextLevelNameEl.textContent = isSnow ? 'FROZEN PEAKS' : 'GRASS PLAINS';
+    if (this.nextMapThumb) {
+      this.nextMapThumb.src = isSnow ? './lobby/map_snow.png' : './lobby/map_grass.png';
     }
   }
 
   openPanel(panelKey) {
     const titleMap = {
-      heroes: 'HEROES',
-      staves: 'STAVES',
-      upgrades: 'UPGRADES',
-      quests: 'DAILY QUESTS',
-      spellbook: 'THE GRANTH'
+      heroes: 'HEROES', staves: 'STAVES', upgrades: 'UPGRADES',
+      quests: 'DAILY QUESTS', spellbook: 'THE GRANTH'
     };
     if (this.sheetTitle) this.sheetTitle.textContent = titleMap[panelKey] || 'MENU';
     document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
-    const target = document.getElementById(`tab-${panelKey}`);
-    if (target) target.classList.add('active');
+    document.getElementById(`tab-${panelKey}`)?.classList.add('active');
     if (this.sheetOverlay) this.sheetOverlay.style.display = 'flex';
     this.ui?.renderLobby();
   }
@@ -162,6 +222,9 @@ export class LobbyShell {
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => this.toastEl.classList.remove('show'), 1600);
   }
+
+  stopHeroShowcase() {}
+  startHeroShowcase() {}
 
   render() {
     this.updateHeroDisplay();

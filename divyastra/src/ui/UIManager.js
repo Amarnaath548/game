@@ -39,7 +39,11 @@ export class UIManager {
     });
     if (this.questManager) this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
     if (this.spellbookContainer && this.spellbookManager) this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
-    if (this.campaignManager) this.levelSelectView = new LevelSelectView(this.campaignManager, { onLevelSelected: () => { document.body.classList.add('in-match'); this.lobbyScreen.style.display = 'none'; this.hud.style.display = 'block'; } });
+    if (this.campaignManager) this.levelSelectView = new LevelSelectView(this.campaignManager, {
+      onLevelSelected: () => {
+        document.body.classList.add('in-match'); this.lobbyScreen.style.display = 'none'; this.hud.style.display = 'block';
+      }
+    });
 
     const logoEl = document.querySelector('.game-logo');
     if (logoEl) logoEl.textContent = GAME_TITLE;
@@ -63,7 +67,10 @@ export class UIManager {
       document.body.classList.add('in-match'); this.lobbyScreen.style.display = 'none'; this.hud.style.display = 'block';
       this.onStartMatch?.();
     };
-    this.playMatchBtn.addEventListener('click', () => { if (this.levelSelectView) this.levelSelectView.show(); else startMatchUI(); });
+    this.playMatchBtn.addEventListener('click', () => {
+      if (this.levelSelectView) this.levelSelectView.show();
+      else startMatchUI();
+    });
     this.modalPlayAgainBtn.addEventListener('click', () => {
       this.endModal.style.display = 'none';
       if (this.campaignManager?.currentLevelId) this.campaignManager.startLevel(this.campaignManager.currentLevelId);
@@ -72,7 +79,8 @@ export class UIManager {
     this.modalLobbyBtn.addEventListener('click', () => {
       this.pickFlow.reset(); this.leaderboard?.reset(); this.topRightHUD?.reset(); this.spellIndicator?.reset();
       document.body.classList.remove('in-match'); this.endModal.style.display = 'none'; this.hud.style.display = 'none';
-      this.lobbyScreen.style.display = 'flex'; this.renderLobby(); this.onReturnToLobby?.();
+      this.lobbyScreen.style.display = 'flex'; this.renderLobby();
+      this.onReturnToLobby?.();
     });
   }
 
@@ -107,6 +115,7 @@ export class UIManager {
     const rank = this.meta.getRank();
     this.lobbyTrophies.textContent = this.meta.data.trophies; this.lobbyGold.textContent = this.meta.data.gold;
     this.lobbyRankTitle.textContent = rank.title; this.lobbyRankTitle.style.color = rank.color;
+    const gemsEl = document.getElementById('lobby-gems'); if (gemsEl) gemsEl.textContent = this.meta.gems ?? 0;
     const rawHeroId = localStorage.getItem('magica_selected_hero') || 'tapasvi';
     this.heroSelectView.render(VALID_HERO_IDS.includes(rawHeroId) ? rawHeroId : 'tapasvi');
     if (this.questView) this.questView.render();

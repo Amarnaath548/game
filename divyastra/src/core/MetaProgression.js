@@ -99,6 +99,7 @@ export class MetaProgression {
     return {
       trophies: 0,
       gold: 100,
+      gems: 0,
       matchesPlayed: 0,
       wins: 0,
       selectedStaffId: 'PYRO_STAFF',
@@ -106,6 +107,9 @@ export class MetaProgression {
       upgradeLevels: { VITALITY: 0, SWIFTNESS: 0, MAGNETISM: 0 }
     };
   }
+
+  get gems() { return this.data.gems || 0; }
+  set gems(val) { this.data.gems = val; }
 
   load() {
     try {
