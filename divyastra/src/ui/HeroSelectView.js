@@ -1,6 +1,6 @@
 import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES } from '../config/constants.js';
 
-function getSilhouetteClass(hero) {
+export function getSilhouetteClass(hero) {
   const arch = (hero.archetype || hero.hatType || '').toLowerCase();
   if (arch.includes('tapasvi') || arch.includes('jata')) return 'sil-tapasvi';
   if (arch.includes('agni') || arch.includes('flame') || arch.includes('wizard')) return 'sil-agni';

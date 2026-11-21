@@ -11,6 +11,7 @@ import { TopRightHUD } from './TopRightHUD.js';
 import { SpellIndicator } from './SpellIndicator.js';
 import { LevelSelectView } from './LevelSelectView.js';
 import { showEndGameModal } from './EndGameModal.js';
+import { LobbyShell } from './LobbyShell.js';
 
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
@@ -32,7 +33,10 @@ export class UIManager {
 
     this.leaderboard = new Leaderboard(get('leaderboard')); this.topRightHUD = new TopRightHUD(get('top-right-hud'));
     this.spellIndicator = new SpellIndicator(get('spell-indicator'));
-    this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange?.(h));
+    this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => {
+      this.lobbyShell?.updateHeroDisplay();
+      this.onHeroChange?.(h);
+    });
     if (this.questManager) this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
     if (this.spellbookContainer && this.spellbookManager) this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
     if (this.campaignManager) this.levelSelectView = new LevelSelectView(this.campaignManager, { onLevelSelected: () => { document.body.classList.add('in-match'); this.lobbyScreen.style.display = 'none'; this.hud.style.display = 'block'; } });
@@ -41,6 +45,7 @@ export class UIManager {
     if (logoEl) logoEl.textContent = GAME_TITLE;
     document.title = GAME_TITLE;
 
+    this.lobbyShell = new LobbyShell(this, this.campaignManager, this.meta);
     this.initLobbyEvents(); this.initSpellPanel(); this.initCastButton(); this.initKeyboardShortcuts(); this.renderLobby();
   }
 
@@ -68,15 +73,6 @@ export class UIManager {
       this.pickFlow.reset(); this.leaderboard?.reset(); this.topRightHUD?.reset(); this.spellIndicator?.reset();
       document.body.classList.remove('in-match'); this.endModal.style.display = 'none'; this.hud.style.display = 'none';
       this.lobbyScreen.style.display = 'flex'; this.renderLobby(); this.onReturnToLobby?.();
-    });
-
-    const tabBtns = document.querySelectorAll('.lobby-tab-btn'), tabPanels = document.querySelectorAll('.tab-panel');
-    tabBtns.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        tabBtns.forEach((b) => b.classList.remove('active')); tabPanels.forEach((p) => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add('active');
-      });
     });
   }
 
@@ -116,6 +112,7 @@ export class UIManager {
     if (this.questView) this.questView.render();
     if (this.spellbookView) this.spellbookView.render();
     if (this.lobbyArenaLabel && this.sceneManager) this.lobbyArenaLabel.textContent = `ARENA: ${this.sceneManager.getNextBiomeName()}`;
+    this.lobbyShell?.render();
 
     this.stavesContainer.innerHTML = '';
     STAVES.forEach((staff) => {
