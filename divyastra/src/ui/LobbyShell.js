@@ -1,6 +1,13 @@
 import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES } from '../config/constants.js';
 import { LEVELS } from '../config/levels.js';
 
+const HERO_IMG = {
+  tapasvi: 'hero_tapasvi.webp',
+  jala: 'hero_jala.webp',
+  prithvi: 'hero_prithvi.webp',
+  agni: 'hero_agni.png'
+};
+
 export class LobbyShell {
   constructor(uiManager, campaignManager, meta) {
     this.ui = uiManager;
@@ -42,7 +49,6 @@ export class LobbyShell {
   preloadImages() {
     const images = [
       './lobby/bg_lobby.webp', './lobby/pedestal.png',
-      `./lobby/hero_${this.displayedHeroId}.png`,
       './lobby/icon_trophy.png', './lobby/icon_gold.png', './lobby/icon_gem.png',
       './lobby/icon_quests.png', './lobby/icon_granth.png', './lobby/icon_settings.png',
       './lobby/icon_heroes.png', './lobby/icon_staves.png', './lobby/icon_upgrades.png',
@@ -60,12 +66,18 @@ export class LobbyShell {
     bg.onerror = onCriticalLoad;
     bg.src = './lobby/bg_lobby.webp';
 
+    const initialHero = HERO_IMG[this.displayedHeroId] || HERO_IMG.tapasvi;
     const hero = new Image();
     hero.onload = onCriticalLoad;
     hero.onerror = onCriticalLoad;
-    hero.src = `./lobby/hero_${this.displayedHeroId}.png`;
+    hero.src = `./lobby/${initialHero}`;
 
-    images.slice(3).forEach((src) => {
+    Object.values(HERO_IMG).forEach((file) => {
+      const img = new Image();
+      img.src = `./lobby/${file}`;
+    });
+
+    images.forEach((src) => {
       const img = new Image();
       img.src = src;
     });
@@ -170,11 +182,12 @@ export class LobbyShell {
   updateHeroDisplay() {
     const hero = HEROES.find((h) => h.id === this.displayedHeroId) || HEROES[0];
     const isUnlocked = this.getUnlockedHeroes().includes(hero.id);
+    const heroFile = HERO_IMG[hero.id] || HERO_IMG.tapasvi;
 
     if (this.heroImg) {
       this.heroImg.classList.add('fading');
       setTimeout(() => {
-        this.heroImg.src = `./lobby/hero_${hero.id}.png`;
+        this.heroImg.src = `./lobby/${heroFile}`;
         this.heroImg.classList.toggle('locked-dim', !isUnlocked);
         this.heroImg.classList.remove('fading');
       }, 150);
