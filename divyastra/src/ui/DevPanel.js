@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { getDevTools } from '../core/DevTools.js';
 import { ALL_SPELLS } from '../config/spellRegistry.js';
 import { STORM_PHASES, LEVEL_TABLE } from '../config/constants.js';
+import { setDifficulty } from '../config/difficulty.js';
 
 export class DevPanel {
   constructor(deps) {
@@ -11,6 +12,7 @@ export class DevPanel {
     this.sceneManager = deps.sceneManager;
     this.ui = deps.ui;
     this.devInspectView = deps.devInspectView;
+    this.campaignManager = deps.campaignManager;
     this.dev = getDevTools();
     this.circleEls = [];
     this._build();
@@ -49,6 +51,8 @@ export class DevPanel {
     };
 
     // 1-2: God mode & No-cooldown
+    button('Unlock all levels', () => { this.campaignManager?.unlockAll(); });
+    button('Restart match (Normal)', () => { setDifficulty('NORMAL'); if (this.campaignManager) this.campaignManager.currentLevelId = null; this.matchManager.startMatch(); });
     toggle('God mode', () => this.dev.godMode, (v) => { this.dev.godMode = v; });
     toggle('No cooldown', () => this.dev.noCooldown, (v) => { this.dev.noCooldown = v; });
 

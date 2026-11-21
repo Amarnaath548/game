@@ -5,15 +5,17 @@ import { BotBrain } from './BotBrain.js';
 import { SpellSlotController } from './SpellSlotController.js';
 import { TapasComponent } from './TapasComponent.js';
 import { UPGRADES } from '../config/spellSchools.js';
+import { getDifficulty } from '../config/difficulty.js';
 
 export class Bot extends Actor {
   constructor(scene, x, z, id = 1, hero = null) {
     const botHero = hero || HEROES[(id - 1) % HEROES.length];
+    const baseHp = Math.round(PLAYER_BASE.MAX_HP * (getDifficulty()?.botHpMult ?? 1.0));
     super(scene, {
       x,
       z,
       radius: PLAYER_BASE.RADIUS,
-      maxHp: PLAYER_BASE.MAX_HP,
+      maxHp: baseHp,
       moveSpeed: PLAYER_BASE.MOVE_SPEED * (0.85 + Math.random() * 0.15),
       hero: botHero
     });
@@ -112,8 +114,9 @@ export class Bot extends Actor {
       const nextConfig = LEVEL_TABLE.find((lvl) => lvl.level === this.level + 1);
       if (nextConfig && this.xp >= nextConfig.xpReq) {
         this.level += 1;
-        this.maxHp += nextConfig.hpBonus;
-        this.hp = Math.min(this.maxHp, this.hp + nextConfig.hpBonus);
+        const hpBonus = Math.round(nextConfig.hpBonus * (getDifficulty()?.botHpMult ?? 1.0));
+        this.maxHp += hpBonus;
+        this.hp = Math.min(this.maxHp, this.hp + hpBonus);
         this.dmgBonus += nextConfig.dmgBonus;
         this.pickElementalUpgrade();
       } else {

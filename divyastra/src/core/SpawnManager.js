@@ -21,7 +21,7 @@ export class SpawnManager {
     this.bushes = BUSH_COORDS.map(([x, z]) => new ShadowBush(x, z, this.scene));
   }
 
-  startMatch() {
+  startMatch(botCount = null) {
     this.cleanup();
 
     // Spawn Mythic center chest + 24 arena chests
@@ -35,8 +35,9 @@ export class SpawnManager {
       this.crystals.push(new ArcaneCrystal(x, z, this.scene));
     });
 
-    // Spawn 11 Bots across inner, mid, and outer rings
-    for (let i = 0; i < BOT_SPAWNS.length; i++) {
+    // Spawn first N of BOT_SPAWNS
+    const count = (botCount !== null && botCount !== undefined) ? Math.min(BOT_SPAWNS.length, botCount) : BOT_SPAWNS.length;
+    for (let i = 0; i < count; i++) {
       const s = BOT_SPAWNS[i];
       const bx = Math.cos(s.angle) * s.r;
       const bz = Math.sin(s.angle) * s.r;

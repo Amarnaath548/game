@@ -9,11 +9,13 @@ import { SpellbookView } from './SpellbookView.js';
 import { Leaderboard } from './Leaderboard.js';
 import { TopRightHUD } from './TopRightHUD.js';
 import { SpellIndicator } from './SpellIndicator.js';
+import { LevelSelectView } from './LevelSelectView.js';
+import { showEndGameModal } from './EndGameModal.js';
 
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
     this.meta = metaProgression;
-    this.questManager = callbacks.questManager; this.spellbookManager = callbacks.spellbookManager; this.sceneManager = callbacks.sceneManager; this.banners = callbacks.banners;
+    this.questManager = callbacks.questManager; this.spellbookManager = callbacks.spellbookManager; this.sceneManager = callbacks.sceneManager; this.banners = callbacks.banners; this.campaignManager = callbacks.campaignManager;
     this.onHeroChange = callbacks.onHeroChange; this.onPerkSelected = callbacks.onPerkSelected; this.onStartMatch = callbacks.onStartMatch; this.onReturnToLobby = callbacks.onReturnToLobby;
     this.onCastRequested = callbacks.onCastRequested; this.onElementPicked = callbacks.onElementPicked;
 
@@ -33,6 +35,7 @@ export class UIManager {
     this.heroSelectView = new HeroSelectView(this.heroesContainer, this.meta, (h) => this.onHeroChange?.(h));
     if (this.questManager) this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
     if (this.spellbookContainer && this.spellbookManager) this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
+    if (this.campaignManager) this.levelSelectView = new LevelSelectView(this.campaignManager, { onLevelSelected: () => { document.body.classList.add('in-match'); this.lobbyScreen.style.display = 'none'; this.hud.style.display = 'block'; } });
 
     const logoEl = document.querySelector('.game-logo');
     if (logoEl) logoEl.textContent = GAME_TITLE;
@@ -47,16 +50,20 @@ export class UIManager {
   initLobbyEvents() {
     const fsBtn = document.getElementById('fullscreen-btn');
     if (fsBtn) fsBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) { document.documentElement.requestFullscreen?.().catch(() => {}); }
-      else { document.exitFullscreen?.().catch(() => {}); }
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+      else document.exitFullscreen?.().catch(() => {});
     });
 
     const startMatchUI = () => {
       document.body.classList.add('in-match'); this.lobbyScreen.style.display = 'none'; this.hud.style.display = 'block';
       this.onStartMatch?.();
     };
-    this.playMatchBtn.addEventListener('click', startMatchUI);
-    this.modalPlayAgainBtn.addEventListener('click', () => { this.endModal.style.display = 'none'; startMatchUI(); });
+    this.playMatchBtn.addEventListener('click', () => { if (this.levelSelectView) this.levelSelectView.show(); else startMatchUI(); });
+    this.modalPlayAgainBtn.addEventListener('click', () => {
+      this.endModal.style.display = 'none';
+      if (this.campaignManager?.currentLevelId) this.campaignManager.startLevel(this.campaignManager.currentLevelId);
+      else startMatchUI();
+    });
     this.modalLobbyBtn.addEventListener('click', () => {
       this.pickFlow.reset(); this.leaderboard?.reset(); this.topRightHUD?.reset(); this.spellIndicator?.reset();
       document.body.classList.remove('in-match'); this.endModal.style.display = 'none'; this.hud.style.display = 'none';
@@ -102,14 +109,10 @@ export class UIManager {
 
   renderLobby() {
     const rank = this.meta.getRank();
-    this.lobbyTrophies.textContent = this.meta.data.trophies;
-    this.lobbyGold.textContent = this.meta.data.gold;
-    this.lobbyRankTitle.textContent = rank.title;
-    this.lobbyRankTitle.style.color = rank.color;
-
+    this.lobbyTrophies.textContent = this.meta.data.trophies; this.lobbyGold.textContent = this.meta.data.gold;
+    this.lobbyRankTitle.textContent = rank.title; this.lobbyRankTitle.style.color = rank.color;
     const rawHeroId = localStorage.getItem('magica_selected_hero') || 'tapasvi';
-    const currentHeroId = VALID_HERO_IDS.includes(rawHeroId) ? rawHeroId : 'tapasvi';
-    this.heroSelectView.render(currentHeroId);
+    this.heroSelectView.render(VALID_HERO_IDS.includes(rawHeroId) ? rawHeroId : 'tapasvi');
     if (this.questView) this.questView.render();
     if (this.spellbookView) this.spellbookView.render();
     if (this.lobbyArenaLabel && this.sceneManager) this.lobbyArenaLabel.textContent = `ARENA: ${this.sceneManager.getNextBiomeName()}`;
@@ -215,34 +218,23 @@ export class UIManager {
     } else { this.showPerkCards(level, player); }
   }
 
-  openNextElementPick(player) {
-    this.pickFlow.openNextElementPick(player);
-  }
+  openNextElementPick(player) { this.pickFlow.openNextElementPick(player); }
+  reset() { this.pickFlow?.reset(); }
+  showPerkCards(level, player = null) { renderPerkSelection(this.perkOverlay, this.onPerkSelected, player); }
 
-  reset() {
-    this.pickFlow?.reset();
-  }
-
-  showPerkCards(level, player = null) {
-    renderPerkSelection(this.perkOverlay, this.onPerkSelected, player);
-  }
-
-  showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null, devCheated = false) {
+  showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null, devCheated = false, campRes = null) {
     this.pickFlow.reset();
-    const results = devCheated ? { trophyChange: 0, newTrophies: this.meta.data.trophies, goldEarned: 0, newGold: this.meta.data.gold } : this.meta.applyMatchResults(place);
-    this.endModal.style.display = 'flex';
-    const heroName = player?.hero?.name || 'Archmage', kills = player?.kills || 0;
-    this.endTitle.innerHTML = isVictory ? `<span class="title-win">#1 VICTORY ROYALE!</span>` : `<span class="title-loss">DEFEAT - #${place} of 12</span>`;
-    this.endSubtitle.textContent = isVictory ? `Glory to ${heroName}! Sanctum Champion.` : `${heroName} eliminated at rank #${place}.`;
-    let statsEl = document.getElementById('match-hero-stats');
-    if (!statsEl) { statsEl = document.createElement('div'); statsEl.id = 'match-hero-stats'; this.endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box')); }
-    const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">✨ Quest completed!</div>` : '';
-    const newSpellHtml = spellbookSummary?.newSpells?.length ? `<div class="quest-done-pill new-astra-pill" style="background:#0284c7;border-color:#38bdf8;">📖 New astra unlocked! (${spellbookSummary.newSpells.join(', ')})</div>` : '';
-    const starHtml = spellbookSummary?.starsEarned ? `<div class="quest-done-pill" style="background:#ca8a04;border-color:#facc15;">⭐ Siddhi earned! (+${spellbookSummary.starsEarned})</div>` : '';
-    const devHtml = devCheated ? `<div class="quest-done-pill" style="background:#ef4444;border-color:#f87171;color:#fff;font-weight:900;">DEV MATCH - no rewards</div>` : '';
-    statsEl.innerHTML = `${devHtml}<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place} of 12</b></div><div class="stat-pill">Kills: <b>${kills} ⚔️</b></div>${questHtml}${newSpellHtml}${starHtml}`;
-    const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
-    this.rewardTrophy.textContent = `${tSign} 🏆 (${results.newTrophies})`;
-    this.rewardGold.textContent = `+${results.goldEarned} 🪙 (${results.newGold})`;
+    showEndGameModal({
+      meta: this.meta,
+      endModal: this.endModal,
+      endTitle: this.endTitle,
+      endSubtitle: this.endSubtitle,
+      rewardTrophy: this.rewardTrophy,
+      rewardGold: this.rewardGold,
+      modalPlayAgainBtn: this.modalPlayAgainBtn,
+      modalLobbyBtn: this.modalLobbyBtn,
+      campaignManager: this.campaignManager,
+      isVictory, place, player, finishedQuests, spellbookSummary, devCheated, campRes
+    });
   }
 }

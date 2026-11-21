@@ -94,8 +94,10 @@ export class SceneManager {
     return (BIOMES[this.nextBiomeKey] || BIOMES.GRASS).name;
   }
 
-  startMatchBiome(bushes = []) {
-    const biomeKey = this.nextBiomeKey || this.pickNextBiome();
+  startMatchBiome(bushes = [], forcedBiomeKey = null) {
+    const biomeKey = (forcedBiomeKey && BIOMES[forcedBiomeKey.toUpperCase()])
+      ? forcedBiomeKey.toUpperCase()
+      : (this.nextBiomeKey || this.pickNextBiome());
     this.biomeHistory.push(biomeKey);
     if (this.biomeHistory.length > 8) this.biomeHistory.shift();
     this.applyBiome(biomeKey, bushes);

@@ -4,20 +4,14 @@ import { PLAYER_BASE, LEVEL_TABLE, COLORS, ARENA, HEROES } from '../config/const
 import { SpellSlotController } from './SpellSlotController.js';
 import { getSpell, FIST_SPELL } from '../config/spellRegistry.js';
 import { TapasComponent } from './TapasComponent.js';
+import { getDifficulty } from '../config/difficulty.js';
 
 export class Player extends Actor {
   constructor(scene, inputManager, hero = null) {
     const selectedHeroId = (typeof localStorage !== 'undefined') ? localStorage.getItem('magica_selected_hero') : null;
     const playerHero = hero || HEROES.find((h) => h.id === selectedHeroId) || HEROES[0];
 
-    super(scene, {
-      x: 0,
-      z: 0,
-      radius: PLAYER_BASE.RADIUS,
-      maxHp: PLAYER_BASE.MAX_HP,
-      moveSpeed: PLAYER_BASE.MOVE_SPEED,
-      hero: playerHero
-    });
+    super(scene, { x: 0, z: 0, radius: PLAYER_BASE.RADIUS, maxHp: PLAYER_BASE.MAX_HP, moveSpeed: PLAYER_BASE.MOVE_SPEED, hero: playerHero });
 
     this.input = inputManager;
     this.isPlayer = true;
@@ -124,7 +118,8 @@ export class Player extends Actor {
   }
 
   addXP(amount, onLevelUp) {
-    this.xp += amount;
+    const mult = getDifficulty()?.playerXpMult ?? 1.0;
+    this.xp += Math.round(amount * mult);
     const nextConfig = LEVEL_TABLE.find((lvl) => lvl.level === this.level + 1);
     if (nextConfig && this.xp >= nextConfig.xpReq) {
       this.level += 1;

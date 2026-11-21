@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT, SEPARATION_FACTOR, AOE_SPLASH_DAMAGE_MULT } from '../config/constants.js';
+import { getDifficulty } from '../config/difficulty.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js'; import { SpellEffects } from '../systems/SpellEffects.js'; import { HitFeedback } from '../systems/HitFeedback.js'; import { projectileDeflect, destroyProjectilesInCircle } from '../systems/ProjectileDeflect.js'; import { damageObjectsInCircle } from './EnvironmentDamage.js'; import { resolveChain, spawnSubMunitions, resolveObeliskCollisions } from './CombatChain.js';
 import { applySpellHit, detonateAoE, applyStatuses } from './SpellOnHit.js';
 import { SideEffectZones } from '../systems/SideEffectZones.js';
@@ -24,7 +25,7 @@ export class CombatResolver {
 
   executeCastPayload(payload, owner) {
     const isP = owner === this.player, cfg = { ...payload };
-    if (owner?.dmgBonus) cfg.damage += owner.dmgBonus; if (!isP && owner && !owner.isPlayer) cfg.damage = Math.round(cfg.damage * BOT_DAMAGE_MULT);
+    if (owner?.dmgBonus) cfg.damage += owner.dmgBonus; if (!isP && owner && !owner.isPlayer) cfg.damage = Math.round(cfg.damage * BOT_DAMAGE_MULT * (getDifficulty()?.botDamageMult ?? 1.0));
     if (isP && this.player.staffElement && cfg.elements?.includes(this.player.staffElement)) cfg.damage = Math.round(cfg.damage * 1.12);
     if (isP && this.spellbookManager) { const sm = this.spellbookManager.getDamageMultiplier(cfg.id); if (sm > 1.0) cfg.damage = Math.round(cfg.damage * sm); }
     if (isP && this.player.perks.includes('SNIPER_VELOCITY')) { cfg.speed = (cfg.speed || 28) * 1.35; cfg.range = (cfg.range || 24) * 1.35; }

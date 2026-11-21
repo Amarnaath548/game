@@ -1,6 +1,7 @@
 import { ZoneSystem } from '../systems/ZoneSystem.js';
 import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE, VALID_HERO_IDS } from '../config/constants.js';
 import { getDevTools } from './DevTools.js';
+import { getDifficulty } from '../config/difficulty.js';
 
 export class MatchManager {
   constructor(deps) {
@@ -18,6 +19,7 @@ export class MatchManager {
     this.combatResolver = deps.combatResolver;
     this.projectiles = deps.projectiles;
     this.projPool = deps.projPool;
+    this.campaignManager = deps.campaignManager || null;
     this.gemPool = deps.gemPool;
     this.orbPool = deps.orbPool;
     this.questManager = deps.questManager;
@@ -86,7 +88,7 @@ export class MatchManager {
     }
   }
 
-  startMatch() {
+  startMatch(forcedBiome = null, botCount = null) {
     this.spawnManager.cleanup();
     this.projectiles.forEach((p) => p.despawn());
     this.spawnManager.gems.forEach((g) => g.despawn());
@@ -100,8 +102,8 @@ export class MatchManager {
     this.zoneSys = new ZoneSystem(this.sceneManager.scene);
 
     this.applyLobbyLoadout();
-    this.sceneManager.startMatchBiome(this.spawnManager.bushes);
-    this.spawnManager.startMatch();
+    this.sceneManager.startMatchBiome(this.spawnManager.bushes, forcedBiome);
+    this.spawnManager.startMatch(botCount);
     if (this.arenaInteractables) this.arenaInteractables.spawn();
 
     this.matchTime = 0;
@@ -110,6 +112,9 @@ export class MatchManager {
     if (this.spellbookManager) this.spellbookManager.onMatchStart();
     this.isGameOver = false;
     this.matchActive = true;
+    if (this.banners && !this.campaignManager?.currentLevelId) {
+      this.banners.showMatchStartBanner('Arena Match', getDifficulty()?.name || 'Normal');
+    }
   }
 
   resetToLobby() {
@@ -204,13 +209,15 @@ export class MatchManager {
         const place = aliveActors.length + 1;
         if (!devT.cheatsUsed && this.questManager) this.questManager.record('matchEnd', { placement: place, survivalTime: this.matchTime, level: this.player.level });
         const finished = (!devT.cheatsUsed && this.questManager) ? this.questManager.getQuestsCompletedThisMatch() : [];
-        this.ui.showEndGame(false, place, this.player, finished, this.spellbookManager?.getMatchSummary(), devT.cheatsUsed);
+        const campRes = this.campaignManager?.currentLevelId ? this.campaignManager.completeLevel(this.campaignManager.currentLevelId, place, this.player.kills, false) : null;
+        this.ui.showEndGame(false, place, this.player, finished, this.spellbookManager?.getMatchSummary(), devT.cheatsUsed, campRes);
       } else if (aliveActors.length === 1 && aliveActors[0] === this.player) {
         this.isGameOver = true;
         this.matchActive = false;
         if (!devT.cheatsUsed && this.questManager) this.questManager.record('matchEnd', { placement: 1, survivalTime: this.matchTime, level: this.player.level });
         const finished = (!devT.cheatsUsed && this.questManager) ? this.questManager.getQuestsCompletedThisMatch() : [];
-        this.ui.showEndGame(true, 1, this.player, finished, this.spellbookManager?.getMatchSummary(), devT.cheatsUsed);
+        const campRes = this.campaignManager?.currentLevelId ? this.campaignManager.completeLevel(this.campaignManager.currentLevelId, 1, this.player.kills, true) : null;
+        this.ui.showEndGame(true, 1, this.player, finished, this.spellbookManager?.getMatchSummary(), devT.cheatsUsed, campRes);
       }
     }
   }

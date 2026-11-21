@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { SEPARATION_FACTOR } from '../config/constants.js';
 import { BotSenses } from './BotSenses.js';
 import { evaluateCornered } from './BotLastStand.js';
+import { getDifficulty } from '../config/difficulty.js';
 
 export class BotBrain {
   constructor(bot) {
@@ -172,7 +173,7 @@ export class BotBrain {
       baseAngle = Math.atan2(leadX - bot.x, leadZ - bot.z);
     }
 
-    const maxErrDeg = traj === 'MELEE' ? 0 : (18 - bot.personality.skill * 15);
+    const maxErrDeg = traj === 'MELEE' ? 0 : (getDifficulty()?.botAimErrorDeg ?? 8);
     const aimOffset = (Math.random() - 0.5) * 2 * (maxErrDeg * Math.PI / 180);
     const aimX = Math.sin(baseAngle + aimOffset), aimZ = Math.cos(baseAngle + aimOffset);
 
@@ -203,7 +204,7 @@ export class BotBrain {
     const dashReady = traj !== 'SELF_DASH' || (edist <= 12 && edist >= 2.0);
 
     if (bot.shootCooldown <= 0 && onShoot && inRange && dashReady) {
-      const reactDelay = 0.35 - bot.personality.skill * 0.22;
+      const reactDelay = (0.35 - bot.personality.skill * 0.22) * (getDifficulty()?.botReactionMult ?? 1.0);
       bot.shootCooldown = (spell.cooldown || 0.7) + reactDelay + Math.random() * 0.1;
       onShoot(bot, aimX, aimZ);
     }
@@ -223,7 +224,7 @@ export class BotBrain {
       if (cdist > 5.5) { moveX = aimX; moveZ = aimZ; }
       else {
         moveX = -aimZ * bot.strafeDir * 0.45; moveZ = aimX * bot.strafeDir * 0.45;
-        if (bot.shootCooldown <= 0 && onShoot) { bot.shootCooldown = (bot.currentSpell?.cooldown || 0.7) * 1.2; onShoot(bot, aimX, aimZ); }
+        if (bot.shootCooldown <= 0 && onShoot) { bot.shootCooldown = (bot.currentSpell?.cooldown || 0.7) * 1.2 * (getDifficulty()?.botReactionMult ?? 1.0); onShoot(bot, aimX, aimZ); }
       }
     } else {
       const rdx = bot.roamTarget.x - bot.x, rdz = bot.roamTarget.z - bot.z, rdist = Math.hypot(rdx, rdz);

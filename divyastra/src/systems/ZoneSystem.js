@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { STORM_PHASES, ARENA } from '../config/constants.js';
 import { ZoneVisuals } from './ZoneVisuals.js';
+import { getDifficulty } from '../config/difficulty.js';
 
 export let activeZoneSystem = null;
 
@@ -34,7 +35,8 @@ export class ZoneSystem {
     if (!currentPhase) return;
 
     this.phaseTime += dt;
-    const progress = Math.min(1.0, this.phaseTime / currentPhase.duration);
+    const duration = currentPhase.duration * (getDifficulty()?.zoneTimeMult ?? 1.0);
+    const progress = Math.min(1.0, this.phaseTime / duration);
 
     this.currentRadius = THREE.MathUtils.lerp(
       currentPhase.startRadius,
@@ -64,7 +66,7 @@ export class ZoneSystem {
     }
 
     // Advance Phase
-    if (this.phaseTime >= currentPhase.duration) {
+    if (this.phaseTime >= duration) {
       if (this.currentPhaseIndex < STORM_PHASES.length - 1) {
         this.currentPhaseIndex++;
         this.phaseTime = 0;
@@ -86,7 +88,8 @@ export class ZoneSystem {
     if (currentPhase.endRadius < currentPhase.startRadius) {
       return 0; // Currently shrinking
     }
-    return Math.max(0, currentPhase.duration - this.phaseTime);
+    const duration = currentPhase.duration * (getDifficulty()?.zoneTimeMult ?? 1.0);
+    return Math.max(0, duration - this.phaseTime);
   }
 
   getSafeDistance(x, z) {

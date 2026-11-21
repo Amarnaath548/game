@@ -25,6 +25,8 @@ import { separateActors } from './systems/ActorSeparation.js';
 import { ArenaInteractables } from './systems/ArenaInteractables.js';
 import { getDevTools } from './core/DevTools.js';
 import { DevInspectView } from './ui/DevInspectView.js';
+import { CampaignManager } from './core/CampaignManager.js';
+import { setDifficulty } from './config/difficulty.js';
 
 // Core Systems
 const sceneManager = new SceneManager();
@@ -33,6 +35,7 @@ const sound = new SoundManager();
 const meta = new MetaProgression();
 const questManager = new QuestManager();
 const spellbookManager = new SpellbookManager();
+const campaignManager = new CampaignManager();
 const tutorialHints = new TutorialHints();
 const particleSys = new ParticleSystem(sceneManager.scene, 400);
 const floatingBars = new FloatingBarSystem(sceneManager.camera);
@@ -81,7 +84,7 @@ const combatResolver = new CombatResolver({
 });
 const matchManager = new MatchManager({
   sceneManager, sound, meta, ui: null, banners, floatingBars, damageNumbers, killFeed,
-  particleSys, player, spawnManager, combatResolver, projectiles, projPool, gemPool, orbPool, questManager, spellbookManager, arenaInteractables
+  particleSys, player, spawnManager, combatResolver, projectiles, projPool, gemPool, orbPool, questManager, spellbookManager, arenaInteractables, campaignManager
 });
 
 // UI
@@ -90,38 +93,21 @@ const ui = new UIManager(meta, {
   spellbookManager,
   sceneManager,
   banners,
+  campaignManager,
   onSpellChange: (spellKey) => player.setSpell(spellKey),
-  onCastRequested: () => {
-    input.fireReleased = true;
-  },
+  onCastRequested: () => { input.fireReleased = true; },
   onHeroChange: (hero) => {
     if (player.rebuildHeroVisual) player.rebuildHeroVisual(hero);
-    else {
-      player.hero = hero;
-      if (player.bodyMat) player.bodyMat.color.setHex(hero.bodyColor);
-      if (player.accentMat) player.accentMat.color.setHex(hero.accentColor);
-    }
+    else { player.hero = hero; if (player.bodyMat) player.bodyMat.color.setHex(hero.bodyColor); if (player.accentMat) player.accentMat.color.setHex(hero.accentColor); }
   },
-  onPerkSelected: (perk) => {
-    player.applyPerk(perk);
-    sound.playLevelUp();
-  },
-  onStartMatch: () => {
-    sceneManager.onMatchStart();
-    matchManager.startMatch();
-    tutorialHints.onMatchStart();
-    lastTime = performance.now();
-  },
-  onReturnToLobby: () => {
-    matchManager.resetToLobby();
-    tutorialHints.onMatchEnd();
-  },
-  onElementPicked: () => {
-    tutorialHints.onElementPicked();
-  }
+  onPerkSelected: (perk) => { player.applyPerk(perk); sound.playLevelUp(); },
+  onStartMatch: () => { sceneManager.onMatchStart(); matchManager.startMatch(); tutorialHints.onMatchStart(); lastTime = performance.now(); },
+  onReturnToLobby: () => { matchManager.resetToLobby(); tutorialHints.onMatchEnd(); },
+  onElementPicked: () => { tutorialHints.onElementPicked(); }
 });
 matchManager.ui = ui;
 combatResolver.ui = ui;
+campaignManager.setDeps({ matchManager, ui, banners });
 
 const origShowLevelUp = ui.showLevelUp.bind(ui);
 ui.showLevelUp = (p, lvl) => { origShowLevelUp(p, lvl); tutorialHints.onLevelUp(lvl); };
@@ -133,8 +119,9 @@ const devInspectView = new DevInspectView({ sceneManager, matchManager, spawnMan
 const devTools = getDevTools();
 let devPanel = null;
 if (devTools.enabled) {
+  setDifficulty('NORMAL');
   import('./ui/DevPanel.js').then(({ DevPanel }) => {
-    devPanel = new DevPanel({ player, spawnManager, matchManager, sceneManager, ui, devInspectView });
+    devPanel = new DevPanel({ player, spawnManager, matchManager, sceneManager, ui, devInspectView, campaignManager });
   });
 }
 

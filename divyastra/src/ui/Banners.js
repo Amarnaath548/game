@@ -90,6 +90,20 @@ export class BannerManager {
     }, 1800);
   }
 
+  showMatchStartBanner(levelName, difficultyName) {
+    const el = document.createElement('div');
+    el.className = 'match-start-banner';
+    el.innerHTML = `
+      <div class="banner-title" style="font-size:18px;font-weight:900;color:#facc15;letter-spacing:1px;text-shadow:0 0 12px rgba(250,204,21,0.6);">${levelName}</div>
+      <div class="banner-sub" style="font-size:11px;font-weight:800;color:#e2e8f0;text-transform:uppercase;letter-spacing:1px;">Difficulty: ${difficultyName}</div>
+    `;
+    this.container.appendChild(el);
+    setTimeout(() => {
+      el.classList.add('banner-fade');
+      setTimeout(() => el.remove(), 400);
+    }, 2600);
+  }
+
   reset() {
     this.killHistory = {};
     this.lastZoneSafe = null;
