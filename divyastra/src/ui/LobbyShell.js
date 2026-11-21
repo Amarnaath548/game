@@ -1,5 +1,6 @@
 import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES } from '../config/constants.js';
 import { LEVELS } from '../config/levels.js';
+import { loadAndTrimHero, getHeroSrc } from './HeroImageTrim.js';
 
 const HERO_IMG = {
   tapasvi: 'hero_tapasvi.webp',
@@ -28,7 +29,6 @@ export class LobbyShell {
 
     this.displayedHeroId = this.getSelectedHeroId();
     this.lastUnlockedHeroId = this.displayedHeroId;
-
     this.initScaling();
     this.preloadImages();
     this.bindEvents();
@@ -54,30 +54,32 @@ export class LobbyShell {
       './lobby/icon_heroes.png', './lobby/icon_staves.png', './lobby/icon_upgrades.png',
       './lobby/map_grass.png', './lobby/map_snow.png'
     ];
-    let loadedCritical = 0;
-    const onCriticalLoad = () => {
-      loadedCritical++;
-      if (loadedCritical >= 2 && this.preloader) {
+
+    let bgLoaded = false;
+    let initialHeroLoaded = false;
+    const checkCritical = () => {
+      if (bgLoaded && initialHeroLoaded && this.preloader) {
         this.preloader.classList.add('hidden');
       }
     };
+
     const bg = new Image();
-    bg.onload = onCriticalLoad;
-    bg.onerror = onCriticalLoad;
+    bg.onload = () => { bgLoaded = true; checkCritical(); };
+    bg.onerror = () => { bgLoaded = true; checkCritical(); };
     bg.src = './lobby/bg_lobby.webp';
 
     const initialHero = HERO_IMG[this.displayedHeroId] || HERO_IMG.tapasvi;
-    const hero = new Image();
-    hero.onload = onCriticalLoad;
-    hero.onerror = onCriticalLoad;
-    hero.src = `./lobby/${initialHero}`;
-
-    Object.values(HERO_IMG).forEach((file) => {
-      const img = new Image();
-      img.src = `./lobby/${file}`;
+    loadAndTrimHero(this.displayedHeroId, initialHero).then((src) => {
+      initialHeroLoaded = true;
+      if (this.heroImg) this.heroImg.src = src;
+      checkCritical();
     });
 
-    images.forEach((src) => {
+    Object.entries(HERO_IMG).forEach(([id, file]) => {
+      if (id !== this.displayedHeroId) loadAndTrimHero(id, file);
+    });
+
+    images.slice(2).forEach((src) => {
       const img = new Image();
       img.src = src;
     });
@@ -183,11 +185,12 @@ export class LobbyShell {
     const hero = HEROES.find((h) => h.id === this.displayedHeroId) || HEROES[0];
     const isUnlocked = this.getUnlockedHeroes().includes(hero.id);
     const heroFile = HERO_IMG[hero.id] || HERO_IMG.tapasvi;
+    const heroSrc = getHeroSrc(hero.id, heroFile);
 
     if (this.heroImg) {
       this.heroImg.classList.add('fading');
       setTimeout(() => {
-        this.heroImg.src = `./lobby/${heroFile}`;
+        this.heroImg.src = heroSrc;
         this.heroImg.classList.toggle('locked-dim', !isUnlocked);
         this.heroImg.classList.remove('fading');
       }, 150);
@@ -238,7 +241,6 @@ export class LobbyShell {
 
   stopHeroShowcase() {}
   startHeroShowcase() {}
-
   render() {
     this.updateHeroDisplay();
     this.updateNextLevelDisplay();
