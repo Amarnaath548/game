@@ -57,7 +57,7 @@ export function buildHeroVisual(actor, hero) {
   addMesh(torsoGroup, G.belt, accentMat);
   addMesh(torsoGroup, G.sash, bodyMat);
   addMesh(torsoGroup, G.necklace, beadMat, false);
-  addMesh(torsoGroup, G.pouch, clayMat);
+  addMesh(torsoGroup, G.pouch, clayMat, false);
   actor.visualMesh.add(torsoGroup);
 
   // 2. Head: faceted face (no eyes, no symbols), beard, hair, soft halo glow
@@ -96,7 +96,7 @@ export function buildHeroVisual(actor, hero) {
   actor.rightArm = makeArm(0.39);
   actor.leftLeg = makeLeg(-0.14);
   actor.rightLeg = makeLeg(0.14);
-  addMesh(actor.leftArm, G.pot, clayMat); // kamandalu swings with the free hand
+  addMesh(actor.leftArm, G.pot, clayMat, false); // kamandalu swings with the free hand
 
   // 4. Staff (Danda) & spell orb, gripped in the right fist (tilted 12° outward)
   const staffGroup = new THREE.Group();
@@ -113,7 +113,7 @@ export function buildHeroVisual(actor, hero) {
   staffGroup.add(actor.staffOrb);
 
   actor.staffAccentMat = mk(0xffd166);
-  const staffAccentMesh = addMesh(staffGroup, GEO_CACHE.staffAccentRing, actor.staffAccentMat);
+  const staffAccentMesh = addMesh(staffGroup, GEO_CACHE.staffAccentRing, actor.staffAccentMat, false);
   staffAccentMesh.position.set(0, 0.76, 0);
   actor.staffAccentMesh = staffAccentMesh;
 

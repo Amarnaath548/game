@@ -229,7 +229,7 @@ export class ArenaMap {
     const geo = new THREE.BoxGeometry(1, 1, 1);
     const blocks = new THREE.InstancedMesh(geo, lambert(0xffffff), COUNT);
     const caps = new THREE.InstancedMesh(geo, lambert(T.blockCap ?? T.cap), COUNT);
-    blocks.castShadow = true; blocks.receiveShadow = true;
+    blocks.receiveShadow = true;
     const col = new THREE.Color();
     for (let i = 0; i < COUNT; i++) {
       const a = (i / COUNT) * Math.PI * 2 + (rng() - 0.5) * 0.04;
@@ -276,9 +276,9 @@ export class ArenaMap {
     // Dais under the mythic chest + soft glow
     const [cx, cz] = this.layout.anchors.mythicChest;
     const d1 = new THREE.Mesh(new THREE.CylinderGeometry(4.0, 4.3, 0.2, 24), lambert(P.dais));
-    d1.position.set(cx, 0.1, cz); d1.renderOrder = 12; d1.receiveShadow = true; d1.castShadow = true; this.root.add(d1);
+    d1.position.set(cx, 0.1, cz); d1.renderOrder = 12; d1.receiveShadow = true; this.root.add(d1);
     const d2 = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 3.0, 0.2, 20), lambert(P.daisTop));
-    d2.position.set(cx, 0.3, cz); d2.renderOrder = 12; d2.receiveShadow = true; d2.castShadow = true; this.root.add(d2);
+    d2.position.set(cx, 0.3, cz); d2.renderOrder = 12; d2.receiveShadow = true; this.root.add(d2);
     const inlay = new THREE.Mesh(new THREE.RingGeometry(2.2, 2.45, 24).rotateX(-Math.PI / 2), lambert(P.inlay));
     inlay.position.set(cx, 0.405, cz); inlay.renderOrder = 13; this.root.add(inlay);
     const glow = new THREE.Mesh(
@@ -308,7 +308,7 @@ export class ArenaMap {
       const g = new THREE.Group(); g.position.set(px, 0, pz);
       const shad = this.contactShadow(1.5); shad.position.y = 0.04; g.add(shad);
       const add = (geo, mat, y, rot) => {
-        const m = new THREE.Mesh(geo, mat); m.position.y = y; m.castShadow = true;
+        const m = new THREE.Mesh(geo, mat); m.position.y = y;
         if (rot) m.rotation.set(...rot); g.add(m); return m;
       };
       add(new THREE.BoxGeometry(1.6, 0.4, 1.6), sh, 0.2);
@@ -341,7 +341,7 @@ export class ArenaMap {
     const fin = new THREE.ConeGeometry(0.28, 0.8, 4);
     list.forEach((tp) => {
       const g = new THREE.Group(); g.position.set(tp.x, 0, tp.z); g.rotation.y = tp.rot;
-      const add = (geo, mat, x, y) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, 0); m.castShadow = true; g.add(m); return m; };
+      const add = (geo, mat, x, y) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, 0); g.add(m); return m; };
       [-2.2, 2.2].forEach((ox) => {
         add(plinth, sh, ox, 0.2); add(col, hi, ox, 2.6);
         const s = this.contactShadow(1.2); s.position.set(ox, 0.04, 0); g.add(s);
@@ -388,7 +388,7 @@ export class ArenaMap {
     const panel = new THREE.BoxGeometry(2.0, 0.34, 0.1);
     const addWall = (cx, cz, len, ry) => {
       const w = new THREE.Mesh(new THREE.BoxGeometry(len, 0.6, 0.7), curb);
-      w.position.set(cx, 0.5, cz); w.rotation.y = ry; w.castShadow = true; w.receiveShadow = true; grp.add(w);
+      w.position.set(cx, 0.5, cz); w.rotation.y = ry; w.receiveShadow = true; grp.add(w);
       const holder = new THREE.Group(); holder.position.set(cx, 0.5, cz); holder.rotation.y = ry;
       const n = Math.max(1, Math.floor(len / 2.4));
       for (let k = 0; k < n; k++) {
@@ -407,7 +407,7 @@ export class ArenaMap {
     addWall(-(gap / 2 + seg / 2), half, seg, 0); addWall(gap / 2 + seg / 2, half, seg, 0);
     for (let st = 0; st < 4; st++) {
       const step = new THREE.Mesh(new THREE.BoxGeometry(gap - 0.4, 0.14, 0.8), st % 2 ? curb : curbDk);
-      step.position.set(0, 0.09 + st * 0.11, half + 2.3 - st * 0.8); step.castShadow = true; step.receiveShadow = true; grp.add(step);
+      step.position.set(0, 0.09 + st * 0.11, half + 2.3 - st * 0.8); step.receiveShadow = true; grp.add(step);
     }
 
     const ped = new THREE.BoxGeometry(1.5, 1.0, 1.5);
@@ -416,9 +416,9 @@ export class ArenaMap {
     const f1 = new THREE.MeshBasicMaterial({ color: 0xF97316 }), f2 = new THREE.MeshBasicMaterial({ color: 0xFDE047 });
     const fg1 = new THREE.ConeGeometry(0.55, 1.2, 5), fg2 = new THREE.ConeGeometry(0.34, 1.1, 5), fg3 = new THREE.ConeGeometry(0.22, 0.7, 5);
     [[-8.5, -8.5], [8.5, -8.5], [-8.5, 8.5], [8.5, 8.5]].forEach(([bx, bz]) => {
-      const p = new THREE.Mesh(ped, curb); p.position.set(bx, 0.7, bz); p.castShadow = true; grp.add(p);
+      const p = new THREE.Mesh(ped, curb); p.position.set(bx, 0.7, bz); grp.add(p);
       if (snow) { const sc = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.12, 1.5), snow); sc.position.set(bx, 1.22, bz - 0.0); sc.scale.set(0.6, 1, 0.6); sc.position.x += 0.35; sc.position.z += 0.35; grp.add(sc); }
-      const b = new THREE.Mesh(bowl, bowlMat); b.position.set(bx, 1.45, bz); b.castShadow = true; grp.add(b);
+      const b = new THREE.Mesh(bowl, bowlMat); b.position.set(bx, 1.45, bz); grp.add(b);
       const a = new THREE.Mesh(fg1, f1); a.position.set(bx, 2.25, bz); grp.add(a);
       const b2 = new THREE.Mesh(fg2, f2); b2.position.set(bx, 2.6, bz); grp.add(b2);
       const c = new THREE.Mesh(fg3, f1); c.position.set(bx + 0.3, 2.35, bz - 0.2); c.rotation.z = -0.25; grp.add(c);
@@ -427,7 +427,7 @@ export class ArenaMap {
     if (snow) {
       // drifts along the platform's outer edge
       [[-9.5, -3, 3.2, 1.6], [9.4, 4, 2.6, 1.8], [2, -9.7, 3.6, 1.4], [-4, 9.8, 2.8, 1.5]].forEach(([dx, dz, w, d]) => {
-        const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.28, d), snow); m.position.set(dx, 0.14, dz); m.castShadow = true; grp.add(m);
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.28, d), snow); m.position.set(dx, 0.14, dz); grp.add(m);
       });
     }
     this.root.add(grp);
@@ -480,7 +480,7 @@ export class ArenaMap {
     // Central shrine
     const stone = lambert(W.stone), stoneDk = lambert(W.stoneDk);
     const snow = this.theme.snowCap ? lambert(this.theme.snowCap) : null;
-    const add = (geo, mat, x, y, z, shadow = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = shadow; g.add(m); return m; };
+    const add = (geo, mat, x, y, z, shadow = false) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = shadow; g.add(m); return m; };
     add(new THREE.BoxGeometry(3.2, 0.34, 3.2), stoneDk, 0, 0.17, 0);
     add(new THREE.BoxGeometry(2.4, 0.34, 2.4), stone, 0, 0.51, 0);
     [[-0.85, -0.85], [0.85, -0.85], [-0.85, 0.85], [0.85, 0.85]].forEach(([cx, cz]) => add(new THREE.BoxGeometry(0.3, 1.5, 0.3), stone, cx, 1.5, cz));
@@ -527,7 +527,7 @@ export class ArenaMap {
       const reedMat = lambert(W.reeds);
       [[0.4, -3.9], [-3.9, 0.3], [3.9, 0.9], [-0.6, 4.1]].forEach(([rx, rz], i) => {
         const m = new THREE.Mesh(reedGeo, reedMat);
-        m.position.set(rx, 0.04, rz); m.scale.setScalar(1.1 + (i % 2) * 0.3); m.castShadow = true; g.add(m);
+        m.position.set(rx, 0.04, rz); m.scale.setScalar(1.1 + (i % 2) * 0.3); g.add(m);
       });
     }
   }

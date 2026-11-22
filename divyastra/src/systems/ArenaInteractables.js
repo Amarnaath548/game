@@ -44,22 +44,22 @@ function buildSurya(scene, x, z, obstacles) {
 
   // Stepped hexagonal gold base
   const base = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.3, 0.45, 6), new THREE.MeshLambertMaterial({ color: 0xD99B26, flatShading: true }));
-  base.position.y = 0.225; base.castShadow = true; g.add(base);
+  base.position.y = 0.225; g.add(base);
 
   // Tall beveled octagonal gold monolith (height: 3.8, radius: 0.75 in #D99B26)
   const frameMat = new THREE.MeshLambertMaterial({ color: 0xD99B26, flatShading: true });
   const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.75, 3.8, 8), frameMat);
-  frame.position.y = 2.35; frame.castShadow = true; g.add(frame);
+  frame.position.y = 2.35; g.add(frame);
 
   const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.72, 0.35, 8), new THREE.MeshLambertMaterial({ color: 0xF59E0B, flatShading: true }));
-  cap.position.y = 4.4; cap.castShadow = true; g.add(cap);
+  cap.position.y = 4.4; g.add(cap);
 
   // Bright vertical glowing mirror panel on front/back faces
   const coreMat = new THREE.MeshStandardMaterial({
     color: 0xFEF9C3, emissive: 0xF59E0B, emissiveIntensity: 0.45, metalness: 0.85, roughness: 0.1, flatShading: true
   });
   const core = new THREE.Mesh(new THREE.BoxGeometry(0.85, 2.8, 0.25), coreMat);
-  core.position.y = 2.35; core.castShadow = true; g.add(core);
+  core.position.y = 2.35; g.add(core);
 
   scene.add(g);
   obstacles.push({ x, z, radius: SURYA_COL_R, isSuryaPillar: true });
@@ -74,7 +74,7 @@ function buildBrazier(scene, x, z) {
   // Wide dark stone bowl
   const bowlGeo = new THREE.CylinderGeometry(0.85, 0.6, 0.65, 8);
   const bowl = new THREE.Mesh(bowlGeo, new THREE.MeshLambertMaterial({ color: 0x334155, flatShading: true }));
-  bowl.position.y = 0.325; bowl.castShadow = true; g.add(bowl);
+  bowl.position.y = 0.325; g.add(bowl);
 
   // Glowing embers
   const embers = new THREE.Mesh(

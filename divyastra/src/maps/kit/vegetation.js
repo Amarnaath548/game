@@ -220,7 +220,7 @@ export function rocks(map, { clusters = [], solo = 26, colors, cap = null, accen
 
   const geo = new THREE.DodecahedronGeometry(1, 0);
   const body = inst(map, geo, lambert(0xffffff), list.length, { receive: true });
-  const capMesh = cap ? inst(map, geo, lambert(cap.color), list.length) : null;
+  const capMesh = cap ? inst(map, geo, lambert(cap.color), list.length, { shadow: false }) : null;
   const col = new THREE.Color();
   list.forEach(({ x, z, sc, rot }, i) => {
     put(map, body, i, x, sc * 0.62, z, sc * 1.05, sc * 0.9, sc, rot, 0.1, 0.08);
@@ -240,7 +240,7 @@ export function rocks(map, { clusters = [], solo = 26, colors, cap = null, accen
         if (Math.abs(bx) > hw || Math.abs(bz) > hw) spots.push([bx, bz, 0.7 + map.rng() * 0.7]);
       }
     });
-    const m = inst(map, geo, lambert(accent.color), spots.length);
+    const m = inst(map, geo, lambert(accent.color), spots.length, { shadow: false });
     spots.forEach(([x, z, sc], i) => put(map, m, i, x, sc * 0.6, z, sc * 0.9, sc * 1.1, sc * 0.8, i, 0.1, 0.05));
     finish(m);
   }
@@ -268,7 +268,7 @@ export function agaves(map, { color, solo = 40, tint = null }) {
     const spot = map.findSpot(26, 112, 1.1, 20, { rim: 5 });
     if (spot) spots.push([spot[0], spot[1], 0.85 + map.rng() * 0.5]);
   }
-  const mesh = inst(map, makeAgaveGeometry(), lambert(0xffffff), spots.length);
+  const mesh = inst(map, makeAgaveGeometry(), lambert(0xffffff), spots.length, { shadow: false });
   const base = new THREE.Color(color);
   const alt = tint ? new THREE.Color(tint) : base;
   spots.forEach(([x, z, s], i) => {
@@ -302,7 +302,7 @@ export function pots(map, { colors, snowCap = null }) {
   cluster(26, -52, 3);
   cluster(52, -26, 3);
 
-  const mesh = inst(map, makePotGeometry(), lambert(0xffffff, { side: THREE.DoubleSide }), spots.length);
+  const mesh = inst(map, makePotGeometry(), lambert(0xffffff, { side: THREE.DoubleSide }), spots.length, { shadow: false });
   const col = new THREE.Color();
   spots.forEach(([x, z, s], i) => {
     put(map, mesh, i, x, 0, z, s, s * 1.1, s, map.rng() * 6);
@@ -485,7 +485,7 @@ export function ringWalls(map, { color, darkColor }) {
       pieces.push([x, z, -aa + Math.PI / 2 + (map.rng() - 0.5) * 0.15, 0.45 + map.rng() * 0.6]);
     }
   }
-  const mesh = inst(map, new THREE.BoxGeometry(3.4, 1, 0.9), lambert(0xffffff), pieces.length, { receive: true });
+  const mesh = inst(map, new THREE.BoxGeometry(3.4, 1, 0.9), lambert(0xffffff), pieces.length, { shadow: false, receive: true });
   const c1 = new THREE.Color(color), c2 = new THREE.Color(darkColor);
   pieces.forEach(([x, z, ry, h], i) => {
     put(map, mesh, i, x, h / 2, z, 1, h, 1, ry);

@@ -27,14 +27,12 @@ export class Chest {
 
     this.bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), this.mat);
     this.bodyMesh.position.y = baseY + H / 2;
-    this.bodyMesh.castShadow = true;
     this.bodyMesh.receiveShadow = true;
     this.group.add(this.bodyMesh);
 
     const lid = new THREE.Mesh(new THREE.CylinderGeometry(D / 2, D / 2, W, 10, 1, false, 0, Math.PI), this.mat);
     lid.rotation.set(0, 0, Math.PI / 2); // axis along X, dome facing up
     lid.position.y = baseY + H;
-    lid.castShadow = true;
     this.group.add(lid);
 
     [-W * 0.32, W * 0.32].forEach((bx) => {
@@ -124,7 +122,6 @@ export class ArcaneCrystal {
     });
     this.mesh = new THREE.Mesh(crystalGeo, this.mat);
     this.mesh.position.y = 1.1;
-    this.mesh.castShadow = true;
     this.group.add(this.mesh);
 
     // Base ring
@@ -199,7 +196,7 @@ export class ShadowBush {
     lobeOffsets.forEach(([ox, , oz, r, mat]) => {
       const m = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), mat);
       m.position.set(ox, r * 0.55, oz); m.scale.set(1.15, 0.55, 1.15);
-      m.castShadow = true; m.receiveShadow = true; this.group.add(m);
+      m.receiveShadow = true; this.group.add(m);
     });
 
     this.scene.add(this.group);

@@ -2,10 +2,12 @@ import * as THREE from 'three';
 import { COLORS, ARENA, CAMERA_CONFIG, BIOMES } from '../config/constants.js';
 import { QUALITY_PRESETS, getSavedQuality, getLowerQualityTier, saveQuality } from '../config/quality.js';
 import { CameraZoom } from './CameraZoom.js';
+import { ShadowFollower } from './ShadowFollower.js';
 import { createMap } from '../maps/index.js';
 import {
   MYTHIC_CHEST, CHEST_COORDS, CRYSTAL_COORDS, BUSH_COORDS, PAD_COORDS, SURYA_COORDS, BRAZIER_COORDS
 } from '../config/worldLayout.js';
+import { loadBiomeHistory, saveBiomeHistory, initNextBiome, pickNextBiome } from './BiomeRotation.js';
 
 export class SceneManager {
   constructor() {
@@ -34,8 +36,8 @@ export class SceneManager {
     this.hitShakeTimer = 0; this.hitShakeDuration = 0.15; this.hitShakeAmp = 0.12; this.trauma = 0;
     this.zoom = new CameraZoom();
     this.obelisks = []; this.obeliskMeshes = [];
-    this.biomeHistory = this.loadBiomeHistory();
-    this.nextBiomeKey = this.initNextBiome();
+    this.biomeHistory = loadBiomeHistory();
+    this.nextBiomeKey = initNextBiome(this.biomeHistory);
     this.qualityEvaluated = false;
     this.matchFpsTimer = 0; this.matchFpsFrames = 0;
     this.particleSys = null;
@@ -49,11 +51,7 @@ export class SceneManager {
     window.addEventListener('resize', () => this.onResize());
   }
 
-  onMatchStart() {
-    this.qualityEvaluated = false;
-    this.matchFpsTimer = 0;
-    this.matchFpsFrames = 0;
-  }
+  onMatchStart() { this.qualityEvaluated = false; this.matchFpsTimer = 0; this.matchFpsFrames = 0; }
 
   checkPerformanceFallback(dt, particleSys = null) {
     if (this.qualityEvaluated) return;
@@ -89,15 +87,14 @@ export class SceneManager {
       if (hasShadows) {
         const size = typeof preset.shadows === 'number' ? preset.shadows : (preset.shadowMapSize || 1024);
         this.dirLight.shadow.mapSize.set(size, size);
+        if (this.shadowFollower) this.shadowFollower.applyCameraBounds();
         if (this.dirLight.shadow.map) {
           this.dirLight.shadow.map.dispose();
           this.dirLight.shadow.map = null;
         }
       }
     }
-    if (this.floorMesh) {
-      this.floorMesh.receiveShadow = hasShadows;
-    }
+    if (this.floorMesh) this.floorMesh.receiveShadow = hasShadows;
 
     const ps = particleSys || this.particleSys;
     if (ps) {
@@ -109,29 +106,6 @@ export class SceneManager {
     }
   }
 
-  loadBiomeHistory() {
-    try { const s = localStorage.getItem('magica_biome_history'); if (s) { const a = JSON.parse(s); if (Array.isArray(a)) return a; } } catch (e) {}
-    return [];
-  }
-
-  saveBiomeHistory() {
-    try { localStorage.setItem('magica_biome_history', JSON.stringify(this.biomeHistory)); localStorage.setItem('magica_next_biome', this.nextBiomeKey); } catch (e) {}
-  }
-
-  initNextBiome() {
-    try { const s = localStorage.getItem('magica_next_biome'); if (s && BIOMES[s]) return s; } catch (e) {}
-    const p = this.pickNextBiome();
-    try { localStorage.setItem('magica_next_biome', p); } catch (e) {}
-    return p;
-  }
-
-  pickNextBiome() {
-    const keys = Object.keys(BIOMES);
-    const last = this.biomeHistory[this.biomeHistory.length - 1];
-    const pool = keys.filter((k) => k !== last);
-    return pool[Math.floor(Math.random() * pool.length)] || keys[0];
-  }
-
   getNextBiomeName() {
     return (BIOMES[this.nextBiomeKey] || BIOMES.GRASS).name;
   }
@@ -139,12 +113,12 @@ export class SceneManager {
   async startMatchBiome(bushes = [], forcedBiomeKey = null) {
     const biomeKey = (forcedBiomeKey && BIOMES[forcedBiomeKey.toUpperCase()])
       ? forcedBiomeKey.toUpperCase()
-      : (this.nextBiomeKey || this.pickNextBiome());
+      : (this.nextBiomeKey || pickNextBiome(this.biomeHistory));
     this.biomeHistory.push(biomeKey);
     if (this.biomeHistory.length > 8) this.biomeHistory.shift();
     await this.applyBiome(biomeKey, bushes);
-    this.nextBiomeKey = this.pickNextBiome();
-    this.saveBiomeHistory();
+    this.nextBiomeKey = pickNextBiome(this.biomeHistory);
+    saveBiomeHistory(this.biomeHistory, this.nextBiomeKey);
     return biomeKey;
   }
 
@@ -154,20 +128,26 @@ export class SceneManager {
   initLights() {
     const preset = QUALITY_PRESETS[this.qualityTier] || QUALITY_PRESETS.HIGH;
     const hasShadows = preset.shadows !== 'off' && !!preset.shadows;
+
     this.hemiLight = new THREE.HemisphereLight(0xFFFBEB, 0x3D6B24, 0.7);
     this.scene.add(this.hemiLight);
+
+    const lightOffset = new THREE.Vector3(40, 65, 30);
     this.dirLight = new THREE.DirectionalLight(0xFFF4D2, 1.45);
-    this.dirLight.position.set(40, 65, 30);
+    this.dirLight.position.copy(lightOffset);
+    this.dirLight.target.position.set(0, 0, 0);
     this.dirLight.castShadow = hasShadows;
+
     const mapSize = typeof preset.shadows === 'number' ? preset.shadows : (preset.shadowMapSize || 1024);
     this.dirLight.shadow.mapSize.set(mapSize, mapSize);
     this.dirLight.shadow.bias = -0.0004;
     this.dirLight.shadow.normalBias = 0.03;
     this.dirLight.shadow.camera.near = 10;
     this.dirLight.shadow.camera.far = 160;
-    const d = 75, sc = this.dirLight.shadow.camera;
-    sc.left = -d; sc.right = d; sc.top = d; sc.bottom = -d;
+
     this.scene.add(this.dirLight);
+    this.scene.add(this.dirLight.target);
+    this.shadowFollower = new ShadowFollower(this.dirLight, lightOffset, 25);
   }
 
   initArena() {
@@ -222,6 +202,8 @@ export class SceneManager {
   }
 
   updateCamera(playerPos, aimDir, dt = 0.016) {
+    if (this.shadowFollower) this.shadowFollower.update(playerPos);
+
     const lookAheadX = aimDir.x * CAMERA_CONFIG.AIM_LOOKAHEAD;
     const lookAheadZ = aimDir.z * CAMERA_CONFIG.AIM_LOOKAHEAD;
     let shakeX = 0, shakeZ = 0;
@@ -260,7 +242,5 @@ export class SceneManager {
     this.renderer.setPixelRatio(preset.pixelRatio);
   }
 
-  render() {
-    this.renderer.render(this.scene, this.camera);
-  }
+  render() { this.renderer.render(this.scene, this.camera); }
 }

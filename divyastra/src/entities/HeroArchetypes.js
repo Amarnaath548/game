@@ -29,13 +29,11 @@ function buildTapasviVisuals(actor, head, torso, staff, accentMat) {
   // Jata topknot: tapered tuft + bun, a ring of rudraksha beads and a thin accent band
   const tuft = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 0.14, 8), actor.hairMat);
   tuft.position.set(0, 0.26, -0.03);
-  tuft.castShadow = true;
   head.add(tuft);
 
   const bun = new THREE.Mesh(new THREE.SphereGeometry(0.15, 9, 8), actor.hairMat);
   bun.scale.set(1, 0.9, 1);
   bun.position.set(0, 0.39, -0.04);
-  bun.castShadow = true;
   head.add(bun);
 
   const beads = new THREE.Mesh(buildBeadRing(0.14, 9, 0.03), actor.beadMat);
