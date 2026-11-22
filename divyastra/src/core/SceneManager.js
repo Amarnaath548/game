@@ -240,6 +240,7 @@ export class SceneManager {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     const preset = QUALITY_PRESETS[this.qualityTier] || QUALITY_PRESETS.HIGH;
     this.renderer.setPixelRatio(preset.pixelRatio);
+    if (this.zoom?.syncWithDevice) this.zoom.syncWithDevice();
   }
 
   render() { this.renderer.render(this.scene, this.camera); }
