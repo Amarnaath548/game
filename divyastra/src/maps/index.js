@@ -1,20 +1,22 @@
-import { GrassMap } from './GrassMap.js';
-import { DesertMap } from './DesertMap.js';
-import { AutumnMap } from './AutumnMap.js';
-import { SnowMap } from './SnowMap.js';
-
 export { ArenaMap } from './kit/ArenaMap.js';
-export { GrassMap, DesertMap, AutumnMap, SnowMap };
 
-export const MAPS = { grass: GrassMap, desert: DesertMap, autumn: AutumnMap, snow: SnowMap };
-export const MAP_IDS = Object.keys(MAPS);
+export const MAP_IDS = ['grass', 'desert', 'autumn', 'snow'];
+
+/** Lazy loaders — each returns a Promise<{ default: class }> */
+const MAP_LOADERS = {
+  grass:  () => import('./GrassMap.js').then(m => m.GrassMap),
+  desert: () => import('./DesertMap.js').then(m => m.DesertMap),
+  autumn: () => import('./AutumnMap.js').then(m => m.AutumnMap),
+  snow:   () => import('./SnowMap.js').then(m => m.SnowMap)
+};
 
 /**
- * createMap('desert', scene, { obstacles, anchors, floor, applyEnvironment })
- * Returns the map; call map.dispose() to remove it completely (geometry, materials, scene env).
+ * createMap('desert', scene, opts) → Promise<ArenaMap>
+ * Dynamically imports only the requested map, then constructs and returns it.
  */
-export function createMap(id, scene, opts = {}) {
-  const Cls = MAPS[id];
-  if (!Cls) throw new Error(`Unknown map "${id}". Available: ${MAP_IDS.join(', ')}`);
+export async function createMap(id, scene, opts = {}) {
+  const loader = MAP_LOADERS[id];
+  if (!loader) throw new Error(`Unknown map "${id}". Available: ${MAP_IDS.join(', ')}`);
+  const Cls = await loader();
   return new Cls(scene, opts);
 }

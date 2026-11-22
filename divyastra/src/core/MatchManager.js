@@ -90,7 +90,7 @@ export class MatchManager {
     }
   }
 
-  startMatch(forcedBiome = null, botCount = null) {
+  async startMatch(forcedBiome = null, botCount = null) {
     this.spawnManager.cleanup();
     this.projectiles.forEach((p) => p.despawn());
     this.spawnManager.gems.forEach((g) => g.despawn());
@@ -104,7 +104,7 @@ export class MatchManager {
     this.zoneSys = new ZoneSystem(this.sceneManager.scene);
 
     this.applyLobbyLoadout();
-    this.sceneManager.startMatchBiome(this.spawnManager.bushes, forcedBiome);
+    await this.sceneManager.startMatchBiome(this.spawnManager.bushes, forcedBiome);
     this.spawnManager.startMatch(botCount);
     if (this.arenaInteractables) this.arenaInteractables.spawn();
 

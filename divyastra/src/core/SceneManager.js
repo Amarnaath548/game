@@ -37,7 +37,7 @@ export class SceneManager {
     this.initArena();
     this.map = null;
     this.mapId = null;
-    this.applyBiome(this.nextBiomeKey);
+    this.ready = this.applyBiome(this.nextBiomeKey);
     window.addEventListener('resize', () => this.onResize());
   }
 
@@ -97,13 +97,13 @@ export class SceneManager {
     return (BIOMES[this.nextBiomeKey] || BIOMES.GRASS).name;
   }
 
-  startMatchBiome(bushes = [], forcedBiomeKey = null) {
+  async startMatchBiome(bushes = [], forcedBiomeKey = null) {
     const biomeKey = (forcedBiomeKey && BIOMES[forcedBiomeKey.toUpperCase()])
       ? forcedBiomeKey.toUpperCase()
       : (this.nextBiomeKey || this.pickNextBiome());
     this.biomeHistory.push(biomeKey);
     if (this.biomeHistory.length > 8) this.biomeHistory.shift();
-    this.applyBiome(biomeKey, bushes);
+    await this.applyBiome(biomeKey, bushes);
     this.nextBiomeKey = this.pickNextBiome();
     this.saveBiomeHistory();
     return biomeKey;
@@ -137,12 +137,12 @@ export class SceneManager {
   }
 
   /** Builds (or swaps) the arena map for a biome. Colliders are re-registered into this.obelisks. */
-  buildMap(biome) {
+  async buildMap(biome) {
     const mapId = biome.id.toLowerCase();
     if (this.map && this.mapId === mapId) return;
     if (this.map) this.map.dispose();
     this.obelisks.length = 0; // same array instance the collision system reads
-    this.map = createMap(mapId, this.scene, {
+    this.map = await createMap(mapId, this.scene, {
       obstacles: this.obelisks,
       floor: false, // SceneManager owns the floor disc
       anchors: {
@@ -153,7 +153,7 @@ export class SceneManager {
     this.mapId = mapId;
   }
 
-  applyBiome(biomeKey = null, bushes = []) {
+  async applyBiome(biomeKey = null, bushes = []) {
     let biome = typeof biomeKey === 'string' ? BIOMES[biomeKey.toUpperCase()] : biomeKey;
     if (!biome) { const k = Object.keys(BIOMES); biome = BIOMES[k[Math.floor(Math.random() * k.length)]]; }
     this.currentBiome = biome;
@@ -162,7 +162,7 @@ export class SceneManager {
     const near = biome.fogNear || 45, far = biome.fogFar || 140;
     if (!this.scene.fog) this.scene.fog = new THREE.Fog(biome.fogColor, near, far);
     else { this.scene.fog.color.setHex(biome.fogColor); this.scene.fog.near = near; this.scene.fog.far = far; }
-    this.buildMap(biome);
+    await this.buildMap(biome);
 
     // Default (grass-friendly) lighting, then let the map tint it (snow / desert / autumn presets)
     if (this.hemiLight) { this.hemiLight.color.setHex(0xFFFBEB); this.hemiLight.groundColor.setHex(0x3D6B24); this.hemiLight.intensity = 0.7; }
