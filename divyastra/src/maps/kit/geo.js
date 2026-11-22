@@ -52,7 +52,19 @@ export function partColor(geo, color, p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1
   return withColor(g, color);
 }
 
-export const merge = (list) => BufferGeometryUtils.mergeGeometries(list, false);
+/** Merge that first normalises every input (non-indexed, position/normal/color only) so mixed Ring/Shape/Plane geometries never return null. */
+export function merge(list) {
+  const norm = list.map((g) => {
+    const n = g.index ? g.toNonIndexed() : g;
+    for (const k of Object.keys(n.attributes)) {
+      if (k !== 'position' && k !== 'normal' && k !== 'color') n.deleteAttribute(k);
+    }
+    return n;
+  });
+  const out = BufferGeometryUtils.mergeGeometries(norm, false);
+  if (!out) console.warn('[merge] attribute mismatch, returning empty geometry');
+  return out || new THREE.BufferGeometry();
+}
 
 /** Flat ground decal: Lambert (receives shadows), no depth write, polygon-offset against z-fighting. */
 export function decalMat(color, opts = {}) {
