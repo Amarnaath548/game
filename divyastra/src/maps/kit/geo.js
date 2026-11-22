@@ -31,6 +31,27 @@ export function partQ(geo, p, q, s = [1, 1, 1]) {
   return g;
 }
 
+/** Attaches vertex colors to an attribute-normalised geometry for single-draw-call props. */
+export function withColor(geo, hexColor) {
+  const g = geo.index ? geo.toNonIndexed() : geo.clone();
+  const count = g.attributes.position.count;
+  const colors = new Float32Array(count * 3);
+  const c = new THREE.Color(hexColor);
+  for (let i = 0; i < count; i++) {
+    colors[i * 3] = c.r;
+    colors[i * 3 + 1] = c.g;
+    colors[i * 3 + 2] = c.b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return g;
+}
+
+/** Combines part transform and vertex coloring into one step. */
+export function partColor(geo, color, p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1], order = 'XYZ') {
+  const g = part(geo, p, r, s, order);
+  return withColor(g, color);
+}
+
 export const merge = (list) => BufferGeometryUtils.mergeGeometries(list, false);
 
 /** Flat ground decal: Lambert (receives shadows), no depth write, polygon-offset against z-fighting. */
