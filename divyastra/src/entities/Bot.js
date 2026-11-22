@@ -17,7 +17,8 @@ export class Bot extends Actor {
       radius: PLAYER_BASE.RADIUS,
       maxHp: baseHp,
       moveSpeed: PLAYER_BASE.MOVE_SPEED * (0.85 + Math.random() * 0.15),
-      hero: botHero
+      hero: botHero,
+      isBot: true
     });
 
     this.id = id;

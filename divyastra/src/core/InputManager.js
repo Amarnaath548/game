@@ -15,6 +15,7 @@ export class InputManager {
     this.raycaster = new THREE.Raycaster();
     this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     this.mouseNormalized = new THREE.Vector2();
+    this.intersectPlanePoint = new THREE.Vector3();
     this.usingTouch = false;
 
     this.initKeyboardAndMouse();
@@ -175,9 +176,8 @@ export class InputManager {
       this.moveDir.z = len > 0 ? kz / len : 0;
 
       this.raycaster.setFromCamera(this.mouseNormalized, this.camera);
-      const intersect = new THREE.Vector3();
-      if (this.raycaster.ray.intersectPlane(this.groundPlane, intersect)) {
-        const dx = intersect.x - playerPos.x, dz = intersect.z - playerPos.z;
+      if (this.raycaster.ray.intersectPlane(this.groundPlane, this.intersectPlanePoint)) {
+        const dx = this.intersectPlanePoint.x - playerPos.x, dz = this.intersectPlanePoint.z - playerPos.z;
         const dist = Math.hypot(dx, dz);
         if (dist > 0.01) {
           this.aimDir.x = dx / dist;

@@ -15,7 +15,7 @@ const _e = new THREE.Euler();
 const _p = new THREE.Vector3();
 const _s = new THREE.Vector3();
 
-function part(geo, p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1], order = 'XYZ') {
+export function part(geo, p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1], order = 'XYZ') {
   const g = geo.index ? geo.toNonIndexed() : geo.clone();
   _e.set(r[0], r[1], r[2], order);
   _q.setFromEuler(_e);

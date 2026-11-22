@@ -30,6 +30,7 @@ export class Actor {
     if (options.robeColor && !options.hero) {
       this.hero = { ...this.hero, bodyColor: options.robeColor, accentColor: options.hatColor || this.hero.accentColor };
     }
+    this.isBot = !!options.isBot;
 
     // Visuals
     this.group = new THREE.Group();
@@ -58,9 +59,13 @@ export class Actor {
     this.robeMat = this.bodyMat; this.hatMat = this.accentMat;
   }
 
-  setHeroEmissive(hex) { for (const m of this.visualMats || this.heroMats || [this.bodyMat, this.accentMat]) m?.emissive?.setHex(hex); }
+  setHeroEmissive(hex) {
+    if (this.isBot) return;
+    for (const m of this.visualMats || this.heroMats || [this.bodyMat, this.accentMat]) m?.emissive?.setHex(hex);
+  }
 
   setHeroOpacity(opacity) {
+    if (this.isBot) return;
     const translucent = opacity < 1;
     for (const m of this.visualMats || this.heroMats || [this.bodyMat, this.accentMat, this.staffOrbMat]) {
       if (!m) continue;
@@ -212,6 +217,7 @@ export class Actor {
         this.leftLeg.rotation.x = Math.sin(this.walkTime) * 0.45; this.rightLeg.rotation.x = -Math.sin(this.walkTime) * 0.45;
       }
       if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) this.leftArm.rotation.x = -Math.sin(this.walkTime) * 0.35;
+      if (this.headGroup) this.headGroup.rotation.y = Math.sin(this.walkTime * 0.5) * 0.08;
       const len = Math.hypot(moveX, moveZ);
       if (len > 0.01) {
         const nx = moveX / len, nz = moveZ / len, ang = this.visualMesh.rotation.y;
@@ -226,6 +232,7 @@ export class Actor {
         this.rightLeg.rotation.x = THREE.MathUtils.lerp(this.rightLeg.rotation.x, 0, 0.2);
       }
       if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) this.leftArm.rotation.x = THREE.MathUtils.lerp(this.leftArm.rotation.x, 0, 0.2);
+      if (this.headGroup) this.headGroup.rotation.y = THREE.MathUtils.lerp(this.headGroup.rotation.y || 0, 0, 0.2);
     }
     this.leanX = THREE.MathUtils.lerp(this.leanX || 0, targetLeanX, 0.15);
     this.leanZ = THREE.MathUtils.lerp(this.leanZ || 0, targetLeanZ, 0.15);
@@ -237,13 +244,15 @@ export class Actor {
     if (this.isDead) return;
     this.isDead = true; this.isDying = true; this.deathTimer = 0.35;
     this._hideShield();
-    for (const m of this.visualMats || this.heroMats || []) m.transparent = true;
+    if (!this.isBot) for (const m of this.visualMats || this.heroMats || []) m.transparent = true;
   }
   destroyVisuals() {
     if (this.isPlayer) { this.group.visible = false; return; }
     this.scene.remove(this.group);
-    for (const m of this.visualMats || this.heroMats || []) m.dispose();
-    this.shieldMesh?.material?.dispose();
+    if (!this.isBot) {
+      for (const m of this.visualMats || this.heroMats || []) m.dispose();
+      this.shieldMesh?.material?.dispose();
+    }
   }
   destroy() { this.isDead = true; this.isDying = false; this.destroyVisuals(); }
 }

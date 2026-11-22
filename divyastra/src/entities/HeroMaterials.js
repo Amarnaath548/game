@@ -28,6 +28,7 @@ export const MAT_SHIELD = new THREE.MeshBasicMaterial({
 });
 
 const matCache = new Map();
+const glowMatCache = new Map();
 
 /**
  * Returns or creates a shared MeshLambertMaterial for a given color.
@@ -42,6 +43,25 @@ export function getHeroMaterial(hexColor) {
     }));
   }
   return matCache.get(key);
+}
+
+/**
+ * Returns or creates a shared halo glow BasicMaterial for a given accent color.
+ */
+export function getGlowMaterial(hexColor) {
+  const key = Number(hexColor);
+  if (!glowMatCache.has(key)) {
+    const m = new THREE.MeshBasicMaterial({
+      color: key,
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    m.userData.keepTransparent = true;
+    glowMatCache.set(key, m);
+  }
+  return glowMatCache.get(key);
 }
 
 // Reusable primitive geometries cache

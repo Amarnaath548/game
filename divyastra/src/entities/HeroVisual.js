@@ -6,6 +6,7 @@ import {
 import { getBodyGeometries } from './HeroBody.js';
 import { attachArchetypeVisuals } from './HeroArchetypes.js';
 import { buildTierVisuals } from './HeroTierVisuals.js';
+import { buildBotVisual } from './BotVisual.js';
 
 const mk = (hex) => new THREE.MeshLambertMaterial({ color: hex, flatShading: true, emissive: 0x000000 });
 
@@ -23,6 +24,10 @@ function addMesh(parent, geo, mat, shadow = true) {
  * flash and fade together; see Actor.setHeroEmissive / setHeroOpacity.
  */
 export function buildHeroVisual(actor, hero) {
+  if (actor.isBot) {
+    buildBotVisual(actor, hero);
+    return;
+  }
   const G = getBodyGeometries();
   const archetype = hero.archetype || getArchetypeFromLegacy(hero.hatType);
   const elder = archetype === 'PRITHVI';
