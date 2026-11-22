@@ -188,16 +188,26 @@ export class Bot extends Actor {
       this.z = (this.z / distFromCenter) * maxAllowed;
     }
 
+    const isVisible = this.visible && this.group.visible;
     const aimLen = Math.hypot(aimX, aimZ);
     if (aimLen > 0.01) {
       const aimAngle = Math.atan2(aimX, aimZ);
-      this.visualMesh.rotation.y = THREE.MathUtils.lerp(this.visualMesh.rotation.y, aimAngle, 0.2);
+      if (isVisible) {
+        this.visualMesh.rotation.y = THREE.MathUtils.lerp(this.visualMesh.rotation.y, aimAngle, 0.2);
+      }
     }
 
     const isMoving = Math.hypot(moveX, moveZ) > 0.05 || this.dashTimer > 0;
-    this.setWobble(isMoving && this.dashTimer <= 0, dt, moveX, moveZ, this.dashTimer > 0);
+    if (isVisible) {
+      this.setWobble(isMoving && this.dashTimer <= 0, dt, moveX, moveZ, this.dashTimer > 0);
+    }
     this.tapas.update(dt, isMoving, this.shootCooldown > 0);
     super.update(dt);
+  }
+
+  isChasingOrAttacking(player) {
+    if (!player || this.isDead) return false;
+    return this.brain?.chaseTarget === player || this.brain?.currentTarget === player;
   }
 
   destroyVisuals() {

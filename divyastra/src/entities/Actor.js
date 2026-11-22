@@ -39,7 +39,6 @@ export class Actor {
     this.scene.add(this.group);
 
     buildHeroVisual(this, this.hero);
-    // Backwards-compatible aliases for robe/hat materials
     this.robeMat = this.bodyMat;
     this.hatMat = this.accentMat;
 
@@ -48,6 +47,9 @@ export class Actor {
     this.rightArm = this.rightArm || this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.38) < 0.1);
     this.staffShaft = this.staffShaft || this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.68) < 0.1);
   }
+
+  get visible() { return this.group ? this.group.visible : true; }
+  set visible(val) { if (this.group) this.group.visible = val; }
 
   rebuildHeroVisual(hero) {
     this.hero = hero;
@@ -67,20 +69,21 @@ export class Actor {
     }
   }
 
+  _hideShield() { if (this.shieldMesh && this.damageTakenTimer <= 0) this.shieldMesh.visible = false; }
+  _showShield(color) {
+    if (!this.shieldMesh) return;
+    this.shieldMesh.visible = true;
+    if (this.shieldMesh.material) { this.shieldMesh.material.color.setHex(color); this.shieldMesh.material.opacity = 0.45; }
+  }
+
   applyDamageReduction(mult = 0.7, duration = 4.0) {
     this.damageTakenMult = mult; this.damageTakenTimer = duration;
-    if (this.shieldMesh) {
-      this.shieldMesh.visible = true;
-      if (this.shieldMesh.material) { this.shieldMesh.material.color.setHex(0x8b5a2b); this.shieldMesh.material.opacity = 0.45; }
-    }
+    this._showShield(0x8b5a2b);
   }
 
   applyShield(amount = 80, duration = 3.0) {
     this.shieldHp = amount; this.shieldTimer = duration; this.shieldActive = true;
-    if (this.shieldMesh) {
-      this.shieldMesh.visible = true;
-      if (this.shieldMesh.material) { this.shieldMesh.material.color.setHex(0x38bdf8); this.shieldMesh.material.opacity = 0.45; }
-    }
+    this._showShield(0x38bdf8);
   }
 
   takeDamage(amount, sourceSpell = null) {
@@ -90,12 +93,9 @@ export class Actor {
     if (this.shieldActive && this.shieldHp > 0) {
       if (this.shieldHp >= amount) { this.shieldHp -= amount; return 0; }
       const rem = amount - this.shieldHp; this.shieldHp = 0; this.shieldActive = false;
-      if (this.shieldMesh && this.damageTakenTimer <= 0) this.shieldMesh.visible = false;
-      amount = rem;
+      this._hideShield(); amount = rem;
     } else if (this.shieldActive) {
-      this.shieldActive = false;
-      if (this.shieldMesh && this.damageTakenTimer <= 0) this.shieldMesh.visible = false;
-      return 0;
+      this.shieldActive = false; this._hideShield(); return 0;
     }
 
     this.hp -= amount; this.hitTimer = 0.08; this.setHeroEmissive(0xffffff);
@@ -110,14 +110,12 @@ export class Actor {
 
   applyChill(factor = 0.3, duration = 1.5) { this.status.chillTimer = duration; this.status.chillFactor = Math.max(0.3, 1.0 - factor); }
   applyStun(duration = 0.5) { this.status.stunTimer = duration; }
-  applyBurn(dps = 8, duration = 3.0, owner = null, spellId = null) {
-    this.status.burnTimer = duration; this.status.burnDps = dps;
+  _applyDot(tKey, dKey, dps, dur, owner, spellId) {
+    this.status[tKey] = dur; this.status[dKey] = dps;
     if (owner) { this.status.dotOwner = owner; this.status.dotSpellId = spellId; }
   }
-  applyPoison(dps = 8, duration = 4.0, owner = null, spellId = null) {
-    this.status.poisonTimer = duration; this.status.poisonDps = dps;
-    if (owner) { this.status.dotOwner = owner; this.status.dotSpellId = spellId; }
-  }
+  applyBurn(dps = 8, dur = 3.0, owner = null, spellId = null) { this._applyDot('burnTimer', 'burnDps', dps, dur, owner, spellId); }
+  applyPoison(dps = 8, dur = 4.0, owner = null, spellId = null) { this._applyDot('poisonTimer', 'poisonDps', dps, dur, owner, spellId); }
   heal(amount) { if (!this.isDead) this.hp = Math.min(this.maxHp, this.hp + amount); }
 
   triggerCastAnim() { this.castTimer = 0.23; this.orbTimer = 0.2; }
@@ -147,20 +145,26 @@ export class Actor {
       this.setHeroEmissive(0xff5500);
     }
 
-    const armRotX = this.punchTimer > 0 ? ((this.punchTimer -= dt), -1.2) : (this.castTimer > 0 ? ((this.castTimer -= dt), this.castTimer > 0.15 ? 0.25 : 0.25 * (this.castTimer / 0.15)) : 0);
-    if (this.rightArm) this.rightArm.rotation.x = armRotX;
-    if (this.staffShaft && this.staffShaft.parent === this.visualMesh) this.staffShaft.rotation.x = armRotX;
+    if (this.visible && this.group.visible) {
+      const armRotX = this.punchTimer > 0 ? ((this.punchTimer -= dt), -1.2) : (this.castTimer > 0 ? ((this.castTimer -= dt), this.castTimer > 0.15 ? 0.25 : 0.25 * (this.castTimer / 0.15)) : 0);
+      if (this.rightArm) this.rightArm.rotation.x = armRotX;
+      if (this.staffShaft && this.staffShaft.parent === this.visualMesh) this.staffShaft.rotation.x = armRotX;
 
-    const tier = this.spellSlot?.elements?.length || this.spellSlot?.activeSpell?.tier || 0;
-    updateTierVisuals(this, tier, dt);
-    if (this.spinningStaffTip) this.spinningStaffTip.rotation.y += dt * 3.0;
+      const tier = this.spellSlot?.elements?.length || this.spellSlot?.activeSpell?.tier || 0;
+      updateTierVisuals(this, tier, dt);
+      if (this.spinningStaffTip) this.spinningStaffTip.rotation.y += dt * 3.0;
 
-    if (this.orbTimer > 0) {
-      this.orbTimer -= dt;
-      if (this.staffOrb) {
-        const pulse = 1.0 + 0.35 * Math.sin(Math.max(0, Math.min(1, 1.0 - this.orbTimer / 0.2)) * Math.PI);
-        this.staffOrb.scale.setScalar((this.tierBaseScale || 1.0) * pulse);
+      if (this.orbTimer > 0) {
+        this.orbTimer -= dt;
+        if (this.staffOrb) {
+          const pulse = 1.0 + 0.35 * Math.sin(Math.max(0, Math.min(1, 1.0 - this.orbTimer / 0.2)) * Math.PI);
+          this.staffOrb.scale.setScalar((this.tierBaseScale || 1.0) * pulse);
+        }
       }
+    } else {
+      if (this.punchTimer > 0) this.punchTimer -= dt;
+      if (this.castTimer > 0) this.castTimer -= dt;
+      if (this.orbTimer > 0) this.orbTimer -= dt;
     }
 
     if (this.kbTimer > 0) {
@@ -171,15 +175,12 @@ export class Actor {
 
     if (this.shieldTimer > 0 && (this.shieldTimer -= dt) <= 0) {
       this.shieldActive = false; this.shieldHp = 0;
-      if (this.shieldMesh && this.damageTakenTimer <= 0) this.shieldMesh.visible = false;
+      this._hideShield();
     }
 
     if (this.damageTakenTimer > 0 && (this.damageTakenTimer -= dt) <= 0) {
       this.damageTakenMult = 1.0;
-      if (!this.shieldActive && this.shieldMesh) {
-        this.shieldMesh.visible = false;
-        if (this.shieldMesh.material) { this.shieldMesh.material.color.setHex(0x38bdf8); this.shieldMesh.material.opacity = 0.45; }
-      }
+      if (!this.shieldActive) this._hideShield();
     }
 
     if (this.status.stunTimer > 0) {
@@ -235,14 +236,14 @@ export class Actor {
   die() {
     if (this.isDead) return;
     this.isDead = true; this.isDying = true; this.deathTimer = 0.35;
-    if (this.shieldMesh) this.shieldMesh.visible = false;
+    this._hideShield();
     for (const m of this.visualMats || this.heroMats || []) m.transparent = true;
   }
   destroyVisuals() {
     if (this.isPlayer) { this.group.visible = false; return; }
     this.scene.remove(this.group);
     for (const m of this.visualMats || this.heroMats || []) m.dispose();
-    if (this.shieldMesh?.material) this.shieldMesh.material.dispose();
+    this.shieldMesh?.material?.dispose();
   }
   destroy() { this.isDead = true; this.isDying = false; this.destroyVisuals(); }
 }

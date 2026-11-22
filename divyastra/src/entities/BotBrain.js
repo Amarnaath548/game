@@ -9,6 +9,7 @@ export class BotBrain {
     this.bot = bot;
     this.chaseTarget = null;
     this.chaseTimer = 0;
+    this.currentTarget = null;
     this.isMeditating = false;
   }
 
@@ -77,11 +78,13 @@ export class BotBrain {
 
     if (this.isMeditating) {
       bot.state = 'MEDITATE';
+      this.currentTarget = null;
       return { moveX: 0, moveZ: 0, aimX: 0, aimZ: 0 };
     }
 
     if (isLowHp || isStormThreat || threats.highLevelThreat !== null) {
       bot.state = 'EVADE';
+      this.currentTarget = null;
       if (loot.nearestOrb && isSafeLoot(loot.nearestOrb) && loot.nearestOrbDist < 28) {
         if (loot.nearestOrbDist < 1.2) { loot.nearestOrb.despawn(); bot.heal(bot.maxHp * loot.nearestOrb.healPercent); }
         else { moveX = (loot.nearestOrb.x - bot.x) / loot.nearestOrbDist; moveZ = (loot.nearestOrb.z - bot.z) / loot.nearestOrbDist; aimX = moveX; aimZ = moveZ; }
@@ -98,10 +101,12 @@ export class BotBrain {
         if (isLowHp && bot.dashCooldownTimer <= 0) bot.dash(moveX, moveZ);
       }
     } else if (target) {
+      this.currentTarget = target;
       const res = this._skirmish(bot, dt, target, onShoot);
       moveX = res.moveX; moveZ = res.moveZ; aimX = res.aimX; aimZ = res.aimZ;
     } else {
       bot.state = 'FORAGE';
+      this.currentTarget = null;
       const f = this._forage(bot, dt, loot, zoneRadius, onShoot);
       moveX = f.moveX; moveZ = f.moveZ; aimX = f.aimX; aimZ = f.aimZ;
     }
@@ -124,6 +129,7 @@ export class BotBrain {
 
   _fightNearest(bot, dt, threats, loot, incoming, onShoot) {
     const target = threats.nearestHostile || threats.bestTarget;
+    this.currentTarget = target;
     if (!target) return { moveX: 0, moveZ: 0, aimX: 0, aimZ: 0 };
 
     // Keep health-orb pickup only if within 6 units

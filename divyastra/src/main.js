@@ -28,6 +28,7 @@ import { DevInspectView } from './ui/DevInspectView.js';
 import { CampaignManager } from './core/CampaignManager.js';
 import { setDifficulty } from './config/difficulty.js';
 import { SettingsView } from './ui/SettingsView.js';
+import { updateVisibilityCulling } from './systems/VisibilityCulling.js';
 
 // Core Systems
 const sceneManager = new SceneManager();
@@ -145,9 +146,11 @@ let debugFrames = 0;
 // Game Loop
 let lastTime = performance.now();
 let totalTime = 0;
+let frameCount = 0;
 
 function animate() {
   requestAnimationFrame(animate);
+  frameCount++;
   const now = performance.now();
   const rawDt = Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
@@ -220,6 +223,9 @@ function animate() {
     matchManager.update(dt);
     if (devPanel) devPanel.updateCircles(matchManager.getAllAliveActors());
     sceneManager.updateCamera(player.group.position, input.aimDir, dt);
+    if (frameCount % 3 === 0) {
+      updateVisibilityCulling(sceneManager, spawnManager, arenaInteractables, player);
+    }
   } else {
     const time = totalTime * 0.2;
     sceneManager.camera.position.x = Math.sin(time) * 45;
