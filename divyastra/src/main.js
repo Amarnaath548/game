@@ -27,6 +27,7 @@ import { getDevTools } from './core/DevTools.js';
 import { DevInspectView } from './ui/DevInspectView.js';
 import { CampaignManager } from './core/CampaignManager.js';
 import { setDifficulty } from './config/difficulty.js';
+import { SettingsView } from './ui/SettingsView.js';
 
 // Core Systems
 const sceneManager = new SceneManager();
@@ -38,6 +39,8 @@ const spellbookManager = new SpellbookManager();
 const campaignManager = new CampaignManager();
 const tutorialHints = new TutorialHints();
 const particleSys = new ParticleSystem(sceneManager.scene, 400);
+sceneManager.particleSys = particleSys;
+sceneManager.applyQuality(sceneManager.qualityTier, particleSys);
 const floatingBars = new FloatingBarSystem(sceneManager.camera);
 const damageNumbers = new DamageNumbers(sceneManager.camera);
 const killFeed = new KillFeed();
@@ -113,6 +116,7 @@ const origShowLevelUp = ui.showLevelUp.bind(ui);
 ui.showLevelUp = (p, lvl) => { origShowLevelUp(p, lvl); tutorialHints.onLevelUp(lvl); };
 const origShowEndGame = ui.showEndGame.bind(ui);
 ui.showEndGame = (...args) => { tutorialHints.onMatchEnd(); origShowEndGame(...args); };
+const settingsView = new SettingsView(sceneManager);
 
 // Dev & Inspect mode integration
 const devInspectView = new DevInspectView({ sceneManager, matchManager, spawnManager, arenaInteractables, player });

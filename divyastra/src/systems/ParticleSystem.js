@@ -6,6 +6,7 @@ export class ParticleSystem {
   constructor(scene, maxParticles = 250) {
     this.scene = scene;
     this.maxParticles = maxParticles;
+    this.particleScale = 1.0;
 
     // InstancedMesh for debris/sparks
     const geo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
@@ -77,8 +78,9 @@ export class ParticleSystem {
       }
     }
     const currentBurst = { indices: [], maxLife: 0 };
+    const maxSpawn = Math.max(1, Math.round(amount * (this.particleScale || 1.0)));
     let spawned = 0;
-    for (let i = 0; i < this.maxParticles && spawned < amount; i++) {
+    for (let i = 0; i < this.maxParticles && spawned < maxSpawn; i++) {
       const p = this.particles[i];
       if (!p.active) {
         p.active = true;

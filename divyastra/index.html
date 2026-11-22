@@ -64,6 +64,8 @@
           <div id="settings-popover" class="settings-popover" style="display:none;">
             <div class="popover-row"><span>Audio</span><button id="mute-btn" class="fs-btn" title="Toggle Sound">🔊</button></div>
             <div class="popover-row"><span>Display</span><button id="fullscreen-btn" class="fs-btn" title="Toggle Fullscreen">⛶</button></div>
+            <div class="popover-row"><span>Quality</span><select id="quality-select" class="quality-select"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option></select></div>
+            <div id="quality-restart-notice" class="popover-restart-notice" style="display:none;" title="Click to reload page">Restart needed ⟳</div>
           </div>
         </div>
       </header>
@@ -235,13 +237,11 @@
       <div id="reward-trophy" class="reward-pill trophy-val">+30 Trophies</div>
       <div id="reward-gold" class="reward-pill gold-val">+150 Gold</div>
     </div>
-
     <div class="modal-actions">
       <button id="modal-lobby-btn" class="modal-btn">Return to Lobby</button>
       <button id="modal-play-again-btn" class="modal-btn">Play Again</button>
     </div>
   </div>
-
   <!-- DEBUG & ROTATE OVERLAYS -->
   <div id="debug-overlay"></div>
   <div id="rotate-device-overlay"><div class="rotate-card"><div class="rotate-icon">📱 ↷</div><div class="rotate-title">Rotate Your Phone</div><div class="rotate-sub">Divyastra plays in landscape mode</div></div></div>
