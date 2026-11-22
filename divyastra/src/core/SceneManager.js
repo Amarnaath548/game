@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { COLORS, ARENA, CAMERA_CONFIG, BIOMES, QUALITY } from '../config/constants.js';
 import { CameraZoom } from './CameraZoom.js';
-import { WorldEnvironment } from './WorldEnvironment.js';
-import { WorldLandmarks } from './WorldLandmarks.js';
-import { WorldTerrain } from './WorldTerrain.js';
+import { createMap } from '../maps/index.js';
+import {
+  MYTHIC_CHEST, CHEST_COORDS, CRYSTAL_COORDS, BUSH_COORDS, PAD_COORDS, SURYA_COORDS, BRAZIER_COORDS
+} from '../config/worldLayout.js';
 
 
 export class SceneManager {
@@ -34,8 +35,8 @@ export class SceneManager {
 
     this.initLights();
     this.initArena();
-    this.worldEnv = new WorldEnvironment(this.scene);
-    this.worldLandmarks = new WorldLandmarks(this.scene, this.obelisks);
+    this.map = null;
+    this.mapId = null;
     this.applyBiome(this.nextBiomeKey);
     window.addEventListener('resize', () => this.onResize());
   }
@@ -85,9 +86,11 @@ export class SceneManager {
   }
 
   pickNextBiome() {
-    const h = this.biomeHistory, n = h.length;
-    if (n >= 2 && h[n - 1] === h[n - 2]) return h[n - 1] === 'GRASS' ? 'SNOW' : 'GRASS';
-    return Math.random() < 0.5 ? 'GRASS' : 'SNOW';
+    // Rotate through every available arena, never repeating the previous one
+    const keys = Object.keys(BIOMES);
+    const last = this.biomeHistory[this.biomeHistory.length - 1];
+    const pool = keys.filter((k) => k !== last);
+    return pool[Math.floor(Math.random() * pool.length)] || keys[0];
   }
 
   getNextBiomeName() {
@@ -131,9 +134,23 @@ export class SceneManager {
     this.floorMesh.position.y = -0.5;
     this.floorMesh.receiveShadow = true;
     this.scene.add(this.floorMesh);
+  }
 
-    // Mottled grass, sandy roads, stepping stones and the terracotta cliff rim
-    this.terrain = new WorldTerrain(this.scene);
+  /** Builds (or swaps) the arena map for a biome. Colliders are re-registered into this.obelisks. */
+  buildMap(biome) {
+    const mapId = biome.id.toLowerCase();
+    if (this.map && this.mapId === mapId) return;
+    if (this.map) this.map.dispose();
+    this.obelisks.length = 0; // same array instance the collision system reads
+    this.map = createMap(mapId, this.scene, {
+      obstacles: this.obelisks,
+      floor: false, // SceneManager owns the floor disc
+      anchors: {
+        mythicChest: MYTHIC_CHEST, chests: CHEST_COORDS, crystals: CRYSTAL_COORDS,
+        bushes: BUSH_COORDS, pads: PAD_COORDS, suryas: SURYA_COORDS, braziers: BRAZIER_COORDS
+      }
+    });
+    this.mapId = mapId;
   }
 
   applyBiome(biomeKey = null, bushes = []) {
@@ -145,17 +162,13 @@ export class SceneManager {
     const near = biome.fogNear || 45, far = biome.fogFar || 140;
     if (!this.scene.fog) this.scene.fog = new THREE.Fog(biome.fogColor, near, far);
     else { this.scene.fog.color.setHex(biome.fogColor); this.scene.fog.near = near; this.scene.fog.far = far; }
-    const isSnow = biome && biome.id === 'SNOW';
-    if (this.hemiLight) {
-      this.hemiLight.color.setHex(isSnow ? 0xE0F2FE : 0xFFFBEB);
-      this.hemiLight.groundColor.setHex(isSnow ? 0x64748B : 0x3D6B24);
-      this.hemiLight.intensity = isSnow ? 0.85 : 0.7;
-    }
-    if (this.dirLight) { this.dirLight.color.setHex(isSnow ? 0xFFFFFF : 0xFFF4D2); this.dirLight.intensity = isSnow ? 1.35 : 1.45; }
-    if (this.floorMat) this.floorMat.color.setHex(biome.floorColor);
-    if (this.terrain) this.terrain.applyBiome(biome);
-    if (this.worldEnv) this.worldEnv.applyBiome(biome);
-    if (this.worldLandmarks) this.worldLandmarks.applyBiome(biome);
+    this.buildMap(biome);
+
+    // Default (grass-friendly) lighting, then let the map tint it (snow / desert / autumn presets)
+    if (this.hemiLight) { this.hemiLight.color.setHex(0xFFFBEB); this.hemiLight.groundColor.setHex(0x3D6B24); this.hemiLight.intensity = 0.7; }
+    if (this.dirLight) { this.dirLight.color.setHex(0xFFF4D2); this.dirLight.intensity = 1.45; }
+    if (this.map && this.hemiLight && this.dirLight) this.map.applyLighting(this.hemiLight, this.dirLight);
+    if (this.floorMat) this.floorMat.color.setHex(this.map?.floorColor ?? biome.floorColor);
     if (this.obeliskMeshes) {
       this.obeliskMeshes.forEach((mesh) => {
         if (Array.isArray(mesh.material)) mesh.material.forEach((m, i) => m.color.setHex(i === 2 ? biome.obeliskTopColor : biome.obeliskColor));

@@ -34,5 +34,23 @@ export const LEVELS = [
     botCount: 11,
     completeRank: 1,
     description: 'The ultimate summit test against 11 deadly masters. Claim victory (#1).'
+  },
+  {
+    id: 5,
+    name: 'Harvest Hollow',
+    biome: 'AUTUMN',
+    difficulty: 'NORMAL',
+    botCount: 9,
+    completeRank: 3,
+    description: 'Fight beneath burning banyans in the golden hollow against 9 rival mages. Finish in top 3.'
+  },
+  {
+    id: 6,
+    name: 'Sunscorched Dunes',
+    biome: 'DESERT',
+    difficulty: 'DIFFICULT',
+    botCount: 11,
+    completeRank: 2,
+    description: 'Cross the scorched oasis ruins against 11 skilled sorcerers. Finish in top 2.'
   }
 ];

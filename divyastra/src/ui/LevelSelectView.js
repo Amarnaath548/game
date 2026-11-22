@@ -1,5 +1,6 @@
 import { LEVELS } from '../config/levels.js';
 import { DIFFICULTIES } from '../config/difficulty.js';
+import { BIOMES } from '../config/constants.js';
 
 export class LevelSelectView {
   constructor(campaignManager, callbacks = {}) {
@@ -54,8 +55,10 @@ export class LevelSelectView {
     this.cardsContainer = document.createElement('div');
     this.cardsContainer.className = 'level-cards-row';
     this.cardsContainer.style.cssText = `
-      display: flex; flex-direction: row; gap: 14px; justify-content: center;
-      align-items: stretch; width: 100%; max-width: 980px; flex-wrap: nowrap;
+      display: flex; flex-direction: row; gap: 14px; align-items: stretch;
+      width: 100%; max-width: 980px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+      scroll-snap-type: x proximity; padding: 6px 4px 10px; box-sizing: border-box;
+      -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #c8963e transparent;
     `;
     this.overlay.appendChild(this.cardsContainer);
 
@@ -78,12 +81,12 @@ export class LevelSelectView {
       const unlocked = this.campaignManager.isUnlocked(level.id);
       const stars = this.campaignManager.getStars(level.id);
       const diff = DIFFICULTIES[level.difficulty] || DIFFICULTIES.NORMAL;
-      const mapName = level.biome === 'GRASS' ? 'Grass Plains' : 'Frozen Peaks';
+      const mapName = (BIOMES[level.biome] || BIOMES.GRASS).name;
 
       const card = document.createElement('div');
       card.className = `level-card ${unlocked ? 'unlocked' : 'locked'}`;
       card.style.cssText = `
-        flex: 1 1 0; min-width: 170px; max-width: 230px;
+        flex: 0 0 200px; min-width: 200px; scroll-snap-align: start;
         background: ${unlocked ? 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)' : 'rgba(15, 23, 42, 0.75)'};
         border: 2px solid ${unlocked ? '#38bdf8' : '#334155'};
         border-radius: 12px; padding: 14px 12px; display: flex; flex-direction: column;

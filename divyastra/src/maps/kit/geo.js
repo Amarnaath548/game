@@ -7,7 +7,7 @@ const _e = new THREE.Euler();
 const _p = new THREE.Vector3();
 const _s = new THREE.Vector3();
 
-/** Transformed, attribute-normalised clone of a geometry (so many parts can be merged). */
+/** Transformed, attribute-normalised clone of a geometry so many parts can be merged. */
 export function part(geo, p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1], order = 'XYZ') {
   const g = geo.index ? geo.toNonIndexed() : geo.clone();
   _e.set(r[0], r[1], r[2], order);
@@ -20,13 +20,37 @@ export function part(geo, p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1], order = '
   return g;
 }
 
+/** Same as part() but orientation given as a quaternion (used for leaf blades / palm fronds). */
+export function partQ(geo, p, q, s = [1, 1, 1]) {
+  const g = geo.index ? geo.toNonIndexed() : geo.clone();
+  _m.compose(_p.set(p[0], p[1], p[2]), q, _s.set(s[0], s[1], s[2]));
+  g.applyMatrix4(_m);
+  for (const k of Object.keys(g.attributes)) {
+    if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
+  }
+  return g;
+}
+
 export const merge = (list) => BufferGeometryUtils.mergeGeometries(list, false);
 
-/** Flat ground decal material: Lambert (receives shadows), no depth write, polygon-offset to avoid z-fight. */
+/** Flat ground decal: Lambert (receives shadows), no depth write, polygon-offset against z-fighting. */
 export function decalMat(color, opts = {}) {
   return new THREE.MeshLambertMaterial({
     color, flatShading: true, depthWrite: false,
     polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
     ...opts
   });
+}
+
+export const lambert = (color, opts = {}) => new THREE.MeshLambertMaterial({ color, flatShading: true, ...opts });
+
+export function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }

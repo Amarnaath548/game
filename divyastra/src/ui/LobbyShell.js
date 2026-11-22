@@ -1,4 +1,4 @@
-import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES } from '../config/constants.js';
+import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES, BIOMES } from '../config/constants.js';
 import { LEVELS } from '../config/levels.js';
 import { loadAndTrimHero, getHeroSrc } from './HeroImageTrim.js';
 import { StaffChip } from './StaffChip.js';
@@ -42,7 +42,7 @@ export class LobbyShell {
       './lobby/bg_lobby.webp', './lobby/pedestal.png', './lobby/icon_trophy.png',
       './lobby/icon_gold.png', './lobby/icon_gem.png', './lobby/icon_quests.png',
       './lobby/icon_granth.png', './lobby/icon_settings.png', './lobby/icon_heroes.png',
-      './lobby/icon_staves.png', './lobby/icon_upgrades.png', './lobby/map_grass.png', './lobby/map_snow.png'
+      './lobby/icon_staves.png', './lobby/icon_upgrades.png', './lobby/map_grass.png', './lobby/map_snow.png', './lobby/map_desert.png', './lobby/map_autumn.png'
     ];
     let bgLoaded = false; let heroesPreloaded = false;
     const checkCritical = () => {
@@ -216,9 +216,9 @@ export class LobbyShell {
       const found = LEVELS.find((l) => this.campaign.isUnlocked(l.id) && this.campaign.getStars(l.id) < 3);
       if (found) nextLvl = found;
     }
-    const isSnow = nextLvl.biome === 'SNOW';
-    this.nextLevelNameEl.textContent = isSnow ? 'FROZEN PEAKS' : 'GRASS PLAINS';
-    if (this.nextMapThumb) this.nextMapThumb.src = isSnow ? './lobby/map_snow.png' : './lobby/map_grass.png';
+    const biome = BIOMES[nextLvl.biome] || BIOMES.GRASS;
+    this.nextLevelNameEl.textContent = biome.name.toUpperCase();
+    if (this.nextMapThumb) this.nextMapThumb.src = `./lobby/map_${biome.id.toLowerCase()}.png`;
   }
 
   openPanel(panelKey) {

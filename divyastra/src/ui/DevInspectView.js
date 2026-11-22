@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import '../inspect.css';
-import { CAMERA_CONFIG } from '../config/constants.js';
+import { CAMERA_CONFIG, BIOMES } from '../config/constants.js';
 import { DevCameraController } from './DevCameraController.js';
 import { DevInspectHero } from './DevInspectHero.js';
 
@@ -147,7 +147,8 @@ export class DevInspectView {
 
     const biomeBtn = $('inspect-biome-toggle');
     biomeBtn.onclick = () => {
-      const nextBiome = (this.sceneManager.currentBiome?.id === 'SNOW') ? 'GRASS' : 'SNOW';
+      const keys = Object.keys(BIOMES);
+      const nextBiome = keys[(keys.indexOf(this.sceneManager.currentBiome?.id) + 1) % keys.length];
       this.sceneManager.applyBiome(nextBiome, this.spawnManager.bushes);
       biomeBtn.textContent = `Biome: ${nextBiome}`;
     };
