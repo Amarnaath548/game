@@ -3,6 +3,7 @@ import { decalMat, lambert, mulberry32, merge, part } from './geo.js';
 import { makeLayout } from './layout.js';
 import { buildPlaza, buildMonuments } from './monuments.js';
 import { buildAgni, buildStepwell } from './structures.js';
+import { updateTreeOcclusion } from './vegTrees.js';
 
 export class ArenaMap {
   constructor(scene, theme, opts = {}) {
@@ -94,7 +95,14 @@ export class ArenaMap {
     sun.color.setHex(L.sun); sun.intensity = L.sunIntensity;
   }
 
+  updateTreeOcclusion(playerPos, cameraPos, dt) {
+    if (this.treeOcclusionGroups) {
+      updateTreeOcclusion(this, playerPos, cameraPos, dt);
+    }
+  }
+
   dispose() {
+    this.treeOcclusionGroups = null;
     if (this._prevLight) {
       const p = this._prevLight;
       p.hemi.color.setHex(p.hs); p.hemi.groundColor.setHex(p.hg); p.hemi.intensity = p.hi;

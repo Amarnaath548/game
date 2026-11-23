@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { part, partQ, partColor, withColor, merge, lambert } from './geo.js';
+import { registerTreeMesh, updateTreeOcclusion } from './treeOcclusion.js';
+
+export { registerTreeMesh, updateTreeOcclusion };
 
 function put(map, mesh, i, x, y, z, sx, sy, sz, ry = 0, rx = 0, rz = 0) {
   const d = map.dummy;
@@ -13,14 +16,8 @@ function put(map, mesh, i, x, y, z, sx, sy, sz, ry = 0, rx = 0, rz = 0) {
 function makeBanyanTrunk() {
   return merge([
     part(new THREE.CylinderGeometry(0.75, 1.3, 4.4, 7), [0, 2.2, 0]),
-    ...[0, 2.1, 4.2].map((a) => part(
-      new THREE.CylinderGeometry(0.34, 0.55, 3.6, 6),
-      [Math.cos(a) * 1.55, 1.7, Math.sin(a) * 1.55], [Math.sin(a) * 0.14, 0, -Math.cos(a) * 0.14]
-    )),
-    ...[0.4, 1.5, 2.6, 3.7, 4.9].map((a) => part(
-      new THREE.ConeGeometry(0.55, 1.1, 4),
-      [Math.cos(a) * 1.35, 0.5, Math.sin(a) * 1.35], [Math.sin(a) * 0.55, 0, -Math.cos(a) * 0.55]
-    ))
+    ...[0, 2.1, 4.2].map((a) => part(new THREE.CylinderGeometry(0.34, 0.55, 3.6, 6), [Math.cos(a) * 1.55, 1.7, Math.sin(a) * 1.55], [Math.sin(a) * 0.14, 0, -Math.cos(a) * 0.14])),
+    ...[0.4, 1.5, 2.6, 3.7, 4.9].map((a) => part(new THREE.ConeGeometry(0.55, 1.1, 4), [Math.cos(a) * 1.35, 0.5, Math.sin(a) * 1.35], [Math.sin(a) * 0.55, 0, -Math.cos(a) * 0.55]))
   ]);
 }
 
@@ -78,6 +75,7 @@ export function banyans(map, { palettes, feature = [], scatter = 0, scatterPalet
     mesh.castShadow = true;
     mesh.matrixAutoUpdate = false;
     group.forEach((t, i) => put(map, mesh, i, t.x, 0, t.z, t.s, t.s, t.s, i * 1.3));
+    registerTreeMesh(map, mesh, group.map((t, i) => ({ x: t.x, z: t.z, sx: t.s, sy: t.s, sz: t.s, ry: i * 1.3 })));
     mesh.instanceMatrix.needsUpdate = true;
     mesh.updateMatrix();
     map.root.add(mesh);
@@ -127,6 +125,7 @@ export function pines(map, { groves, green, white, trunk, solo = 0, tiers = 4, s
     put(map, mesh, i, x, 0, z, s, s, s);
     map.placed.push([x, z, 2.4 * s]);
   });
+  registerTreeMesh(map, mesh, trees.map(([x, z, s]) => ({ x, z, sx: s, sy: s, sz: s, ry: 0 })));
   mesh.instanceMatrix.needsUpdate = true;
   mesh.updateMatrix();
   map.root.add(mesh);
@@ -196,6 +195,7 @@ export function palms(map, { groves, trunk, fronds, minH = 8.5, maxH = 13 }) {
     put(map, mesh, i, x, 0, z, s, s, s, ry);
     map.placed.push([x, z, 1.8]);
   });
+  registerTreeMesh(map, mesh, spots.map(([x, z, h, ry]) => ({ x, z, sx: h / 10, sy: h / 10, sz: h / 10, ry })));
   mesh.instanceMatrix.needsUpdate = true;
   mesh.updateMatrix();
   map.root.add(mesh);
@@ -227,11 +227,15 @@ export function cacti(map, { color, spots = [], solo = 0, scale = 1.6 }) {
   mesh.castShadow = true;
   mesh.matrixAutoUpdate = false;
   const base = new THREE.Color(color), alt = new THREE.Color(color).offsetHSL(0, 0, -0.06);
+  const instances = [];
   list.forEach(([x, z, s], i) => {
-    put(map, mesh, i, x, 0, z, s, s, s, map.rng() * 6);
+    const ry = map.rng() * 6;
+    put(map, mesh, i, x, 0, z, s, s, s, ry);
     mesh.setColorAt(i, i % 2 ? alt : base);
     map.placed.push([x, z, 1.2]);
+    instances.push({ x, z, sx: s, sy: s, sz: s, ry });
   });
+  registerTreeMesh(map, mesh, instances);
   mesh.instanceMatrix.needsUpdate = true;
   mesh.instanceColor.needsUpdate = true;
   mesh.updateMatrix();

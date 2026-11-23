@@ -221,8 +221,8 @@ export class SceneManager {
     }
 
     const zoomMult = this.zoom.update();
-    const camCfg = isTouchDevice() ? CAMERA_PHONE : CAMERA_CONFIG;
     const pitchBias = CAMERA_CONFIG.PITCH_BIAS || 1.0;
+    const camCfg = isTouchDevice() ? CAMERA_PHONE : CAMERA_CONFIG;
     const desiredX = playerPos.x + lookAheadX + shakeX;
     const desiredY = camCfg.OFFSET_Y * pitchBias * zoomMult;
     const desiredZ = playerPos.z + (camCfg.OFFSET_Z * pitchBias * zoomMult) + lookAheadZ + shakeZ;
@@ -233,6 +233,7 @@ export class SceneManager {
     this.cameraLookPos.set(playerPos.x + lookAheadX * 0.5, 0, playerPos.z - forwardLead + lookAheadZ * 0.5);
     this.cameraTarget.lerp(this.cameraLookPos, CAMERA_CONFIG.LERP_SPEED);
     this.camera.lookAt(this.cameraTarget);
+    if (this.map?.updateTreeOcclusion) this.map.updateTreeOcclusion(playerPos, this.camera.position, dt);
   }
 
   onResize() {

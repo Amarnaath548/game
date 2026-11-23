@@ -4,9 +4,9 @@ export const CAM_STORAGE_KEY = 'divyastra_cam';
 
 export const CAMERA_ZOOM_PRESETS = {
   PHONE: {
-    NEAR: 0.62,
-    NORMAL: 0.72,
-    FAR: 0.85
+    NEAR: 0.85,
+    NORMAL: 1.0,
+    FAR: 1.2
   },
   DESKTOP: {
     NEAR: 0.85,
@@ -48,7 +48,7 @@ export function getCamZoom(distance = null, isTouch = null) {
   const touch = isTouch ?? isTouchDevice();
   const dist = (distance || getSavedCamDistance()).toUpperCase();
   const table = touch ? CAMERA_ZOOM_PRESETS.PHONE : CAMERA_ZOOM_PRESETS.DESKTOP;
-  return table[dist] ?? (touch ? 0.72 : 1.0);
+  return table[dist] ?? 1.0;
 }
 
 export class CameraZoom {

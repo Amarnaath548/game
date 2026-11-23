@@ -147,9 +147,9 @@ export const CAMERA_CONFIG = {
 };
 
 export const CAMERA_PHONE = {
-  OFFSET_Y: 22,
-  OFFSET_Z: 7,
-  LOOK_FORWARD: 1.0
+  OFFSET_Y: 12,
+  OFFSET_Z: 8.5,
+  LOOK_FORWARD: 1.5
 };
 
 export const PLAYER_BASE = {
