@@ -146,6 +146,12 @@ export const CAMERA_CONFIG = {
   ZOOM: 1.0
 };
 
+export const CAMERA_PHONE = {
+  OFFSET_Y: 22,
+  OFFSET_Z: 7,
+  LOOK_FORWARD: 1.0
+};
+
 export const PLAYER_BASE = {
   MAX_HP: 300,
   MOVE_SPEED: 14,

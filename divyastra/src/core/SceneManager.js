@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { COLORS, ARENA, CAMERA_CONFIG, BIOMES } from '../config/constants.js';
+import { COLORS, ARENA, CAMERA_CONFIG, CAMERA_PHONE, BIOMES } from '../config/constants.js';
 import { QUALITY_PRESETS, getSavedQuality, getLowerQualityTier, saveQuality } from '../config/quality.js';
-import { CameraZoom } from './CameraZoom.js';
+import { CameraZoom, isTouchDevice } from './CameraZoom.js';
 import { ShadowFollower } from './ShadowFollower.js';
 import { createMap } from '../maps/index.js';
 import {
@@ -221,14 +221,15 @@ export class SceneManager {
     }
 
     const zoomMult = this.zoom.update();
+    const camCfg = isTouchDevice() ? CAMERA_PHONE : CAMERA_CONFIG;
     const pitchBias = CAMERA_CONFIG.PITCH_BIAS || 1.0;
     const desiredX = playerPos.x + lookAheadX + shakeX;
-    const desiredY = CAMERA_CONFIG.OFFSET_Y * pitchBias * zoomMult;
-    const desiredZ = playerPos.z + (CAMERA_CONFIG.OFFSET_Z * pitchBias * zoomMult) + lookAheadZ + shakeZ;
+    const desiredY = camCfg.OFFSET_Y * pitchBias * zoomMult;
+    const desiredZ = playerPos.z + (camCfg.OFFSET_Z * pitchBias * zoomMult) + lookAheadZ + shakeZ;
 
     this.cameraDesiredPos.set(desiredX, desiredY, desiredZ);
     this.camera.position.lerp(this.cameraDesiredPos, CAMERA_CONFIG.LERP_SPEED);
-    const forwardLead = CAMERA_CONFIG.LOOK_FORWARD || 3.0;
+    const forwardLead = camCfg.LOOK_FORWARD ?? 3.0;
     this.cameraLookPos.set(playerPos.x + lookAheadX * 0.5, 0, playerPos.z - forwardLead + lookAheadZ * 0.5);
     this.cameraTarget.lerp(this.cameraLookPos, CAMERA_CONFIG.LERP_SPEED);
     this.camera.lookAt(this.cameraTarget);
