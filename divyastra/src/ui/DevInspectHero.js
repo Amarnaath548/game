@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { buildHeroVisual } from '../entities/HeroVisual.js';
 import { updateTierVisuals } from '../entities/HeroTierVisuals.js';
+import { PALETTE } from '../config/palette.js';
 
 export const INSPECT_ARCHETYPES = {
-  'Tapasvi': { id: 'tapasvi', name: 'Tapasvi', archetype: 'TAPASVI', bodyColor: 0xe06014, accentColor: 0xfbbf24, hatType: 'JATA' },
-  'Agni Sadhaka': { id: 'agni', name: 'Agni Sadhaka', archetype: 'AGNI', bodyColor: 0xd92638, accentColor: 0xf97316, hatType: 'FLAME_CREST' },
-  'Jala Sadhaka': { id: 'jala', name: 'Jala Sadhaka', archetype: 'JALA', bodyColor: 0x0284c7, accentColor: 0x99f6e4, hatType: 'TURBAN' },
-  'Prithvi Sadhaka': { id: 'prithvi', name: 'Prithvi Sadhaka', archetype: 'PRITHVI', bodyColor: 0x166534, accentColor: 0xc2410c, hatType: 'CIRCLET' }
+  'Tapasvi': { id: 'tapasvi', name: 'Tapasvi', archetype: 'TAPASVI', bodyColor: PALETTE.saffron, accentColor: PALETTE.gold, hatType: 'JATA' },
+  'Agni Sadhaka': { id: 'agni', name: 'Agni Sadhaka', archetype: 'AGNI', bodyColor: PALETTE.elements.AGNI, accentColor: PALETTE.saffron, hatType: 'FLAME_CREST' },
+  'Jala Sadhaka': { id: 'jala', name: 'Jala Sadhaka', archetype: 'JALA', bodyColor: PALETTE.elements.JALA, accentColor: PALETTE.bone, hatType: 'TURBAN' },
+  'Prithvi Sadhaka': { id: 'prithvi', name: 'Prithvi Sadhaka', archetype: 'PRITHVI', bodyColor: PALETTE.elements.PRITHVI, accentColor: PALETTE.saffron, hatType: 'CIRCLET' }
 };
 
 export class DevInspectHero {
@@ -29,7 +30,7 @@ export class DevInspectHero {
   initPedestal() {
     this.pedestalGroup = new THREE.Group();
     const baseGeo = new THREE.CylinderGeometry(2.6, 2.9, 0.45, 32);
-    const baseMat = new THREE.MeshLambertMaterial({ color: 0xD4A373, flatShading: true });
+    const baseMat = new THREE.MeshLambertMaterial({ color: PALETTE.stone, flatShading: true });
     const base = new THREE.Mesh(baseGeo, baseMat);
     base.position.y = -0.25;
     base.receiveShadow = true;
@@ -37,14 +38,14 @@ export class DevInspectHero {
 
     const rimGeo = new THREE.TorusGeometry(2.65, 0.08, 6, 32);
     rimGeo.rotateX(Math.PI / 2);
-    const rimMat = new THREE.MeshLambertMaterial({ color: 0xFAEDCD });
+    const rimMat = new THREE.MeshLambertMaterial({ color: PALETTE.bone });
     const rim = new THREE.Mesh(rimGeo, rimMat);
     rim.position.y = -0.02;
     this.pedestalGroup.add(rim);
 
     // Glowing subtle rune ring
     const runeGeo = new THREE.RingGeometry(1.6, 2.3, 32).rotateX(-Math.PI / 2);
-    const runeMat = new THREE.MeshBasicMaterial({ color: 0xF59E0B, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false });
+    const runeMat = new THREE.MeshBasicMaterial({ color: PALETTE.gold, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false });
     const runeMesh = new THREE.Mesh(runeGeo, runeMat);
     runeMesh.position.y = 0.01;
     this.pedestalGroup.add(runeMesh);

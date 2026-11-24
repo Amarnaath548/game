@@ -60,10 +60,10 @@ export class DevInspectView {
           </div>
           <div class="inspect-section"><span class="inspect-label">Astra Orb Color</span>
             <div class="inspect-color-swatches" id="inspect-orb-colors">
-              <div class="inspect-swatch active" data-color="0x00f2ff" style="background:#00f2ff;" title="Cyan Blue"></div>
-              <div class="inspect-swatch" data-color="0xef4444" style="background:#ef4444;" title="Agni Red"></div>
-              <div class="inspect-swatch" data-color="0x10b981" style="background:#10b981;" title="Prithvi Green"></div>
-              <div class="inspect-swatch" data-color="0xf59e0b" style="background:#f59e0b;" title="Siddhi Gold"></div>
+              <div class="inspect-swatch active" data-color="0x2FB5C9" style="background:#2FB5C9;" title="Jala Teal"></div>
+              <div class="inspect-swatch" data-color="0xE4572E" style="background:#E4572E;" title="Agni Red"></div>
+              <div class="inspect-swatch" data-color="0x7FA650" style="background:#7FA650;" title="Prithvi Green"></div>
+              <div class="inspect-swatch" data-color="0xE3B04B" style="background:#E3B04B;" title="Siddhi Gold"></div>
             </div>
           </div>
           <label class="inspect-checkbox-row"><input type="checkbox" id="inspect-autorotate-cb" checked /><span>Auto-Rotate Model</span></label>

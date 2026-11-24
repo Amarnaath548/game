@@ -89,7 +89,7 @@ export class UIManager {
   initSpellPanel() {
     const bar = document.getElementById('spell-bar');
     if (!bar) return;
-    bar.innerHTML = `<div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(15,23,42,0.92);border:2px solid #3b4262;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Agni Bana</span><span id="spell-side-tag" style="display:none;font-size:9px;font-weight:900;padding:1px 5px;border-radius:4px;letter-spacing:0.5px;"></span><span id="spell-tier-label" style="display:none;font-size:10px;font-weight:800;background:#334155;color:#38bdf8;padding:1px 6px;border-radius:999px;">Astra</span><span id="tapas-indicator" style="display:none;font-size:9px;font-weight:900;background:#f59e0b;color:#0f172a;padding:1px 5px;border-radius:4px;box-shadow:0 0 8px #f59e0b;">TAPAS +40%</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
+    bar.innerHTML = `<div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(27,31,59,0.92);border:2px solid #E3B04B;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Agni Bana</span><span id="spell-side-tag" style="display:none;font-size:9px;font-weight:900;padding:1px 5px;border-radius:4px;letter-spacing:0.5px;"></span><span id="spell-tier-label" style="display:none;font-size:10px;font-weight:800;background:#15172B;color:#E3B04B;padding:1px 6px;border-radius:999px;">Astra</span><span id="tapas-indicator" style="display:none;font-size:9px;font-weight:900;background:#E3B04B;color:#15172B;padding:1px 5px;border-radius:4px;box-shadow:0 0 8px #E3B04B;">TAPAS +40%</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
     this.spellNameEl = document.getElementById('spell-name-label');
     this.spellSideTagEl = document.getElementById('spell-side-tag');
     this.spellTierEl = document.getElementById('spell-tier-label');
@@ -144,7 +144,7 @@ export class UIManager {
     const elements = player.spellSlot ? player.spellSlot.elements : (spell.elements || []);
     const tier = spell.tier ?? 0;
     this.spellNameEl.textContent = spell.name || (spell.id === 'fist' ? 'Mushti' : 'Agni Bana');
-    const schoolColor = spell.school && ELEMENT_COLORS[spell.school] ? ELEMENT_COLORS[spell.school] : (spell.color || 0x38bdf8);
+    const schoolColor = spell.school && ELEMENT_COLORS[spell.school] ? ELEMENT_COLORS[spell.school] : (spell.color || 0xE3B04B);
     const colorHex = `#${schoolColor.toString(16).padStart(6, '0')}`;
     this.spellNameEl.style.color = colorHex;
 
@@ -158,8 +158,8 @@ export class UIManager {
       const side = spell.sideEffect;
       if (side && side.id) {
         const sideId = side.id.toUpperCase();
-        const sideColors = { LAVA: { bg: '#c2410c', text: '#ffedd5', border: '#f97316' }, STEAM: { bg: '#e2e8f0', text: '#0f172a', border: '#ffffff' }, MUD: { bg: '#5c3a21', text: '#fef3c7', border: '#8b5a2b' } };
-        const cfg = sideColors[sideId] || { bg: '#334155', text: '#fff', border: '#64748b' };
+        const sideColors = { LAVA: { bg: '#C8431E', text: '#EFE6D2', border: '#E4572E' }, STEAM: { bg: '#EFE6D2', text: '#15172B', border: '#B9AE98' }, MUD: { bg: '#5c3a21', text: '#EFE6D2', border: '#7FA650' } };
+        const cfg = sideColors[sideId] || { bg: '#1B1F3B', text: '#EFE6D2', border: '#B9AE98' };
         this.spellSideTagEl.textContent = sideId; this.spellSideTagEl.style.background = cfg.bg;
         this.spellSideTagEl.style.color = cfg.text; this.spellSideTagEl.style.border = `1px solid ${cfg.border}`;
         this.spellSideTagEl.style.display = 'inline-block';
@@ -184,7 +184,7 @@ export class UIManager {
     if (this.topRightHUD) this.topRightHUD.update(player, isSafe);
     else if (this.zoneStatusEl) {
       this.zoneStatusEl.textContent = isSafe ? 'Safe' : 'STORM';
-      this.zoneStatusEl.style.color = isSafe ? '#b700ff' : '#ef4444';
+      this.zoneStatusEl.style.color = isSafe ? '#E3B04B' : '#C8431E';
     }
     const hpPct = Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100));
     this.hpFillEl.style.width = `${hpPct}%`;
@@ -204,7 +204,7 @@ export class UIManager {
     if (this.castCdRing) {
       const cd = player.spellSlot ? player.spellSlot.getCooldownProgress() : Math.max(0, (player.shootCooldown || 0) / (player.currentSpell?.cooldown || 1));
       this.castCdRing.style.strokeDashoffset = `${188.5 * cd}`;
-      this.castCdRing.style.stroke = cd > 0 ? '#f59e0b' : '#00f2ff';
+      this.castCdRing.style.stroke = cd > 0 ? '#E08A2E' : '#E3B04B';
     }
   }
 

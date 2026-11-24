@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CollisionSystem } from './CollisionSystem.js';
 import { PAD_COORDS, SURYA_COORDS, BRAZIER_COORDS } from '../config/worldLayout.js';
+import { PALETTE } from '../config/palette.js';
 
 const PAD_RADIUS = 1.6;
 const PAD_COOLDOWN = 6.0;
@@ -24,13 +25,13 @@ function buildPad(scene, x, z) {
   const sh = contactShadow(1.6); sh.position.y = 0.02; g.add(sh);
 
   const baseGeo = new THREE.CylinderGeometry(1.5, 1.6, 0.15, 16);
-  g.add(new THREE.Mesh(baseGeo, new THREE.MeshLambertMaterial({ color: 0x94a3b8, flatShading: true })));
+  g.add(new THREE.Mesh(baseGeo, new THREE.MeshLambertMaterial({ color: PALETTE.stone, flatShading: true })));
 
-  const r1Mat = new THREE.MeshBasicMaterial({ color: 0x38BDF8, transparent: true, opacity: 0.65, side: THREE.DoubleSide, depthWrite: false });
+  const r1Mat = new THREE.MeshBasicMaterial({ color: PALETTE.elements.JALA, transparent: true, opacity: 0.65, side: THREE.DoubleSide, depthWrite: false });
   const r1 = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.15, 16).rotateX(-Math.PI / 2), r1Mat);
   r1.position.y = 0.18; r1.renderOrder = 2; g.add(r1);
 
-  const r2Mat = new THREE.MeshBasicMaterial({ color: 0xE0F2FE, transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false });
+  const r2Mat = new THREE.MeshBasicMaterial({ color: PALETTE.bone, transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false });
   const r2 = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.65, 16).rotateX(-Math.PI / 2), r2Mat);
   r2.position.y = 0.32; r2.renderOrder = 2; g.add(r2);
   scene.add(g);
@@ -43,20 +44,20 @@ function buildSurya(scene, x, z, obstacles) {
   const sh = contactShadow(1.5); sh.position.y = 0.02; g.add(sh);
 
   // Stepped hexagonal gold base
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.3, 0.45, 6), new THREE.MeshLambertMaterial({ color: 0xD99B26, flatShading: true }));
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.3, 0.45, 6), new THREE.MeshLambertMaterial({ color: PALETTE.gold, flatShading: true }));
   base.position.y = 0.225; g.add(base);
 
-  // Tall beveled octagonal gold monolith (height: 3.8, radius: 0.75 in #D99B26)
-  const frameMat = new THREE.MeshLambertMaterial({ color: 0xD99B26, flatShading: true });
+  // Tall beveled octagonal gold monolith (height: 3.8, radius: 0.75 in gold)
+  const frameMat = new THREE.MeshLambertMaterial({ color: PALETTE.gold, flatShading: true });
   const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.75, 3.8, 8), frameMat);
   frame.position.y = 2.35; g.add(frame);
 
-  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.72, 0.35, 8), new THREE.MeshLambertMaterial({ color: 0xF59E0B, flatShading: true }));
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.72, 0.35, 8), new THREE.MeshLambertMaterial({ color: PALETTE.saffron, flatShading: true }));
   cap.position.y = 4.4; g.add(cap);
 
   // Bright vertical glowing mirror panel on front/back faces
   const coreMat = new THREE.MeshStandardMaterial({
-    color: 0xFEF9C3, emissive: 0xF59E0B, emissiveIntensity: 0.45, metalness: 0.85, roughness: 0.1, flatShading: true
+    color: PALETTE.bone, emissive: PALETTE.gold, emissiveIntensity: 0.45, metalness: 0.85, roughness: 0.1, flatShading: true
   });
   const core = new THREE.Mesh(new THREE.BoxGeometry(0.85, 2.8, 0.25), coreMat);
   core.position.y = 2.35; g.add(core);
@@ -73,26 +74,26 @@ function buildBrazier(scene, x, z) {
 
   // Wide dark stone bowl
   const bowlGeo = new THREE.CylinderGeometry(0.85, 0.6, 0.65, 8);
-  const bowl = new THREE.Mesh(bowlGeo, new THREE.MeshLambertMaterial({ color: 0x334155, flatShading: true }));
+  const bowl = new THREE.Mesh(bowlGeo, new THREE.MeshLambertMaterial({ color: PALETTE.ink, flatShading: true }));
   bowl.position.y = 0.325; g.add(bowl);
 
   // Glowing embers
   const embers = new THREE.Mesh(
     new THREE.CircleGeometry(0.7, 8).rotateX(-Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: 0xEA580C })
+    new THREE.MeshBasicMaterial({ color: PALETTE.sindoor })
   );
   embers.position.y = 0.64; embers.renderOrder = 2; g.add(embers);
 
   // 3 layered low-poly flame cones
-  const fMat1 = new THREE.MeshBasicMaterial({ color: 0xF97316 });
+  const fMat1 = new THREE.MeshBasicMaterial({ color: PALETTE.elements.AGNI });
   const f1 = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.1, 5), fMat1);
   f1.position.y = 1.15; g.add(f1);
 
-  const fMat2 = new THREE.MeshBasicMaterial({ color: 0xFB923C });
+  const fMat2 = new THREE.MeshBasicMaterial({ color: PALETTE.saffron });
   const f2 = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.85, 5), fMat2);
   f2.position.y = 1.05; g.add(f2);
 
-  const fMat3 = new THREE.MeshBasicMaterial({ color: 0xFACC15 });
+  const fMat3 = new THREE.MeshBasicMaterial({ color: PALETTE.gold });
   const f3 = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.6, 5), fMat3);
   f3.position.y = 0.95; g.add(f3);
 
@@ -187,7 +188,7 @@ export class ArenaInteractables {
         actor.dashDirX = dx / nl; actor.dashDirZ = dz / nl;
         actor.dashSpeed = PAD_DASH_SPEED;
         cds[idx] = PAD_COOLDOWN;
-        if (this.particleSys) this.particleSys.spawnBurst(pad.x, 0.5, pad.z, 0x38BDF8, 10, 5);
+        if (this.particleSys) this.particleSys.spawnBurst(pad.x, 0.5, pad.z, PALETTE.elements.JALA, 10, 5);
         if (this.sound) this.sound.playDash();
       }
     });
@@ -207,7 +208,7 @@ export class ArenaInteractables {
     b.embers.visible = false;
     [b.f1, b.f2, b.f3].forEach(f => { f.visible = false; });
     b.cooldown = BRAZIER_CD;
-    if (this.particleSys) this.particleSys.spawnBurst(b.x, 1.0, b.z, 0xff4400, 16, 6);
+    if (this.particleSys) this.particleSys.spawnBurst(b.x, 1.0, b.z, PALETTE.elements.AGNI, 16, 6);
     if (this.sound) this.sound.playExplosion();
 
     nearActors.forEach(actor => {
@@ -232,7 +233,7 @@ export class ArenaInteractables {
         const dot = proj.vx * nnx + proj.vz * nnz;
         proj.vx -= 2 * dot * nnx; proj.vz -= 2 * dot * nnz;
         proj._suryaBounced = true;
-        if (this.particleSys) this.particleSys.spawnBurst(proj.x, 1.0, proj.z, 0xFBBF24, 8, 4);
+        if (this.particleSys) this.particleSys.spawnBurst(proj.x, 1.0, proj.z, PALETTE.gold, 8, 4);
         if (this.sound) this.sound.playHit();
         return true;
       }

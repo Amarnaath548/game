@@ -45,7 +45,7 @@ export class FloatingBarSystem {
 
       const lvl = document.createElement('span');
       lvl.className = 'overhead-lvl';
-      lvl.style.cssText = 'font-size:9px;font-weight:900;color:#fff;background:rgba(15,23,42,0.92);padding:0 3px;border-radius:3px;border:1px solid #000;line-height:1.2;';
+      lvl.style.cssText = 'font-size:9px;font-weight:900;color:#fff;background:rgba(27,31,59,0.92);padding:0 3px;border-radius:3px;border:1px solid #000;line-height:1.2;';
 
       const name = document.createElement('span');
       name.className = 'overhead-name';
@@ -57,12 +57,12 @@ export class FloatingBarSystem {
 
       const bar = document.createElement('div');
       bar.className = 'overhead-bar';
-      bar.style.cssText = 'display:flex;gap:2px;padding:1px;background:rgba(15,23,42,0.9);border:1.5px solid #000;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.7);width:56px;height:7px;box-sizing:border-box;';
+      bar.style.cssText = 'display:flex;gap:2px;padding:1px;background:rgba(27,31,59,0.9);border:1.5px solid #000;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.7);width:56px;height:7px;box-sizing:border-box;';
 
       const segments = [];
       for (let i = 0; i < 8; i++) {
         const seg = document.createElement('div');
-        seg.style.cssText = 'flex:1;height:100%;border-radius:1px;background:#22c55e;';
+        seg.style.cssText = 'flex:1;height:100%;border-radius:1px;background:#7FA650;';
         bar.appendChild(seg);
         segments.push(seg);
       }
@@ -222,18 +222,18 @@ export class FloatingBarSystem {
       const nameText = actor.displayName || 'Mage';
       if (state.name !== nameText) {
         name.textContent = nameText;
-        name.style.color = isPlayer ? '#fde047' : '#ffffff';
+        name.style.color = isPlayer ? '#E3B04B' : '#EFE6D2';
         name.style.fontWeight = isPlayer ? '900' : '800';
         state.name = nameText;
       }
 
       const hpPct = Math.max(0, Math.min(100, (actor.hp / actor.maxHp) * 100));
       const activeCount = actor.hp <= 0 ? 0 : Math.max(1, Math.ceil((hpPct / 100) * 8));
-      const color = hpPct < 25 ? '#ef4444' : (hpPct < 50 ? '#f59e0b' : '#22c55e');
+      const color = hpPct < 25 ? '#C8431E' : (hpPct < 50 ? '#E08A2E' : '#7FA650');
 
       if (state.activeCount !== activeCount || state.color !== color) {
         for (let j = 0; j < 8; j++) {
-          segments[j].style.background = j < activeCount ? color : 'rgba(15, 23, 42, 0.7)';
+          segments[j].style.background = j < activeCount ? color : 'rgba(27, 31, 59, 0.7)';
         }
         state.activeCount = activeCount;
         state.color = color;

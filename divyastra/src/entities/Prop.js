@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PALETTE } from '../config/palette.js';
 export { XPGem, HealthOrb } from './Collectibles.js';
 
 export class Chest {
@@ -43,7 +44,7 @@ export class Chest {
       bandLid.position.set(bx, baseY + H, 0); this.group.add(bandLid);
     });
 
-    const lockMat = new THREE.MeshBasicMaterial({ color: isMythic ? 0x00f2ff : 0xffd700 });
+    const lockMat = new THREE.MeshBasicMaterial({ color: isMythic ? PALETTE.gold : PALETTE.saffron });
     const lock = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.42, 0.18), lockMat);
     lock.position.set(0, baseY + H * 0.72, D / 2 + 0.06);
     this.group.add(lock);
@@ -117,8 +118,8 @@ export class ArcaneCrystal {
     // Crystal Spire
     const crystalGeo = new THREE.ConeGeometry(0.8, 2.2, 5);
     this.mat = new THREE.MeshLambertMaterial({
-      color: 0xff2a6d,
-      emissive: 0x660022
+      color: PALETTE.saffron,
+      emissive: 0x4a1805
     });
     this.mesh = new THREE.Mesh(crystalGeo, this.mat);
     this.mesh.position.y = 1.1;
@@ -157,7 +158,7 @@ export class ArcaneCrystal {
     if (this.hitTimer > 0) {
       this.hitTimer -= dt;
       if (this.hitTimer <= 0) {
-        this.mat.color.setHex(0xff2a6d);
+        this.mat.color.setHex(PALETTE.saffron);
       }
     }
   }
@@ -169,7 +170,7 @@ export class ArcaneCrystal {
 }
 
 export class ShadowBush {
-  constructor(x, z, scene, radius = 2.8, bushColor = 0x3A9620) {
+  constructor(x, z, scene, radius = 2.8, bushColor = 0x4F7F3F) {
     this.x = x;
     this.z = z;
     this.radius = radius;
@@ -182,9 +183,9 @@ export class ShadowBush {
     const shadow = new THREE.Mesh(shadowGeo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false }));
     shadow.position.y = 0.02; this.group.add(shadow);
 
-    // Multi-lobe opaque low-poly leafy shrub (3-4 overlapping clusters in #3A9620 & #5BC227)
+    // Multi-lobe opaque low-poly leafy shrub
     this.mat1 = new THREE.MeshLambertMaterial({ color: bushColor, flatShading: true });
-    this.mat2 = new THREE.MeshLambertMaterial({ color: 0x5BC227, flatShading: true });
+    this.mat2 = new THREE.MeshLambertMaterial({ color: 0x8DB06A, flatShading: true });
 
     const lobeOffsets = [
       [0, 0, 0, radius * 0.65, this.mat1],
@@ -202,7 +203,7 @@ export class ShadowBush {
     this.scene.add(this.group);
   }
 
-  setBiomeColor(color, edgeColor = 0x5BC227) {
+  setBiomeColor(color, edgeColor = 0x8DB06A) {
     if (this.mat1) this.mat1.color.setHex(color);
     if (this.mat2) this.mat2.color.setHex(edgeColor);
   }

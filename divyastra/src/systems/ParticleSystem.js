@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PALETTE } from '../config/palette.js';
 
 const ELEM_TO_STYLE = { F: 'EMBER', W: 'DROPLET', E: 'SHARD' };
 
@@ -46,7 +47,7 @@ export class ParticleSystem {
     }
   }
 
-  spawnBurst(x, y, z, colorHex = 0xff5500, amount = 12, speed = 8, scale = 1.0, elementsOrStyle = null) {
+  spawnBurst(x, y, z, colorHex = PALETTE.elements.AGNI, amount = 12, speed = 8, scale = 1.0, elementsOrStyle = null) {
     this.tempColor.setHex(colorHex);
     let styles = [];
     if (Array.isArray(elementsOrStyle)) {
@@ -57,8 +58,8 @@ export class ParticleSystem {
     }
 
     if (styles.length === 0) {
-      if (colorHex === 0x8b5a2b || colorHex === 0x785535 || colorHex === 0x854d0e || colorHex === 0x888899) styles = ['SHARD'];
-      else if (colorHex === 0x06b6d4 || colorHex === 0x0284c7 || colorHex === 0x0ea5e9 || colorHex === 0x38bdf8 || colorHex === 0x10b981) styles = ['DROPLET'];
+      if (colorHex === PALETTE.elements.PRITHVI || colorHex === 0x8b5a2b || colorHex === 0x785535 || colorHex === 0x854d0e || colorHex === 0x888899) styles = ['SHARD'];
+      else if (colorHex === PALETTE.elements.JALA || colorHex === 0x06b6d4 || colorHex === 0x0284c7 || colorHex === 0x0ea5e9 || colorHex === 0x38bdf8 || colorHex === 0x10b981) styles = ['DROPLET'];
       else styles = ['EMBER'];
     }
 

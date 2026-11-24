@@ -1,4 +1,5 @@
 import { SCHOOLS, UPGRADES, SIDE_EFFECTS, resolveSpell } from './spellSchools.js';
+import { PALETTE } from './palette.js';
 
 export { SCHOOLS, UPGRADES, SIDE_EFFECTS, resolveSpell };
 
@@ -15,9 +16,9 @@ export const ELEMENT_NAMES = {
 };
 
 export const ELEMENT_COLORS = {
-  E: 0x8b5a2b, // gold-brown
-  F: 0xef4444, // orange-red
-  W: 0x06b6d4  // teal-blue
+  E: PALETTE.elements.PRITHVI,
+  F: PALETTE.elements.AGNI,
+  W: PALETTE.elements.JALA
 };
 
 export const TRAJECTORY = {
@@ -43,7 +44,7 @@ export const FIST_SPELL = {
   range: 2.2,
   arc: 1.75,
   knockback: 1.5,
-  color: 0xffaa44
+  color: PALETTE.gold
 };
 
 // Tier 1 & Tier 2 Spells

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { TAPAS_DELAY, TAPAS_BONUS, TAPAS_HEAL_PCT_PER_SEC } from '../config/constants.js';
+import { PALETTE } from '../config/palette.js';
 
 export class TapasComponent {
   constructor(actor) {
@@ -12,7 +13,7 @@ export class TapasComponent {
     const geo = new THREE.RingGeometry(1.65, 1.85, 32);
     geo.rotateX(-Math.PI / 2);
     this.ringMat = new THREE.MeshBasicMaterial({
-      color: 0xfbbf24, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false
+      color: PALETTE.gold, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false
     });
     this.ring = new THREE.Mesh(geo, this.ringMat);
     this.ring.position.y = 0.05;
@@ -20,7 +21,7 @@ export class TapasComponent {
     this.actor.group.add(this.ring);
 
     this.plusPool = [];
-    const pMat = new THREE.MeshBasicMaterial({ color: 0x4ade80, transparent: true, opacity: 0, depthWrite: false });
+    const pMat = new THREE.MeshBasicMaterial({ color: PALETTE.gold, transparent: true, opacity: 0, depthWrite: false });
     for (let i = 0; i < 2; i++) {
       const g = new THREE.Group();
       const h = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.08, 0.06), pMat);
@@ -40,7 +41,7 @@ export class TapasComponent {
     this.healParticleTimer = 0;
     if (this.ringMat) {
       this.ringMat.opacity = 0;
-      this.ringMat.color.setHex(0xfbbf24);
+      this.ringMat.color.setHex(PALETTE.gold);
     }
   }
 
@@ -79,7 +80,7 @@ export class TapasComponent {
     if (progress >= 1.0) {
       if (!this.active) {
         this.active = true;
-        this.ringMat.color.setHex(0x4ade80);
+        this.ringMat.color.setHex(PALETTE.saffron);
         if (this.onReady) this.onReady();
       }
       this.actor.heal(this.actor.maxHp * TAPAS_HEAL_PCT_PER_SEC * dt);
@@ -89,7 +90,7 @@ export class TapasComponent {
         this.spawnPlus();
       }
     } else {
-      this.ringMat.color.setHex(0xfbbf24);
+      this.ringMat.color.setHex(PALETTE.gold);
     }
   }
 

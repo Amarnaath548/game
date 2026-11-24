@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PALETTE } from '../config/palette.js';
 
 const GEO_SPHERE = new THREE.SphereGeometry(0.5, 8, 8);
 const GEO_OCTA = new THREE.OctahedronGeometry(0.5);
@@ -29,7 +30,7 @@ export class Projectile {
     this.mesh.add(this.coreMesh);
 
     this.shellMat = new THREE.MeshBasicMaterial({
-      color: 0xff5500, transparent: true, opacity: 0.45, depthWrite: false
+      color: PALETTE.elements.AGNI, transparent: true, opacity: 0.45, depthWrite: false
     });
     this.shellMesh = new THREE.Mesh(GEO_SPHERE, this.shellMat);
     this.shellMesh.scale.setScalar(1.2);
@@ -81,7 +82,7 @@ export class Projectile {
       this.coreMesh.geometry = GEO_SPHERE; this.shellMesh.geometry = GEO_SPHERE;
     }
 
-    const col = spellConfig.color !== undefined ? spellConfig.color : 0xff5500;
+    const col = spellConfig.color !== undefined ? spellConfig.color : PALETTE.elements.AGNI;
     this.coreMat.color.setHex(0xffffff);
     this.shellMat.color.setHex(col);
 
@@ -90,7 +91,7 @@ export class Projectile {
     this.particleStyles = this.elements.map((e) => ELEM_TO_STYLE[e] || e).filter((s) => s === 'EMBER' || s === 'DROPLET' || s === 'SHARD');
     if (this.elements.length > 0) {
       let r = 0, g = 0, b = 0;
-      const elCols = { E: [0.54, 0.35, 0.17], F: [0.94, 0.27, 0.27], W: [0.02, 0.71, 0.83] };
+      const elCols = { E: [0.50, 0.65, 0.31], F: [0.89, 0.34, 0.18], W: [0.18, 0.71, 0.79] };
       this.elements.forEach((e) => {
         const rgb = elCols[e] || [1, 1, 1];
         r += rgb[0]; g += rgb[1]; b += rgb[2];

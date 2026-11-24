@@ -54,18 +54,18 @@ export class Player extends Actor {
     // Player Marker
     this.markerTime = 0;
     const ringGeo = new THREE.RingGeometry(1.25, 1.48, 32); ringGeo.rotateX(-Math.PI / 2);
-    this.markerRingMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false });
+    this.markerRingMat = new THREE.MeshBasicMaterial({ color: COLORS.AIM_LASER, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false });
     this.markerRing = new THREE.Mesh(ringGeo, this.markerRingMat);
     this.markerRing.position.y = 0.05; this.markerRing.renderOrder = 5; this.group.add(this.markerRing);
 
     const glowGeo = new THREE.RingGeometry(1.05, 1.75, 32); glowGeo.rotateX(-Math.PI / 2);
-    this.markerGlowMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false });
+    this.markerGlowMat = new THREE.MeshBasicMaterial({ color: COLORS.AIM_LASER, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false });
     this.markerGlow = new THREE.Mesh(glowGeo, this.markerGlowMat);
     this.markerGlow.position.y = 0.048; this.markerGlow.renderOrder = 5; this.group.add(this.markerGlow);
 
     const arrowGeo = new THREE.ConeGeometry(0.32, 0.58, 4);
     arrowGeo.rotateX(Math.PI);
-    this.markerArrowMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.95 });
+    this.markerArrowMat = new THREE.MeshBasicMaterial({ color: COLORS.AIM_LASER, transparent: true, opacity: 0.95 });
     this.markerArrow = new THREE.Mesh(arrowGeo, this.markerArrowMat);
     this.markerArrow.position.y = 3.6;
     this.group.add(this.markerArrow);

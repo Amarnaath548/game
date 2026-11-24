@@ -1,4 +1,5 @@
 import { ELEMENTS, ELEMENT_NAMES, ELEMENT_COLORS, resolveSpell } from '../config/spellRegistry.js';
+import { PALETTE } from '../config/palette.js';
 
 export class ElementPicker {
   constructor(overlayContainer) {
@@ -50,8 +51,8 @@ export class ElementPicker {
 
     const header = document.createElement('div');
     header.style.cssText = 'color:#f8fafc;font-size:13px;font-weight:900;text-shadow:0 2px 4px #000;letter-spacing:1px;text-transform:uppercase;';
-    const queueNotice = this.pendingPicks > 1 ? ` &bull; <span style="color:#38bdf8;">(+${this.pendingPicks - 1} QUEUED)</span>` : '';
-    header.innerHTML = `SANKALPA - CHOOSE YOUR ELEMENT${queueNotice} &bull; <span id="picker-timer-text" style="color:#fbbf24;">5s</span>`;
+    const queueNotice = this.pendingPicks > 1 ? ` &bull; <span style="color:#E3B04B;">(+${this.pendingPicks - 1} QUEUED)</span>` : '';
+    header.innerHTML = `SANKALPA - CHOOSE YOUR ELEMENT${queueNotice} &bull; <span id="picker-timer-text" style="color:#E3B04B;">5s</span>`;
     pickerWrapper.appendChild(header);
 
     const cardsRow = document.createElement('div');
@@ -65,11 +66,11 @@ export class ElementPicker {
         const nextSpell = resolveSpell([...currentElems, elem]);
         previewText = nextSpell ? nextSpell.name : 'Unknown';
       }
-      const colorHex = `#${(ELEMENT_COLORS[elem] || 0x38bdf8).toString(16).padStart(6, '0')}`;
+      const colorHex = `#${(ELEMENT_COLORS[elem] || PALETTE.elements.JALA).toString(16).padStart(6, '0')}`;
 
       const card = document.createElement('div');
       card.className = 'element-pick-card';
-      card.style.cssText = `width:130px;min-height:90px;background:rgba(15,23,42,0.95);border:2px solid ${colorHex};border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.6);transition:transform 0.15s,box-shadow 0.15s;text-align:center;user-select:none;`;
+      card.style.cssText = `width:130px;min-height:90px;background:rgba(27,31,59,0.95);border:2px solid ${colorHex};border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.6);transition:transform 0.15s,box-shadow 0.15s;text-align:center;user-select:none;`;
       card.innerHTML = `
         <div style="font-size:11px;font-weight:800;color:#94a3b8;">(${index + 1}) PICK</div>
         <div style="font-size:22px;">${icons[elem]}</div>

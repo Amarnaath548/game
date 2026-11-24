@@ -1,14 +1,15 @@
 import * as THREE from 'three';
+import { PALETTE } from '../config/palette.js';
 
 function createAstraRingGroup() {
   const g = new THREE.Group();
-  const r1 = new THREE.Mesh(new THREE.RingGeometry(1.6, 1.72, 32), new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
+  const r1 = new THREE.Mesh(new THREE.RingGeometry(1.6, 1.72, 32), new THREE.MeshBasicMaterial({ color: PALETTE.gold, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
   r1.rotateX(-Math.PI / 2); g.add(r1);
-  const r2 = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 32), new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
+  const r2 = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 32), new THREE.MeshBasicMaterial({ color: PALETTE.saffron, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
   r2.rotateX(-Math.PI / 2); g.add(r2);
-  const l1 = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 3.4), new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
+  const l1 = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 3.4), new THREE.MeshBasicMaterial({ color: PALETTE.bone, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
   l1.rotateX(-Math.PI / 2); g.add(l1);
-  const l2 = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.08), new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
+  const l2 = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.08), new THREE.MeshBasicMaterial({ color: PALETTE.bone, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
   l2.rotateX(-Math.PI / 2); g.add(l2);
   return g;
 }
@@ -34,8 +35,8 @@ export class AstraVisuals {
     const vg2 = new THREE.RingGeometry(0.5, 0.65, 32); vg2.rotateX(-Math.PI / 2);
     for (let i = 0; i < this.maxVajra; i++) {
       const g = new THREE.Group();
-      const m1 = new THREE.Mesh(vg1, new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }));
-      const m2 = new THREE.Mesh(vg2, new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }));
+      const m1 = new THREE.Mesh(vg1, new THREE.MeshBasicMaterial({ color: PALETTE.gold, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }));
+      const m2 = new THREE.Mesh(vg2, new THREE.MeshBasicMaterial({ color: PALETTE.elements.JALA, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }));
       g.add(m1); g.add(m2);
       g.position.y = 0.06; g.visible = false;
       this.scene.add(g);
@@ -53,7 +54,7 @@ export class AstraVisuals {
     ];
     for (let i = 0; i < this.maxSpirals; i++) {
       const group = new THREE.Group();
-      const mat = new THREE.MeshBasicMaterial({ color: 0x99f6e4, transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false });
+      const mat = new THREE.MeshBasicMaterial({ color: PALETTE.elements.JALA, transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false });
       armConfigs.forEach((cfg) => {
         const geo = new THREE.RingGeometry(cfg.inner, cfg.outer, 24, 1, cfg.start, 1.6);
         geo.rotateX(-Math.PI / 2);

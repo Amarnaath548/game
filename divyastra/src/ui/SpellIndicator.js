@@ -1,4 +1,5 @@
 import { ELEMENT_COLORS } from '../config/spellRegistry.js';
+import { PALETTE } from '../config/palette.js';
 
 const PERK_ICONS = {
   TWIN_CAST: '♊',
@@ -57,7 +58,7 @@ export class SpellIndicator {
   update(player) {
     if (!player) return;
     const spell = player.currentSpell || {};
-    const schoolColor = spell.school && ELEMENT_COLORS[spell.school] ? ELEMENT_COLORS[spell.school] : (spell.color || 0x38bdf8);
+    const schoolColor = spell.school && ELEMENT_COLORS[spell.school] ? ELEMENT_COLORS[spell.school] : (spell.color || PALETTE.elements.JALA);
     const colorHex = `#${schoolColor.toString(16).padStart(6, '0')}`;
 
     if (this.nameEl) {
@@ -120,8 +121,8 @@ export class SpellIndicator {
 
     if (this.lastDeg !== sweepDeg) {
       if (this.cdEl) {
-        const sweepColor = cdRatio > 0 ? '#f59e0b' : colorHex;
-        this.cdEl.style.background = `conic-gradient(${sweepColor} ${sweepDeg}deg, rgba(15, 23, 42, 0.9) ${sweepDeg}deg 360deg)`;
+        const sweepColor = cdRatio > 0 ? '#E08A2E' : colorHex;
+        this.cdEl.style.background = `conic-gradient(${sweepColor} ${sweepDeg}deg, rgba(27, 31, 59, 0.9) ${sweepDeg}deg 360deg)`;
       }
       this.lastDeg = sweepDeg;
     }

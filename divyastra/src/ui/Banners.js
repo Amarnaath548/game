@@ -52,7 +52,7 @@ export class BannerManager {
     const el = document.createElement('div');
     el.className = 'level-up-banner';
     el.innerHTML = `
-      <div class="banner-title" style="font-size:24px;font-weight:900;color:#00f2ff;text-shadow:0 0 16px rgba(0,242,255,0.7);">LEVEL UP!</div>
+      <div class="banner-title" style="font-size:24px;font-weight:900;color:#E3B04B;text-shadow:0 0 16px rgba(227,176,75,0.7);">LEVEL UP!</div>
       <div class="banner-sub" style="font-size:12px;font-weight:800;color:#f8fafc;">Reached Level ${level}</div>
     `;
     this.container.appendChild(el);
@@ -94,7 +94,7 @@ export class BannerManager {
     const el = document.createElement('div');
     el.className = 'match-start-banner';
     el.innerHTML = `
-      <div class="banner-title" style="font-size:18px;font-weight:900;color:#facc15;letter-spacing:1px;text-shadow:0 0 12px rgba(250,204,21,0.6);">${levelName}</div>
+      <div class="banner-title" style="font-size:18px;font-weight:900;color:#E3B04B;letter-spacing:1px;text-shadow:0 0 12px rgba(227,176,75,0.6);">${levelName}</div>
       <div class="banner-sub" style="font-size:11px;font-weight:800;color:#e2e8f0;text-transform:uppercase;letter-spacing:1px;">Difficulty: ${difficultyName}</div>
     `;
     this.container.appendChild(el);

@@ -1,16 +1,18 @@
+import { PALETTE } from './palette.js';
+
 export const GAME_TITLE = 'Divyastra';
 
 export const COLORS = {
-  BG_VOID: 0x0d0e15,
-  FLOOR_SLATE: 0x1a1c29,
+  BG_VOID: PALETTE.ink,
+  FLOOR_SLATE: PALETTE.indigo,
   GRID_RUNE: 0x2a2e42,
   RING_DIVIDER: 0x3b4262,
-  OBELISK: 0xb8b2a7,
+  OBELISK: PALETTE.stone,
   OBELISK_TOP: 0x9f998f,
-  PLAYER_ROBE: 0xd92638,
-  PLAYER_HAT: 0x1e2238,
-  AIM_LASER: 0x00f2ff,
-  STORM_RING: 0xb700ff
+  PLAYER_ROBE: PALETTE.sindoor,
+  PLAYER_HAT: PALETTE.indigo,
+  AIM_LASER: PALETTE.gold,
+  STORM_RING: PALETTE.sindoor
 };
 
 export const HERO_VISUAL_SCALE = 1.4;
@@ -19,37 +21,37 @@ export const QUALITY = 'auto'; // 'auto' | 'high' | 'low'
 export const BIOMES = {
   GRASS: {
     id: 'GRASS',
-    name: 'Grass Plains',
-    floorColor: 0x76C725,
-    floorAccentColor: 0x58c016,
-    shorelineColor: 0xe9d8a6,
-    pondColor: 0x3b5f8a,
-    pondEdgeColor: 0x4d75a8,
-    treeFoliageColor: 0x236b32,
-    skyColor: 0x7ff5e4,
-    fogColor: 0x7ff5e4,
+    name: 'Dharma Plains',
+    floorColor: 0x7A9A4A,
+    floorAccentColor: 0x6A8A3E,
+    shorelineColor: 0xD9C79A,
+    pondColor: 0x2E5E6E,
+    pondEdgeColor: 0x3F7A8C,
+    treeFoliageColor: 0x2F5A3A,
+    skyColor: 0xE8C9A0,
+    fogColor: 0xE8C9A0,
     fogNear: 45,
     fogFar: 140,
-    ambientColor: 0xffffff,
+    ambientColor: 0xfff5ea,
     ambientIntensity: 1.15,
     dirLightColor: 0xfffae0,
     dirLightIntensity: 0.85,
-    obeliskColor: 0xb8b2a7,
+    obeliskColor: PALETTE.stone,
     obeliskTopColor: 0x9f998f,
-    bushColor: 0x22c55e,
-    bushEdgeColor: 0x86efac
+    bushColor: 0x4F7F3F,
+    bushEdgeColor: 0x8DB06A
   },
   SNOW: {
     id: 'SNOW',
     name: 'Frozen Peaks',
-    floorColor: 0xe8f4ff,
-    floorAccentColor: 0xd6e8fa,
-    shorelineColor: 0xdbeafe,
-    pondColor: 0x60a5fa,
-    pondEdgeColor: 0x93c5fd,
-    treeFoliageColor: 0x1e4e3d,
-    skyColor: 0x9be8ff,
-    fogColor: 0x9be8ff,
+    floorColor: 0xE6EEF2,
+    floorAccentColor: 0xCDD9E2,
+    shorelineColor: 0xDCE8F0,
+    pondColor: 0x3E6E96,
+    pondEdgeColor: 0x5A8AB4,
+    treeFoliageColor: 0x1E4E3D,
+    skyColor: 0xB8CCE0,
+    fogColor: 0xB8CCE0,
     fogNear: 45,
     fogFar: 140,
     ambientColor: 0xe0f2fe,
@@ -58,20 +60,20 @@ export const BIOMES = {
     dirLightIntensity: 0.85,
     obeliskColor: 0x64748b,
     obeliskTopColor: 0x475569,
-    bushColor: 0x065f46,
-    bushEdgeColor: 0x38bdf8
+    bushColor: 0x3E6E5E,
+    bushEdgeColor: 0x9EC0B0
   },
   DESERT: {
     id: 'DESERT',
     name: 'Sunscorched Dunes',
-    floorColor: 0xF7BD3A,
-    floorAccentColor: 0xEDAC2F,
-    shorelineColor: 0xf3d9a4,
-    pondColor: 0x1CC8D8,
-    pondEdgeColor: 0x9AF2F8,
-    treeFoliageColor: 0x8A9B44,
-    skyColor: 0xFAD98E,
-    fogColor: 0xF4C873,
+    floorColor: 0xD9A864,
+    floorAccentColor: 0xC48F4E,
+    shorelineColor: 0xEBD5A0,
+    pondColor: 0x2E6E73,
+    pondEdgeColor: 0x3F8A8C,
+    treeFoliageColor: 0x6B7A3A,
+    skyColor: 0xF4D7A8,
+    fogColor: 0xF4D7A8,
     fogNear: 45,
     fogFar: 140,
     ambientColor: 0xfff1cc,
@@ -80,20 +82,20 @@ export const BIOMES = {
     dirLightIntensity: 0.85,
     obeliskColor: 0xCA9068,
     obeliskTopColor: 0xA87249,
-    bushColor: 0x84a02a,
-    bushEdgeColor: 0xe6d36a
+    bushColor: 0x7A8A44,
+    bushEdgeColor: 0xA8B56A
   },
   AUTUMN: {
     id: 'AUTUMN',
     name: 'Harvest Hollow',
-    floorColor: 0xC6BD2D,
-    floorAccentColor: 0xA9B42A,
-    shorelineColor: 0xe9d8a6,
-    pondColor: 0x14A99F,
-    pondEdgeColor: 0x86E4DA,
-    treeFoliageColor: 0xE9741A,
-    skyColor: 0xEBD58A,
-    fogColor: 0xE2CB7C,
+    floorColor: 0x9A7A3A,
+    floorAccentColor: 0x8A5A2A,
+    shorelineColor: 0xD4B97A,
+    pondColor: 0x34586E,
+    pondEdgeColor: 0x46728C,
+    treeFoliageColor: 0xB8532A,
+    skyColor: 0xE8B88A,
+    fogColor: 0xE8B88A,
     fogNear: 45,
     fogFar: 140,
     ambientColor: 0xfff1cf,
@@ -102,16 +104,16 @@ export const BIOMES = {
     dirLightIntensity: 0.85,
     obeliskColor: 0xD9CEB3,
     obeliskTopColor: 0xB8AB8C,
-    bushColor: 0xb45309,
-    bushEdgeColor: 0xf59e0b
+    bushColor: 0xA8622A,
+    bushEdgeColor: 0xD98A3A
   }
 };
 
 export const HEROES = [
-  { id: 'tapasvi', name: 'Tapasvi', archetype: 'TAPASVI', bodyColor: 0xe06014, accentColor: 0xfbbf24, hatType: 'JATA', extra: 'UTTARIYA' },
-  { id: 'agni', name: 'Agni Sadhaka', archetype: 'AGNI', bodyColor: 0xd92638, accentColor: 0xf97316, hatType: 'FLAME_CREST', extra: 'MANTLE' },
-  { id: 'jala', name: 'Jala Sadhaka', archetype: 'JALA', bodyColor: 0x0284c7, accentColor: 0x99f6e4, hatType: 'TURBAN', extra: 'WAVE_PADS' },
-  { id: 'prithvi', name: 'Prithvi Sadhaka', archetype: 'PRITHVI', bodyColor: 0x166534, accentColor: 0xc2410c, hatType: 'CIRCLET', extra: 'ROCK_SHOULDERS' }
+  { id: 'tapasvi', name: 'Tapasvi', archetype: 'TAPASVI', bodyColor: PALETTE.saffron, accentColor: PALETTE.gold, hatType: 'JATA', extra: 'UTTARIYA' },
+  { id: 'agni', name: 'Agni Sadhaka', archetype: 'AGNI', bodyColor: PALETTE.elements.AGNI, accentColor: PALETTE.saffron, hatType: 'FLAME_CREST', extra: 'MANTLE' },
+  { id: 'jala', name: 'Jala Sadhaka', archetype: 'JALA', bodyColor: PALETTE.elements.JALA, accentColor: PALETTE.bone, hatType: 'TURBAN', extra: 'WAVE_PADS' },
+  { id: 'prithvi', name: 'Prithvi Sadhaka', archetype: 'PRITHVI', bodyColor: PALETTE.elements.PRITHVI, accentColor: PALETTE.saffron, hatType: 'CIRCLET', extra: 'ROCK_SHOULDERS' }
 ];
 
 /** Safe hero lookup — falls back to HEROES[0] if id is not found (e.g. old saved id). */
@@ -199,4 +201,5 @@ export const STORM_PHASES = [
   { duration: 25, startRadius: 30, endRadius: 8, tickDamage: 40 }
 ];
 
+export { PALETTE } from './palette.js';
 export { ELEMENTS, ELEMENT_NAMES, ELEMENT_COLORS, TRAJECTORY, getSpell, ALL_SPELLS } from './spellRegistry.js';

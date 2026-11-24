@@ -8,6 +8,8 @@ export const RANKS = [
   { minTrophies: 1000, title: 'Maharishi', color: '#b700ff' }
 ];
 
+import { PALETTE } from '../config/palette.js';
+
 export const STAVES = [
   {
     id: 'PYRO_STAFF',
@@ -15,8 +17,8 @@ export const STAVES = [
     elementBonus: 'F',
     cost: 0,
     perkDesc: '+12% Damage for Agni spells',
-    colorHex: 0xff5500,
-    robeColor: 0xd92638
+    colorHex: PALETTE.elements.AGNI,
+    robeColor: PALETTE.sindoor
   },
   {
     id: 'CRYO_STAFF',
@@ -24,8 +26,8 @@ export const STAVES = [
     elementBonus: 'W',
     cost: 150,
     perkDesc: '+12% Damage for Jala spells',
-    colorHex: 0x00f2ff,
-    robeColor: 0x0284c7
+    colorHex: PALETTE.elements.JALA,
+    robeColor: PALETTE.elements.JALA
   },
   {
     id: 'ELECTRO_STAFF',
@@ -33,8 +35,8 @@ export const STAVES = [
     elementBonus: 'E',
     cost: 300,
     perkDesc: '+12% Damage for Prithvi spells',
-    colorHex: 0x8b5a2b,
-    robeColor: 0xf59e0b
+    colorHex: PALETTE.elements.PRITHVI,
+    robeColor: PALETTE.gold
   },
   {
     id: 'VENOM_STAFF',
@@ -42,8 +44,8 @@ export const STAVES = [
     cooldownReduction: 0.15,
     cost: 500,
     perkDesc: '-15% Spell Cooldown',
-    colorHex: 0x39ff14,
-    robeColor: 0x10b981
+    colorHex: PALETTE.elements.PRITHVI,
+    robeColor: PALETTE.elements.PRITHVI
   },
   {
     id: 'PIERCE_STAFF',
@@ -51,8 +53,8 @@ export const STAVES = [
     speedBonus: 0.10,
     cost: 400,
     perkDesc: '+10% Movement Speed',
-    colorHex: 0xd946ef,
-    robeColor: 0xa21caf
+    colorHex: PALETTE.bone,
+    robeColor: PALETTE.saffron
   },
   {
     id: 'BLAST_STAFF',
@@ -60,8 +62,8 @@ export const STAVES = [
     hpBonus: 60,
     cost: 550,
     perkDesc: '+60 Max HP',
-    colorHex: 0xf97316,
-    robeColor: 0xc2410c
+    colorHex: PALETTE.gold,
+    robeColor: PALETTE.saffron
   },
   {
     id: 'HOMING_STAFF',
@@ -69,8 +71,8 @@ export const STAVES = [
     pickupRadiusBonus: 3.0,
     cost: 700,
     perkDesc: '+3.0m Pickup Magnet Radius',
-    colorHex: 0x06b6d4,
-    robeColor: 0x0e7490
+    colorHex: PALETTE.elements.JALA,
+    robeColor: PALETTE.indigo
   },
   {
     id: 'SHIELD_STAFF',
@@ -79,8 +81,8 @@ export const STAVES = [
     cooldownReduction: 0.10,
     cost: 850,
     perkDesc: '+40 Max HP & -10% Spell Cooldown',
-    colorHex: 0x3b82f6,
-    robeColor: 0x1d4ed8
+    colorHex: PALETTE.stone,
+    robeColor: PALETTE.ink
   }
 ];
 

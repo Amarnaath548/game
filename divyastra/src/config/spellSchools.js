@@ -1,4 +1,5 @@
 import { SPELLS_T3 } from './spellRegistryT3.js';
+import { PALETTE } from './palette.js';
 
 export const UPGRADES = {
   F: {
@@ -32,7 +33,7 @@ export const SCHOOLS = {
       lore: 'Hardened earthen projectile hurled with piercing momentum',
       elements: ['E'],
       trajectory: 'LINEAR',
-      color: 0x8b5a2b,
+      color: PALETTE.elements.PRITHVI,
       damage: 42,
       speed: 20,
       range: 22,
@@ -53,7 +54,7 @@ export const SCHOOLS = {
       lore: 'Blazing arrow of consecrated fire that incinerates targets',
       elements: ['F'],
       trajectory: 'LINEAR',
-      color: 0xff5500,
+      color: PALETTE.elements.AGNI,
       damage: 48,
       speed: 28,
       range: 24,
@@ -75,7 +76,7 @@ export const SCHOOLS = {
       lore: 'Swift torrent dart that slows foes and revitalizes',
       elements: ['W'],
       trajectory: 'LINEAR',
-      color: 0x06b6d4,
+      color: PALETTE.elements.JALA,
       damage: 38,
       speed: 28,
       range: 22,

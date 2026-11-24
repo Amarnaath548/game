@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PALETTE } from '../config/palette.js';
 
 // Global shared materials (flatShading: true, zero textures) for mobile WebGL
 // Sage-style palette (matches the low-poly ascetic reference art)
@@ -6,22 +7,22 @@ export const SKIN_COLOR = 0xd69c68;
 export const HAIR_COLOR = 0x3a2515;
 export const BEAD_COLOR = 0x7a4325;
 export const CLAY_COLOR = 0x8c5a33;
-export const CLOTH_SAND = 0xe3cfa5;
+export const CLOTH_SAND = PALETTE.bone;
 
 export const MAT_SKIN = new THREE.MeshLambertMaterial({ color: SKIN_COLOR, flatShading: true });
 export const MAT_WOOD = new THREE.MeshLambertMaterial({ color: 0x5c3a21, flatShading: true });
-export const MAT_GOLD = new THREE.MeshLambertMaterial({ color: 0xf59e0b, flatShading: true });
-export const MAT_ORANGE_FIRE = new THREE.MeshLambertMaterial({ color: 0xf97316, flatShading: true });
-export const MAT_CRIMSON = new THREE.MeshLambertMaterial({ color: 0xd92638, flatShading: true });
-export const MAT_SEAFOAM = new THREE.MeshLambertMaterial({ color: 0x99f6e4, flatShading: true });
-export const MAT_TURBAN_TAIL = new THREE.MeshLambertMaterial({ color: 0x38bdf8, flatShading: true });
-export const MAT_STONE_GREY = new THREE.MeshLambertMaterial({ color: 0x64748b, flatShading: true });
-export const MAT_BEARD = new THREE.MeshLambertMaterial({ color: 0x94a3b8, flatShading: true });
+export const MAT_GOLD = new THREE.MeshLambertMaterial({ color: PALETTE.gold, flatShading: true });
+export const MAT_ORANGE_FIRE = new THREE.MeshLambertMaterial({ color: PALETTE.elements.AGNI, flatShading: true });
+export const MAT_CRIMSON = new THREE.MeshLambertMaterial({ color: PALETTE.sindoor, flatShading: true });
+export const MAT_SEAFOAM = new THREE.MeshLambertMaterial({ color: PALETTE.elements.JALA, flatShading: true });
+export const MAT_TURBAN_TAIL = new THREE.MeshLambertMaterial({ color: PALETTE.elements.JALA, flatShading: true });
+export const MAT_STONE_GREY = new THREE.MeshLambertMaterial({ color: PALETTE.stone, flatShading: true });
+export const MAT_BEARD = new THREE.MeshLambertMaterial({ color: PALETTE.bone, flatShading: true });
 export const MAT_ROCK = new THREE.MeshLambertMaterial({ color: 0x475569, flatShading: true });
-export const MAT_SASH = new THREE.MeshLambertMaterial({ color: 0xfbbf24, flatShading: true });
+export const MAT_SASH = new THREE.MeshLambertMaterial({ color: PALETTE.gold, flatShading: true });
 
 export const MAT_SHIELD = new THREE.MeshBasicMaterial({
-  color: 0x3b82f6,
+  color: PALETTE.elements.JALA,
   transparent: true,
   opacity: 0.35,
   wireframe: true

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { part, merge, lambert, decalMat, mulberry32 } from './geo.js';
 import { makeAgaveGeometry } from './vegProps.js';
+import { PALETTE } from '../../config/palette.js';
 
 function addMesh(parent, geo, mat, opts = {}) {
   const m = new THREE.Mesh(geo, mat);
@@ -65,7 +66,7 @@ export function buildAgni(map) {
 
   const ped = new THREE.BoxGeometry(1.5, 1.0, 1.5);
   const bowl = new THREE.CylinderGeometry(0.85, 0.55, 0.55, 8);
-  const f1 = new THREE.MeshBasicMaterial({ color: 0xF97316 }), f2 = new THREE.MeshBasicMaterial({ color: 0xFDE047 });
+  const f1 = new THREE.MeshBasicMaterial({ color: PALETTE.elements.AGNI }), f2 = new THREE.MeshBasicMaterial({ color: PALETTE.gold });
   const fg1 = new THREE.ConeGeometry(0.55, 1.2, 5), fg2 = new THREE.ConeGeometry(0.34, 1.1, 5), fg3 = new THREE.ConeGeometry(0.22, 0.7, 5);
   const gBowl = [], gF1 = [], gF2 = [];
 
@@ -146,7 +147,7 @@ export function buildStepwell(map) {
   gStoneDk.push(part(new THREE.BoxGeometry(2.4, 0.2, 2.4), [0, 2.35, 0]));
   gStone.push(part(new THREE.ConeGeometry(1.75, 0.9, 4), [0, 2.9, 0], [0, Math.PI / 4, 0]));
   if (snow) gSnow.push(part(new THREE.ConeGeometry(1.35, 0.55, 4), [0, 3.08, 0], [0, Math.PI / 4, 0]));
-  addMesh(g, new THREE.OctahedronGeometry(0.16, 0).translate(0, 3.5, 0), lambert(0xF2C14E));
+  addMesh(g, new THREE.OctahedronGeometry(0.16, 0).translate(0, 3.5, 0), lambert(PALETTE.gold));
 
   const petal = new THREE.ConeGeometry(0.16, 0.42, 4);
   const addLotus = (lx, ly, lz, s = 1) => {
@@ -189,5 +190,5 @@ export function buildStepwell(map) {
   addMesh(g, merge(gStoneDk), stoneDk);
   if (snow && gSnow.length) addMesh(g, merge(gSnow), snow);
   if (gLotus.length) addMesh(g, merge(gLotus), lambert(W.lotus));
-  if (gGold.length) addMesh(g, merge(gGold), lambert(0xFACC15));
+  if (gGold.length) addMesh(g, merge(gGold), lambert(PALETTE.gold));
 }

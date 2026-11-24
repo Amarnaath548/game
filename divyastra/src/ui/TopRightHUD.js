@@ -21,7 +21,7 @@ export class TopRightHUD {
         </div>
       </div>
       <div class="top-subrow">
-        <div class="badge badge-zone">ZONE: <span id="zone-status">Safe</span> • <span id="zone-countdown" style="color:#d8b4fe;">Next shrink 0:25</span></div>
+        <div class="badge badge-zone">ZONE: <span id="zone-status">Safe</span> • <span id="zone-countdown" style="color:#E3B04B;">Next shrink 0:25</span></div>
         <button id="hud-mute-btn" class="fs-btn hud-mute-btn" title="Toggle Sound">🔊</button>
       </div>
     `;
@@ -50,7 +50,7 @@ export class TopRightHUD {
     }
     if (this.zoneStatusEl && this.lastSafe !== isSafe) {
       this.zoneStatusEl.textContent = isSafe ? 'Safe' : 'STORM';
-      this.zoneStatusEl.style.color = isSafe ? '#a855f7' : '#ef4444';
+      this.zoneStatusEl.style.color = isSafe ? '#E3B04B' : '#C8431E';
       this.lastSafe = isSafe;
     }
 

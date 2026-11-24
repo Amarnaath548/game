@@ -1,3 +1,5 @@
+import { PALETTE } from './palette.js';
+
 export const SPELLS_T3 = {
   E_E_E: {
     id: 'E_E_E',
@@ -6,7 +8,7 @@ export const SPELLS_T3 = {
     lore: 'Mighty radial earthquake spike ring crushing adversaries. Blocks enemy projectiles and fortifies caster',
     elements: ['E', 'E', 'E'],
     trajectory: 'RADIAL',
-    color: 0x854d0e,
+    color: PALETTE.elements.PRITHVI,
     damage: 75,
     radius: 6,
     knockback: 5,
@@ -25,7 +27,7 @@ export const SPELLS_T3 = {
     lore: 'Invincible thermonuclear firestorm consuming everything nearby. Blocks enemy projectiles',
     elements: ['F', 'F', 'F'],
     trajectory: 'RADIAL',
-    color: 0xff2200,
+    color: PALETTE.elements.AGNI,
     damage: 85,
     speed: 0,
     range: 7.5,
@@ -44,7 +46,7 @@ export const SPELLS_T3 = {
     lore: 'Vast radial tidal surge sweeping away all resistance. Blocks enemy projectiles',
     elements: ['W', 'W', 'W'],
     trajectory: 'RADIAL',
-    color: 0x0ea5e9,
+    color: PALETTE.elements.JALA,
     damage: 70,
     radius: 7,
     knockback: 10,

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PALETTE } from '../config/palette.js';
 
 export class SideEffectZones {
   constructor(scene, particleSys = null) {
@@ -12,7 +13,7 @@ export class SideEffectZones {
 
     for (let i = 0; i < this.maxZones; i++) {
       const mat = new THREE.MeshBasicMaterial({
-        color: 0xff4500,
+        color: PALETTE.elements.AGNI,
         transparent: true,
         opacity: 0.6,
         side: THREE.DoubleSide,
@@ -73,8 +74,8 @@ export class SideEffectZones {
     zItem.dps = sideEffect.dps || 0;
     zItem.slowFactor = sideEffect.slowFactor || 0;
 
-    let col = 0xff4500, op = 0.65;
-    if (type === 'STEAM') { col = 0xffffff; op = 0.38; }
+    let col = PALETTE.elements.AGNI, op = 0.65;
+    if (type === 'STEAM') { col = PALETTE.bone; op = 0.38; }
     else if (type === 'MUD') { col = 0x5c3a21; op = 0.65; }
 
     zItem.baseOpacity = op;

@@ -40,7 +40,7 @@ export class LevelSelectView {
     const titleBox = document.createElement('div');
     titleBox.style.cssText = 'text-align: center;';
     titleBox.innerHTML = `
-      <div style="font-size:22px; font-weight:900; color:#facc15; letter-spacing:1.5px; text-shadow:0 0 16px rgba(250,204,21,0.5);">CAMPAIGN MISSIONS</div>
+      <div style="font-size:22px; font-weight:900; color:#E3B04B; letter-spacing:1.5px; text-shadow:0 0 16px rgba(227,176,75,0.5);">CAMPAIGN MISSIONS</div>
       <div style="font-size:11px; font-weight:700; color:#94a3b8; letter-spacing:0.5px;">Select a trial to prove your mastery</div>
     `;
 
@@ -102,11 +102,11 @@ export class LevelSelectView {
         card.onmouseenter = () => {
           card.style.transform = 'translateY(-4px) scale(1.02)';
           card.style.borderColor = '#facc15';
-          card.style.boxShadow = '0 12px 30px rgba(250, 204, 21, 0.35)';
+          card.style.boxShadow = '0 12px 30px rgba(227, 176, 75, 0.35)';
         };
         card.onmouseleave = () => {
           card.style.transform = 'none';
-          card.style.borderColor = '#38bdf8';
+          card.style.borderColor = '#E3B04B';
           card.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
         };
         card.onclick = () => {
@@ -118,13 +118,13 @@ export class LevelSelectView {
 
       let starsHtml = '';
       for (let s = 1; s <= 3; s++) {
-        starsHtml += `<span style="color:${s <= stars ? '#facc15' : '#475569'}; font-size:16px; margin:0 1px;">★</span>`;
+        starsHtml += `<span style="color:${s <= stars ? '#E3B04B' : '#475569'}; font-size:16px; margin:0 1px;">★</span>`;
       }
 
       card.innerHTML = `
         <div style="width:100%;">
           ${!unlocked ? '<div style="font-size:24px; margin-bottom:4px;">🔒</div>' : ''}
-          <div style="font-size:10px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:1px;">Level ${level.id}</div>
+          <div style="font-size:10px; font-weight:800; color:#E3B04B; text-transform:uppercase; letter-spacing:1px;">Level ${level.id}</div>
           <div style="font-size:16px; font-weight:900; color:#fff; margin:2px 0 6px 0;">${level.name}</div>
           <div style="display:inline-block; background:${diff.badgeColor}; color:#000; font-weight:900; font-size:10px; padding:2px 8px; border-radius:999px; margin-bottom:8px; text-transform:uppercase;">${diff.name}</div>
           <div style="font-size:11px; font-weight:700; color:#cbd5e1; margin-bottom:3px;">🗺️ ${mapName}</div>
@@ -133,7 +133,7 @@ export class LevelSelectView {
         </div>
         <div style="width:100%; border-top:1px solid rgba(255,255,255,0.08); padding-top:8px;">
           <div style="margin-bottom:4px;">${starsHtml}</div>
-          <div style="font-size:9px; font-weight:800; color:#a855f7; text-transform:uppercase;">Goal: Top ${level.completeRank}</div>
+          <div style="font-size:9px; font-weight:800; color:#E08A2E; text-transform:uppercase;">Goal: Top ${level.completeRank}</div>
         </div>
       `;
 

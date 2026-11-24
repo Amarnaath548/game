@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { projectileDeflect, destroyProjectilesInRotatedRect } from './ProjectileDeflect.js';
 import { damageObjectsInCircle, damageObjectsInWave } from '../core/EnvironmentDamage.js';
+import { PALETTE } from '../config/palette.js';
 
 export class SpellEffects {
   constructor(scene, particleSys, astraVisuals = null) {
@@ -15,7 +16,7 @@ export class SpellEffects {
     const radGeo = new THREE.RingGeometry(0.85, 1.0, 32);
     radGeo.rotateX(-Math.PI / 2);
     for (let i = 0; i < this.maxRadials; i++) {
-      const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false });
+      const mat = new THREE.MeshBasicMaterial({ color: PALETTE.gold, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false });
       const mesh = new THREE.Mesh(radGeo, mat);
       mesh.position.y = 0.08; mesh.visible = false;
       this.scene.add(mesh);
@@ -27,7 +28,7 @@ export class SpellEffects {
     this.waves = [];
     const waveGeo = new THREE.BoxGeometry(1, 0.8, 1);
     for (let i = 0; i < this.maxWaves; i++) {
-      const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.75, depthWrite: false });
+      const mat = new THREE.MeshBasicMaterial({ color: PALETTE.elements.JALA, transparent: true, opacity: 0.75, depthWrite: false });
       const mesh = new THREE.Mesh(waveGeo, mat);
       mesh.position.y = 0.45; mesh.visible = false;
       this.scene.add(mesh);
@@ -40,7 +41,7 @@ export class SpellEffects {
     const hazGeo = new THREE.RingGeometry(0.05, 1.0, 32);
     hazGeo.rotateX(-Math.PI / 2);
     for (let i = 0; i < this.maxHazards; i++) {
-      const mat = new THREE.MeshBasicMaterial({ color: 0xff5500, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false });
+      const mat = new THREE.MeshBasicMaterial({ color: PALETTE.elements.AGNI, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false });
       const mesh = new THREE.Mesh(hazGeo, mat);
       mesh.position.y = 0.03; mesh.visible = false;
       this.scene.add(mesh);
@@ -52,7 +53,7 @@ export class SpellEffects {
     this.beams = [];
     const beamGeo = new THREE.CylinderGeometry(0.25, 0.5, 24, 6);
     for (let i = 0; i < this.maxBeams; i++) {
-      const mat = new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.95 });
+      const mat = new THREE.MeshBasicMaterial({ color: PALETTE.gold, transparent: true, opacity: 0.95 });
       const mesh = new THREE.Mesh(beamGeo, mat);
       mesh.position.y = 12; mesh.visible = false;
       this.scene.add(mesh);
@@ -65,7 +66,7 @@ export class SpellEffects {
     if (!r) return;
     r.active = true; r.x = x; r.z = z; r.maxRadius = config.radius || 6.0;
     r.duration = 0.42; r.elapsed = 0; r.config = config; r.owner = owner;
-    r.hitTargets.clear(); r.mat.color.setHex(config.color || 0xffffff);
+    r.hitTargets.clear(); r.mat.color.setHex(config.color || PALETTE.gold);
     r.mesh.position.set(x, 0.08, z); r.mesh.scale.set(0.1, 1, 0.1); r.mesh.visible = true;
     if (this.particleSys) this.particleSys.spawnBurst(x, 0.5, z, config.color, 12, 6);
     if (config.deflectsProjectiles) projectileDeflect.addBarrier(x, z, config, owner, r);
@@ -81,7 +82,7 @@ export class SpellEffects {
     w.speed = config.speed || 20; w.distanceTraveled = 0;
     w.maxRange = config.range || 24; w.width = config.width || 8.0; w.depth = config.depth || 2.0;
     w.config = config; w.owner = owner; w.hitTargets.clear();
-    w.mat.color.setHex(config.color || 0x0ea5e9);
+    w.mat.color.setHex(config.color || PALETTE.elements.JALA);
     w.mesh.scale.set(w.width, 0.8, w.depth);
     w.mesh.rotation.y = w.angle; w.mesh.position.set(x, 0.45, z); w.mesh.visible = true;
   }
@@ -96,14 +97,14 @@ export class SpellEffects {
     hz.elapsed = 0; hz.tickTimer = 0; hz.bubbleTimer = 0;
     hz.config = config; hz.owner = owner;
     hz.isPoison = !!(cfg.poison || config.poison);
-    hz.mat.color.setHex(config.color || 0xca8a04);
+    hz.mat.color.setHex(config.color || PALETTE.elements.PRITHVI);
     hz.mesh.position.set(x, 0.03, z);
     hz.mesh.scale.set(hz.radius, 1, hz.radius);
     hz.mesh.visible = true;
     if (this.particleSys) this.particleSys.spawnBurst(x, 0.4, z, config.color, 10, 4);
   }
 
-  spawnLightningBeam(x, z, colorHex = 0xfef08a) {
+  spawnLightningBeam(x, z, colorHex = PALETTE.gold) {
     const b = this.beams.find((item) => !item.active);
     if (!b) return;
     b.active = true; b.elapsed = 0;
@@ -165,7 +166,7 @@ export class SpellEffects {
         if (hz.bubbleTimer >= 0.18 && this.particleSys) {
           hz.bubbleTimer = 0;
           const ba = Math.random() * Math.PI * 2, br = Math.random() * hz.radius * 0.85;
-          this.particleSys.spawnBurst(hz.x + Math.cos(ba) * br, 0.2, hz.z + Math.sin(ba) * br, 0x10b981, 2, 2, 0.7, 'DROPLET');
+          this.particleSys.spawnBurst(hz.x + Math.cos(ba) * br, 0.2, hz.z + Math.sin(ba) * br, PALETTE.elements.PRITHVI, 2, 2, 0.7, 'DROPLET');
         }
       }
 

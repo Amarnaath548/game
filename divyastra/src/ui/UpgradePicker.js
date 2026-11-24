@@ -1,5 +1,6 @@
 import { UPGRADES } from '../config/spellSchools.js';
 import { ELEMENT_COLORS, ELEMENT_NAMES } from '../config/spellRegistry.js';
+import { PALETTE } from '../config/palette.js';
 
 const UPGRADE_DESCRIPTIONS = {
   JWALA: 'Arrow explodes in a small area',
@@ -56,7 +57,7 @@ export class UpgradePicker {
 
     const upgradesMap = UPGRADES[school] || {};
     this.currentUpgrades = Object.values(upgradesMap);
-    const colorHex = `#${(ELEMENT_COLORS[school] || 0x38bdf8).toString(16).padStart(6, '0')}`;
+    const colorHex = `#${(ELEMENT_COLORS[school] || PALETTE.elements.JALA).toString(16).padStart(6, '0')}`;
     const schoolName = ELEMENT_NAMES[school] || school;
 
     const wrapper = document.createElement('div');
@@ -65,7 +66,7 @@ export class UpgradePicker {
 
     const header = document.createElement('div');
     header.style.cssText = 'color:#f8fafc;font-size:13px;font-weight:900;text-shadow:0 2px 4px #000;letter-spacing:1px;text-transform:uppercase;';
-    header.innerHTML = `${schoolName} UPGRADE &bull; <span id="upgrade-timer-text" style="color:#fbbf24;">5s</span>`;
+    header.innerHTML = `${schoolName} UPGRADE &bull; <span id="upgrade-timer-text" style="color:#E3B04B;">5s</span>`;
     wrapper.appendChild(header);
 
     const cardsRow = document.createElement('div');
@@ -75,7 +76,7 @@ export class UpgradePicker {
       const desc = UPGRADE_DESCRIPTIONS[upg.id] || '';
       const card = document.createElement('div');
       card.className = 'element-pick-card upgrade-pick-card';
-      card.style.cssText = `width:160px;min-height:96px;background:rgba(15,23,42,0.95);border:2px solid ${colorHex};border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.6);transition:transform 0.15s,box-shadow 0.15s;text-align:center;user-select:none;`;
+      card.style.cssText = `width:160px;min-height:96px;background:rgba(27,31,59,0.95);border:2px solid ${colorHex};border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.6);transition:transform 0.15s,box-shadow 0.15s;text-align:center;user-select:none;`;
       card.innerHTML = `
         <div style="font-size:11px;font-weight:800;color:#94a3b8;">(${index + 1}) CHOOSE</div>
         <div style="font-size:16px;font-weight:900;color:${colorHex};">${upg.name}</div>

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { part, merge, lambert, decalMat } from './geo.js';
+import { PALETTE } from '../../config/palette.js';
 
 export function buildPlaza(map) {
   const T = map.theme, P = T.plaza, L = map.layout.landmarks;
@@ -44,7 +45,7 @@ export function buildPlaza(map) {
 
   const glow = new THREE.Mesh(
     new THREE.CircleGeometry(3.4, 24).rotateX(-Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: P.glow ?? 0xFFD54A, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending })
+    new THREE.MeshBasicMaterial({ color: P.glow ?? PALETTE.gold, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending })
   );
   glow.position.set(cx, 0.42, cz); glow.renderOrder = 14;
   glow.matrixAutoUpdate = false; glow.updateMatrix(); map.root.add(glow);
