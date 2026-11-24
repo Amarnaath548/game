@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { assetLoader } from '../core/AssetLoader.js';
 import {
   MAT_WOOD, MAT_SHIELD, GEO_CACHE,
   SKIN_COLOR, HAIR_COLOR, BEAD_COLOR, CLAY_COLOR, CLOTH_SAND, MAT_OUTLINE_PLAYER
@@ -25,6 +26,18 @@ function addMesh(parent, geo, mat, shadow = true) {
  * flash and fade together; see Actor.setHeroEmissive / setHeroOpacity.
  */
 export function buildHeroVisual(actor, hero) {
+  const customModel = assetLoader.getHeroModel(hero.id);
+  if (customModel) {
+    customModel.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    actor.visualMesh.add(customModel);
+    actor.customModel = customModel;
+    return;
+  }
   if (actor.isBot) {
     buildBotVisual(actor, hero);
     return;

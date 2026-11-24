@@ -29,11 +29,13 @@ import { CampaignManager } from './core/CampaignManager.js';
 import { setDifficulty } from './config/difficulty.js';
 import { SettingsView } from './ui/SettingsView.js';
 import { updateVisibilityCulling } from './systems/VisibilityCulling.js';
+import { assetLoader } from './core/AssetLoader.js';
 
 // Core Systems
 const sceneManager = new SceneManager();
 const input = new InputManager(sceneManager.camera);
 const sound = new SoundManager();
+assetLoader.loadAll(sound.ctx);
 const meta = new MetaProgression();
 const questManager = new QuestManager();
 const spellbookManager = new SpellbookManager();

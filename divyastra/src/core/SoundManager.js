@@ -1,5 +1,6 @@
 import { SoundSynth } from './SoundSynth.js';
 import { SoundDrone } from './SoundDrone.js';
+import { assetLoader } from './AssetLoader.js';
 
 const MUTE_KEY = 'magica_sound_muted';
 const SFX_VOL_KEY = 'divyastra_sfx_vol';
@@ -14,6 +15,7 @@ export class SoundManager {
     this.activeVoices = 0;
     this.maxVoices = 6;
     this.heartbeatTimer = 0;
+    this.bgmSource = null;
 
     try {
       this.muted = localStorage.getItem(MUTE_KEY) === 'true';
@@ -47,6 +49,8 @@ export class SoundManager {
 
           this.synth = new SoundSynth(this.ctx, this.sfxGain, () => this.getVoiceSlot());
           this.drone = new SoundDrone(this.ctx, this.musicGain);
+
+          assetLoader.setAudioContext(this.ctx);
         }
       }
       if (this.ctx && this.ctx.state === 'suspended') {
@@ -72,6 +76,21 @@ export class SoundManager {
         }, Math.min(400, delay * 1000));
       }
     };
+  }
+
+  playAudioBuffer(key, gainNode = this.sfxGain, loop = false) {
+    if (this.muted || !this.ctx) return null;
+    const buffer = assetLoader.getAudioBuffer(key);
+    if (!buffer) return null;
+    const slot = loop ? null : this.getVoiceSlot();
+    if (!loop && !slot) return null;
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = loop;
+    source.connect(gainNode || this.sfxGain);
+    source.start();
+    if (slot) slot.release(buffer.duration);
+    return source;
   }
 
   setSfxVolume(val) {
@@ -113,8 +132,22 @@ export class SoundManager {
     });
   }
 
-  startMatchDrone() { this.drone?.start(); }
-  stopMatchDrone() { this.drone?.stop(); }
+  startMatchDrone() {
+    if (assetLoader.hasAudioBuffer('bgm')) {
+      this.stopMatchDrone();
+      this.bgmSource = this.playAudioBuffer('bgm', this.musicGain, true);
+      return;
+    }
+    this.drone?.start();
+  }
+
+  stopMatchDrone() {
+    if (this.bgmSource) {
+      try { this.bgmSource.stop(); } catch {}
+      this.bgmSource = null;
+    }
+    this.drone?.stop();
+  }
 
   _resolveElement(spellOrId) {
     if (!spellOrId) return 'E';
@@ -130,62 +163,84 @@ export class SoundManager {
   }
 
   playCast(spellOrId = 'AGNI') {
-    if (this.muted || !this.synth) return;
+    if (this.muted) return;
     this.drone?.duck(0.45);
     const elem = this._resolveElement(spellOrId);
+    const key = elem === 'F' ? 'cast_fire' : (elem === 'W' ? 'cast_water' : 'cast_earth');
+    if (this.playAudioBuffer(key)) return;
+    if (!this.synth) return;
     if (elem === 'F') this.synth.playAgniCast();
     else if (elem === 'W') this.synth.playJalaCast();
     else this.synth.playPrithviCast();
   }
 
   playHit(spellOrElem = 'E') {
-    if (this.muted || !this.synth) return;
+    if (this.muted) return;
     const elem = this._resolveElement(spellOrElem);
+    const key = elem === 'F' ? 'hit_fire' : (elem === 'W' ? 'hit_water' : 'hit_earth');
+    if (this.playAudioBuffer(key)) return;
+    if (!this.synth) return;
     this.synth.playImpact(elem);
   }
 
   playExplosion() {
-    if (this.muted || !this.synth) return;
+    if (this.muted) return;
+    if (this.playAudioBuffer('explosion')) return;
+    if (!this.synth) return;
     this.synth.playImpact('F');
   }
 
   playPlayerDamage() {
-    if (this.muted || !this.synth) return;
+    if (this.muted) return;
+    if (this.playAudioBuffer('player_damage')) return;
+    if (!this.synth) return;
     this.synth.playImpact('E');
   }
 
   playDash() {
-    if (this.muted || !this.synth) return;
+    if (this.muted) return;
+    if (this.playAudioBuffer('dash')) return;
+    if (!this.synth) return;
     this.synth.playDashWhoosh();
   }
 
   playPickup() {
-    if (this.muted || !this.synth) return;
+    if (this.muted) return;
+    if (this.playAudioBuffer('pickup')) return;
+    if (!this.synth) return;
     this.synth.playPickupChime();
   }
 
   playLevelUp() {
-    if (this.muted || !this.synth) return;
+    if (this.muted) return;
+    if (this.playAudioBuffer('level_up')) return;
+    if (!this.synth) return;
     this.synth.playLevelUpArpeggio();
   }
 
   playKillSting() {
-    if (this.muted || !this.synth) return;
+    if (this.muted) return;
+    if (this.playAudioBuffer('kill')) return;
+    if (!this.synth) return;
     this.synth.playKillSting();
   }
 
   playTapasReady() {
-    if (this.muted || !this.synth) return;
+    if (this.muted) return;
+    if (this.playAudioBuffer('tapas_ready')) return;
+    if (!this.synth) return;
     this.synth.playPickupChime();
   }
 
   updateHeartbeat(dt, hp, maxHp, inMatch = true) {
-    if (!inMatch || this.muted || !this.synth || hp <= 0 || maxHp <= 0) return;
+    if (!inMatch || this.muted || hp <= 0 || maxHp <= 0) return;
     if (hp / maxHp < 0.25) {
       this.heartbeatTimer -= dt;
       if (this.heartbeatTimer <= 0) {
         this.heartbeatTimer = 0.85;
-        this.synth.playHeartbeat();
+        if (!this.playAudioBuffer('heartbeat') && this.synth) {
+          this.synth.playHeartbeat();
+        }
       }
     } else {
       this.heartbeatTimer = 0;

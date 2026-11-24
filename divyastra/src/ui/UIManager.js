@@ -14,6 +14,7 @@ import { LevelSelectView } from './LevelSelectView.js';
 import { showEndGameModal } from './EndGameModal.js';
 import { LobbyShell } from './LobbyShell.js';
 import { elementIcon, iconGold } from './icons.js';
+import { assetLoader } from '../core/AssetLoader.js';
 
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
@@ -173,7 +174,9 @@ export class UIManager {
     if (!elements || elements.length === 0) { this.spellChipsEl.innerHTML = ''; return; }
     this.spellChipsEl.innerHTML = elements.map((e) => {
       const color = ELEMENT_COLORS[e] ? `#${ELEMENT_COLORS[e].toString(16).padStart(6, '0')}` : '#888';
-      return `<span style="font-size:10px;font-weight:700;background:rgba(255,255,255,0.08);border:1px solid ${color};color:${color};padding:1px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">${elementIcon(e, 12)} ${ELEMENT_NAMES[e] || e}</span>`;
+      const iconUrl = assetLoader.getSpellIconUrl(e);
+      const icon = iconUrl ? `<img src="${iconUrl}" style="width:12px;height:12px;object-fit:contain;vertical-align:middle;" />` : elementIcon(e, 12);
+      return `<span style="font-size:10px;font-weight:700;background:rgba(255,255,255,0.08);border:1px solid ${color};color:${color};padding:1px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">${icon} ${ELEMENT_NAMES[e] || e}</span>`;
     }).join('');
   }
 

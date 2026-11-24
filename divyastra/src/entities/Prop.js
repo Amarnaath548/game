@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PALETTE } from '../config/palette.js';
+import { assetLoader } from '../core/AssetLoader.js';
 export { XPGem, HealthOrb } from './Collectibles.js';
 
 export class Chest {
@@ -15,6 +16,16 @@ export class Chest {
 
     this.group = new THREE.Group();
     this.group.position.set(x, 0, z);
+
+    const modelKey = isMythic ? 'chest_mythic' : 'chest';
+    const customModel = assetLoader.getPropModel(modelKey);
+    if (customModel) {
+      this.group.add(customModel);
+      this.customModel = customModel;
+      this.scene.add(this.group);
+      this.hitTimer = 0;
+      return;
+    }
 
     // Chest body + domed lid + gold bands (mythic sits on the plaza dais and glows)
     const W = isMythic ? 2.4 : 1.8;
@@ -70,25 +81,18 @@ export class Chest {
     if (this.isDead) return false;
     this.hp -= amount;
     this.hitTimer = 0.08;
-    this.mat.color.setHex(0xffffff);
-
-    // Wobble bump on hit
+    if (this.mat) this.mat.color.setHex(0xffffff);
     this.group.scale.set(1.15, 0.85, 1.15);
-
-    if (this.hp <= 0) {
-      this.destroy();
-      return true; // Broke
-    }
+    if (this.hp <= 0) { this.destroy(); return true; }
     return false;
   }
 
   update(dt) {
     if (this.isDead) return;
-
     if (this.hitTimer > 0) {
       this.hitTimer -= dt;
       if (this.hitTimer <= 0) {
-        this.mat.color.setHex(this.baseColor);
+        if (this.mat) this.mat.color.setHex(this.baseColor);
         this.group.scale.set(1, 1, 1);
       }
     }
@@ -115,6 +119,15 @@ export class ArcaneCrystal {
     this.group = new THREE.Group();
     this.group.position.set(x, 0, z);
 
+    const customModel = assetLoader.getPropModel('crystal');
+    if (customModel) {
+      this.group.add(customModel);
+      this.customModel = customModel;
+      this.scene.add(this.group);
+      this.hitTimer = 0;
+      return;
+    }
+
     // Crystal Spire
     const crystalGeo = new THREE.ConeGeometry(0.8, 2.2, 5);
     this.mat = new THREE.MeshLambertMaterial({
@@ -140,26 +153,17 @@ export class ArcaneCrystal {
     if (this.isDead) return false;
     this.hp -= amount;
     this.hitTimer = 0.08;
-    this.mat.color.setHex(0xffffff);
-
-    if (this.hp <= 0) {
-      this.destroy();
-      return true; // Exploded
-    }
+    if (this.mat) this.mat.color.setHex(0xffffff);
+    if (this.hp <= 0) { this.destroy(); return true; }
     return false;
   }
 
   update(dt) {
     if (this.isDead) return;
-
-    // Gentle floating hum
-    this.mesh.rotation.y += 1.5 * dt;
-
+    if (this.mesh) this.mesh.rotation.y += 1.5 * dt;
     if (this.hitTimer > 0) {
       this.hitTimer -= dt;
-      if (this.hitTimer <= 0) {
-        this.mat.color.setHex(PALETTE.saffron);
-      }
+      if (this.hitTimer <= 0 && this.mat) this.mat.color.setHex(PALETTE.saffron);
     }
   }
 
@@ -178,6 +182,14 @@ export class ShadowBush {
 
     this.group = new THREE.Group();
     this.group.position.set(x, 0, z);
+
+    const customModel = assetLoader.getPropModel('bush');
+    if (customModel) {
+      this.group.add(customModel);
+      this.customModel = customModel;
+      this.scene.add(this.group);
+      return;
+    }
 
     const shadowGeo = new THREE.CircleGeometry(radius * 0.95, 16); shadowGeo.rotateX(-Math.PI / 2);
     const shadow = new THREE.Mesh(shadowGeo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false }));

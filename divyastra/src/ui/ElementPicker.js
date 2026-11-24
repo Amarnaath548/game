@@ -1,6 +1,7 @@
 import { ELEMENTS, ELEMENT_NAMES, ELEMENT_COLORS, resolveSpell } from '../config/spellRegistry.js';
 import { PALETTE } from '../config/palette.js';
 import { elementIcon } from './icons.js';
+import { assetLoader } from '../core/AssetLoader.js';
 
 export class ElementPicker {
   constructor(overlayContainer) {
@@ -67,13 +68,17 @@ export class ElementPicker {
         previewText = nextSpell ? nextSpell.name : 'Unknown';
       }
       const colorHex = `#${(ELEMENT_COLORS[elem] || PALETTE.elements.JALA).toString(16).padStart(6, '0')}`;
+      const elemIconUrl = assetLoader.getSpellIconUrl(elem);
+      const iconHtml = elemIconUrl
+        ? `<img src="${elemIconUrl}" style="width:24px;height:24px;object-fit:contain;" alt="${ELEMENT_NAMES[elem]}" />`
+        : elementIcon(elem, 24);
 
       const card = document.createElement('div');
       card.className = 'element-pick-card dv-panel';
       card.style.cssText = `width:130px;min-height:90px;background:rgba(27,31,59,0.95);border:2px solid ${colorHex};border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.6);transition:transform 0.15s,box-shadow 0.15s;text-align:center;user-select:none;color:${colorHex};`;
       card.innerHTML = `
         <div style="font-size:11px;font-weight:700;color:#94a3b8;">(${index + 1}) PICK</div>
-        <div style="display:flex;align-items:center;justify-content:center;">${elementIcon(elem, 24)}</div>
+        <div style="display:flex;align-items:center;justify-content:center;">${iconHtml}</div>
         <div style="font-size:14px;font-weight:700;color:${colorHex};">${ELEMENT_NAMES[elem]}</div>
         <div style="font-size:10px;font-weight:700;color:#cbd5e1;line-height:1.2;">&rarr; <b>${previewText}</b></div>
       `;

@@ -1,6 +1,7 @@
 import { ELEMENT_COLORS } from '../config/spellRegistry.js';
 import { PALETTE } from '../config/palette.js';
 import { iconFist, iconFlame, iconDroplet, iconRock, iconSparkle, iconStar, iconSwords } from './icons.js';
+import { assetLoader } from '../core/AssetLoader.js';
 
 const PERK_ICONS = {
   TWIN_CAST: iconSparkle(13),
@@ -58,6 +59,11 @@ export class SpellIndicator {
   }
 
   getSpellIcon(spell) {
+    const key = spell?.id || 'fist';
+    const authoredUrl = assetLoader.getSpellIconUrl(key);
+    if (authoredUrl) {
+      return `<img src="${authoredUrl}" class="spell-slot-img" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;" alt="${spell?.name || ''}" />`;
+    }
     if (!spell || spell.id === 'fist') return iconFist(22);
     if (spell.id === 'fire' || spell.elements?.[0] === 'F') return iconFlame(20);
     if (spell.id === 'water' || spell.elements?.[0] === 'W') return iconDroplet(20);
