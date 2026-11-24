@@ -2,10 +2,13 @@ import { QUALITY_PRESETS, saveQuality } from '../config/quality.js';
 import { getSavedCamDistance, saveCamDistance } from '../core/CameraZoom.js';
 
 export class SettingsView {
-  constructor(sceneManager) {
+  constructor(sceneManager, sound = null) {
     this.sceneManager = sceneManager;
+    this.sound = sound;
     this.selectEl = document.getElementById('quality-select');
     this.camSelectEl = document.getElementById('camera-select');
+    this.sfxSlider = document.getElementById('sfx-vol-slider');
+    this.musicSlider = document.getElementById('music-vol-slider');
     this.restartNoticeEl = document.getElementById('quality-restart-notice');
     this.init();
   }
@@ -18,6 +21,24 @@ export class SettingsView {
     if (this.camSelectEl) {
       this.syncCamValue();
       this.camSelectEl.addEventListener('change', () => this.onCamChange());
+    }
+    if (this.sfxSlider) {
+      this.sfxSlider.value = this.sound ? this.sound.sfxVol : 0.8;
+      const onSfx = () => {
+        const val = parseFloat(this.sfxSlider.value);
+        this.sound?.setSfxVolume(val);
+      };
+      this.sfxSlider.addEventListener('input', onSfx);
+      this.sfxSlider.addEventListener('change', onSfx);
+    }
+    if (this.musicSlider) {
+      this.musicSlider.value = this.sound ? this.sound.musicVol : 0.5;
+      const onMusic = () => {
+        const val = parseFloat(this.musicSlider.value);
+        this.sound?.setMusicVolume(val);
+      };
+      this.musicSlider.addEventListener('input', onMusic);
+      this.musicSlider.addEventListener('change', onMusic);
     }
     if (this.restartNoticeEl) {
       this.restartNoticeEl.addEventListener('click', () => window.location.reload());

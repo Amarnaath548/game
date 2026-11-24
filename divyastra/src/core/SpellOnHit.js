@@ -36,27 +36,40 @@ export function applyBurnSpread(target, cfg, owner, allActors = [], particleSys 
 export function applySpellHit(resolver, target, cfg, owner, hitX, hitZ, dirX = null, dirZ = null) {
   target.onDeath = (killer, spellId) => resolver.handleKill(killer, target, spellId);
   let dmg = cfg.damage || 0;
-  if (owner?.isPlayer && resolver.player?.perks?.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) {
+  const isOwnerPlayer = owner === resolver.player || !!owner?.isPlayer;
+  const isTargetPlayer = target === resolver.player || !!target?.isPlayer;
+
+  let isCrit = false;
+  if (isOwnerPlayer && resolver.player?.tapasActive) isCrit = true;
+  if (isOwnerPlayer && resolver.player?.perks?.includes('EXECUTIONER') && target.hp < target.maxHp * 0.4) {
     dmg = Math.round(dmg * 1.35);
+    isCrit = true;
   }
   const dealt = target.takeDamage(dmg);
-  if (owner?.isPlayer && dealt > 0 && resolver.questManager) {
+  if (isOwnerPlayer && dealt > 0 && resolver.questManager) {
     resolver.questManager.record('damage', dealt);
   }
   let lifesteal = cfg.lifesteal || 0;
-  if (owner?.isPlayer && resolver.player?.perks?.includes('VAMPIRIC_SOUL')) lifesteal += 0.20;
+  if (isOwnerPlayer && resolver.player?.perks?.includes('VAMPIRIC_SOUL')) lifesteal += 0.20;
   if (lifesteal > 0 && dealt > 0 && owner?.heal) owner.heal(dealt * lifesteal);
 
-  if (resolver.sound) resolver.sound.playHit();
+  if (resolver.sound) resolver.sound.playHit(cfg.elements?.[0] || cfg.id);
   const kx = dirX !== null ? dirX : target.x - hitX;
   const kz = dirZ !== null ? dirZ : target.z - hitZ;
   const kb = cfg.knockback !== undefined ? cfg.knockback : 2.5;
   if (kb > 0) target.applyKnockback(kx, kz, kb);
 
-  if (resolver.hitFeedback) resolver.hitFeedback.apply(target, dealt, owner, kx, kz);
+  if (resolver.hitFeedback) resolver.hitFeedback.apply(target, dealt, owner, kx, kz, cfg);
   const tx = target.x !== undefined ? target.x : (hitX ?? 0);
   const tz = target.z !== undefined ? target.z : (hitZ ?? 0);
-  if (resolver.damageNumbers) resolver.damageNumbers.spawn(tx, tz, dealt, cfg.color || 0xff5500);
+  if (resolver.damageNumbers) {
+    resolver.damageNumbers.spawn(tx, tz, dealt, {
+      isPlayerHit: isOwnerPlayer,
+      isPlayerHurt: isTargetPlayer,
+      isCrit,
+      color: cfg.color
+    });
+  }
 
   applyStatuses(target, cfg, resolver.particleSys, owner);
 

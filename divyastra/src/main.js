@@ -57,27 +57,19 @@ player.onDamage = () => sound.playPlayerDamage();
 
 // Pools
 const projPool = new ObjectPool(() => {
-  const group = new THREE.Group();
-  sceneManager.scene.add(group);
-  return group;
+  const group = new THREE.Group(); sceneManager.scene.add(group); return group;
 }, 50);
 const projectiles = projPool.pool.map((group) => new Projectile(group, projPool));
 
 const gemPool = new ObjectPool(() => {
-  const geo = new THREE.OctahedronGeometry(0.35);
-  const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff });
-  const mesh = new THREE.Mesh(geo, mat);
-  sceneManager.scene.add(mesh);
-  return mesh;
+  const mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), new THREE.MeshBasicMaterial({ color: 0x00f2ff }));
+  sceneManager.scene.add(mesh); return mesh;
 }, 60);
 const gems = gemPool.pool.map((mesh) => new XPGem(mesh, gemPool));
 
 const orbPool = new ObjectPool(() => {
-  const geo = new THREE.DodecahedronGeometry(0.35);
-  const mat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
-  const mesh = new THREE.Mesh(geo, mat);
-  sceneManager.scene.add(mesh);
-  return mesh;
+  const mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.35), new THREE.MeshBasicMaterial({ color: 0x10b981 }));
+  sceneManager.scene.add(mesh); return mesh;
 }, 15);
 const healthOrbs = orbPool.pool.map((mesh) => new HealthOrb(mesh, orbPool));
 
@@ -93,11 +85,7 @@ const matchManager = new MatchManager({
 
 // UI
 const ui = new UIManager(meta, {
-  questManager,
-  spellbookManager,
-  sceneManager,
-  banners,
-  campaignManager,
+  questManager, spellbookManager, sceneManager, banners, campaignManager,
   onSpellChange: (spellKey) => player.setSpell(spellKey),
   onCastRequested: () => { input.fireReleased = true; },
   onHeroChange: (hero) => {
@@ -105,19 +93,18 @@ const ui = new UIManager(meta, {
     else { player.hero = hero; if (player.bodyMat) player.bodyMat.color.setHex(hero.bodyColor); if (player.accentMat) player.accentMat.color.setHex(hero.accentColor); }
   },
   onPerkSelected: (perk) => { player.applyPerk(perk); sound.playLevelUp(); },
-  onStartMatch: () => { sceneManager.onMatchStart(); matchManager.startMatch(); tutorialHints.onMatchStart(); lastTime = performance.now(); },
-  onReturnToLobby: () => { matchManager.resetToLobby(); tutorialHints.onMatchEnd(); },
+  onStartMatch: () => { sceneManager.onMatchStart(); sound.startMatchDrone(); matchManager.startMatch(); tutorialHints.onMatchStart(); lastTime = performance.now(); },
+  onReturnToLobby: () => { sound.stopMatchDrone(); matchManager.resetToLobby(); tutorialHints.onMatchEnd(); },
   onElementPicked: () => { tutorialHints.onElementPicked(); }
 });
-matchManager.ui = ui;
-combatResolver.ui = ui;
+matchManager.ui = ui; combatResolver.ui = ui;
 campaignManager.setDeps({ matchManager, ui, banners });
 
 const origShowLevelUp = ui.showLevelUp.bind(ui);
 ui.showLevelUp = (p, lvl) => { origShowLevelUp(p, lvl); tutorialHints.onLevelUp(lvl); };
 const origShowEndGame = ui.showEndGame.bind(ui);
-ui.showEndGame = (...args) => { tutorialHints.onMatchEnd(); origShowEndGame(...args); };
-const settingsView = new SettingsView(sceneManager);
+ui.showEndGame = (...args) => { sound.stopMatchDrone(); tutorialHints.onMatchEnd(); origShowEndGame(...args); };
+const settingsView = new SettingsView(sceneManager, sound);
 
 // Dev & Inspect mode integration
 const devInspectView = new DevInspectView({ sceneManager, matchManager, spawnManager, arenaInteractables, player });
@@ -140,13 +127,10 @@ combatResolver.playerShoot = (input) => { origPlayerShoot(input); devTools.onPla
 const isDebug = new URLSearchParams(window.location.search).get('debug') === '1';
 const debugEl = document.getElementById('debug-overlay');
 if (isDebug && debugEl) debugEl.style.display = 'block';
-let debugTimer = 0;
-let debugFrames = 0;
+let debugTimer = 0, debugFrames = 0;
 
 // Game Loop
-let lastTime = performance.now();
-let totalTime = 0;
-let frameCount = 0;
+let lastTime = performance.now(), totalTime = 0, frameCount = 0;
 
 function animate() {
   requestAnimationFrame(animate);
@@ -158,57 +142,44 @@ function animate() {
   totalTime += dt;
 
   if (isDebug && debugEl) {
-    debugFrames++;
-    debugTimer += dt;
+    debugFrames++; debugTimer += dt;
     if (debugTimer >= 0.25) {
-      const fps = Math.round(debugFrames / debugTimer);
-      debugEl.textContent = `FPS: ${fps} | Calls: ${sceneManager.renderer.info.render.calls}`;
-      debugFrames = 0;
-      debugTimer = 0;
+      debugEl.textContent = `FPS: ${Math.round(debugFrames / debugTimer)} | Calls: ${sceneManager.renderer.info.render.calls}`;
+      debugFrames = 0; debugTimer = 0;
     }
   }
 
   if (devInspectView.isOpen) {
-    devInspectView.update(dt);
-    sceneManager.render();
-    return;
+    devInspectView.update(dt); sceneManager.render(); return;
   }
 
   if (matchManager.matchActive) {
+    sound.updateHeartbeat(dt, player.hp, player.maxHp, true);
+
+    // Hit-stop: freeze actor animation & projectiles, keep camera & HUD running
+    if (combatResolver.hitFeedback.update(dt)) {
+      damageNumbers.update(dt);
+      sceneManager.updateCamera(player.group.position, input.aimDir, dt);
+      sceneManager.render();
+      return;
+    }
+
     sceneManager.checkPerformanceFallback(dt, particleSys);
     const effectiveRange = (player.currentSpell?.range || 24) * (player.perks.includes('SNIPER_VELOCITY') ? 1.35 : 1.0);
     input.update(player.group.position, spawnManager.bots, effectiveRange);
-    if (input.moveDir.x !== 0 || input.moveDir.z !== 0) {
-      tutorialHints.onMove();
-    }
-
+    if (input.moveDir.x !== 0 || input.moveDir.z !== 0) tutorialHints.onMove();
     if (player.dashTimer > 0 && player.dashTimer - dt <= 0) {
-      sound.playDash();
-      tutorialHints.onDash();
+      sound.playDash(); tutorialHints.onDash();
     }
-
     if (input.fireReleased || (input.isAiming && player.shootCooldown <= 0)) {
-      input.fireReleased = false;
-      combatResolver.playerShoot(input);
-      tutorialHints.onCast();
+      input.fireReleased = false; combatResolver.playerShoot(input); tutorialHints.onCast();
     }
 
     player.update(dt, spawnManager.bushes);
-
     const allActors = matchManager.getAllAliveActors();
     if (!devTools.freezeBots) {
       spawnManager.bots.forEach((bot) => {
-        bot.think(
-          dt,
-          matchManager.zoneSys.currentRadius,
-          allActors,
-          spawnManager.chests,
-          spawnManager.gems,
-          spawnManager.healthOrbs,
-          player.kills,
-          projectiles,
-          (b, ax, az) => combatResolver.botShoot(b, ax, az)
-        );
+        bot.think(dt, matchManager.zoneSys.currentRadius, allActors, spawnManager.chests, spawnManager.gems, spawnManager.healthOrbs, player.kills, projectiles, (b, ax, az) => combatResolver.botShoot(b, ax, az));
       });
     }
 
@@ -216,16 +187,13 @@ function animate() {
     arenaInteractables.update(dt, matchManager.getAllAliveActors());
     combatResolver.resolveObeliskCollisions(player);
     spawnManager.bots.forEach((bot) => combatResolver.resolveObeliskCollisions(bot));
-
     combatResolver.update(dt, allActors, spawnManager.chests, spawnManager.crystals, spawnManager.bots);
     if (astraVisuals) astraVisuals.update(dt);
     spawnManager.updateProps(dt);
     matchManager.update(dt);
     if (devPanel) devPanel.updateCircles(matchManager.getAllAliveActors());
     sceneManager.updateCamera(player.group.position, input.aimDir, dt);
-    if (frameCount % 3 === 0) {
-      updateVisibilityCulling(sceneManager, spawnManager, arenaInteractables, player);
-    }
+    if (frameCount % 3 === 0) updateVisibilityCulling(sceneManager, spawnManager, arenaInteractables, player);
   } else {
     const time = totalTime * 0.2;
     sceneManager.camera.position.x = Math.sin(time) * 45;

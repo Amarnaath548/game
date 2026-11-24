@@ -1,42 +1,68 @@
 import * as THREE from 'three';
 import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT, SEPARATION_FACTOR, AOE_SPLASH_DAMAGE_MULT } from '../config/constants.js';
 import { getDifficulty } from '../config/difficulty.js';
-import { CollisionSystem } from '../systems/CollisionSystem.js'; import { SpellEffects } from '../systems/SpellEffects.js'; import { HitFeedback } from '../systems/HitFeedback.js'; import { projectileDeflect, destroyProjectilesInCircle } from '../systems/ProjectileDeflect.js'; import { damageObjectsInCircle } from './EnvironmentDamage.js'; import { resolveChain, spawnSubMunitions, resolveObeliskCollisions } from './CombatChain.js';
+import { CollisionSystem } from '../systems/CollisionSystem.js';
+import { SpellEffects } from '../systems/SpellEffects.js';
+import { HitFeedback } from '../systems/HitFeedback.js';
+import { projectileDeflect, destroyProjectilesInCircle } from '../systems/ProjectileDeflect.js';
+import { damageObjectsInCircle } from './EnvironmentDamage.js';
+import { resolveChain, spawnSubMunitions, resolveObeliskCollisions } from './CombatChain.js';
 import { applySpellHit, detonateAoE, applyStatuses } from './SpellOnHit.js';
 import { SideEffectZones } from '../systems/SideEffectZones.js';
+import { CastWindup } from './CastWindup.js';
 
 export class CombatResolver {
   constructor(deps) {
     Object.assign(this, deps);
-    this.astraVisuals = deps.astraVisuals || null; this.arenaInteractables = deps.arenaInteractables || null;
+    this.astraVisuals = deps.astraVisuals || null;
+    this.arenaInteractables = deps.arenaInteractables || null;
     this.hitFeedback = new HitFeedback({ sceneManager: deps.sceneManager, player: deps.player });
+    this.castWindup = new CastWindup(deps.player, deps.sceneManager.scene);
     this.spellEffects = deps.spellEffects || new SpellEffects(deps.sceneManager.scene, deps.particleSys, this.astraVisuals);
     this.spellEffects.resolver = this;
     this.sideEffectZones = new SideEffectZones(deps.sceneManager.scene, deps.particleSys);
-    this.delayedStrikes = []; this.spellDashes = [];
-    const tgGeo = new THREE.RingGeometry(5.0, 5.5, 32); tgGeo.rotateX(-Math.PI / 2);
+    this.delayedStrikes = [];
+    this.spellDashes = [];
+    const tgGeo = new THREE.RingGeometry(5.0, 5.5, 32);
+    tgGeo.rotateX(-Math.PI / 2);
     this.telegraphMesh = new THREE.Mesh(tgGeo, new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
-    this.telegraphMesh.position.y = 0.05; this.telegraphMesh.visible = false; this.sceneManager.scene.add(this.telegraphMesh); this.telegraphTimer = 0;
+    this.telegraphMesh.position.y = 0.05;
+    this.telegraphMesh.visible = false;
+    this.sceneManager.scene.add(this.telegraphMesh);
+    this.telegraphTimer = 0;
   }
 
   showTelegraph(x, z, radius = 5.5, duration = 0.4, spellId = null) {
-    this.telegraphMesh.position.set(x, 0.05, z); this.telegraphMesh.scale.setScalar(radius / 5.5); this.telegraphMesh.visible = true; this.telegraphTimer = duration;
+    this.telegraphMesh.position.set(x, 0.05, z);
+    this.telegraphMesh.scale.setScalar(radius / 5.5);
+    this.telegraphMesh.visible = true;
+    this.telegraphTimer = duration;
   }
 
   executeCastPayload(payload, owner) {
     const isP = owner === this.player, cfg = { ...payload };
-    if (owner?.dmgBonus) cfg.damage += owner.dmgBonus; if (!isP && owner && !owner.isPlayer) cfg.damage = Math.round(cfg.damage * BOT_DAMAGE_MULT * (getDifficulty()?.botDamageMult ?? 1.0));
+    if (owner?.dmgBonus) cfg.damage += owner.dmgBonus;
+    if (!isP && owner && !owner.isPlayer) cfg.damage = Math.round(cfg.damage * BOT_DAMAGE_MULT * (getDifficulty()?.botDamageMult ?? 1.0));
     if (isP && this.player.staffElement && cfg.elements?.includes(this.player.staffElement)) cfg.damage = Math.round(cfg.damage * 1.12);
-    if (isP && this.spellbookManager) { const sm = this.spellbookManager.getDamageMultiplier(cfg.id); if (sm > 1.0) cfg.damage = Math.round(cfg.damage * sm); }
-    if (isP && this.player.perks.includes('SNIPER_VELOCITY')) { cfg.speed = (cfg.speed || 28) * 1.35; cfg.range = (cfg.range || 24) * 1.35; }
-    if (isP && this.player.perks.includes('GIANT_ARCANA')) { cfg.radius = (cfg.radius || (cfg.trajectory === 'RADIAL' ? 6.0 : 0.5)) * 1.4; if (cfg.aoeRadius) cfg.aoeRadius *= 1.4; }
+    if (isP && this.spellbookManager) {
+      const sm = this.spellbookManager.getDamageMultiplier(cfg.id);
+      if (sm > 1.0) cfg.damage = Math.round(cfg.damage * sm);
+    }
+    if (isP && this.player.perks.includes('SNIPER_VELOCITY')) {
+      cfg.speed = (cfg.speed || 28) * 1.35; cfg.range = (cfg.range || 24) * 1.35;
+    }
+    if (isP && this.player.perks.includes('GIANT_ARCANA')) {
+      cfg.radius = (cfg.radius || (cfg.trajectory === 'RADIAL' ? 6.0 : 0.5)) * 1.4;
+      if (cfg.aoeRadius) cfg.aoeRadius *= 1.4;
+    }
     if (cfg.damageReduction && owner?.applyDamageReduction) owner.applyDamageReduction(cfg.damageTakenMult ?? 0.7, cfg.damageTakenDuration ?? 4.0);
     if (cfg.selfShield && owner?.applyShield) owner.applyShield(cfg.selfShield, cfg.selfShieldDuration || 4.0);
     const sx = cfg.originX ?? owner.x, sz = cfg.originZ ?? owner.z;
 
     if (cfg.trajectory === 'MELEE') return this.executeMelee(cfg, owner);
     if (cfg.trajectory === 'SELF_DASH') {
-      const spd = cfg.speed || 42, rng = cfg.range || 14; owner.isInvulnerable = true; owner.spellDash = true;
+      const spd = cfg.speed || 42, rng = cfg.range || 14;
+      owner.isInvulnerable = true; owner.spellDash = true;
       this.spellDashes.push({ owner, dirX: cfg.dirX, dirZ: cfg.dirZ, speed: spd, duration: rng / spd, elapsed: 0, config: cfg, hitTargets: new Set() });
       if (this.sound) this.sound.playDash();
       return;
@@ -58,32 +84,28 @@ export class CombatResolver {
         const p = this.projectiles.find((proj) => !proj.active);
         if (!p) return;
         const pCfg = { ...cfg, damage: twinDmg };
-        if (cfg.trajectory === 'LOBBED') { pCfg.targetX = (cfg.targetX ?? (sx + cfg.dirX * (cfg.range || 20))) + px * off; pCfg.targetZ = (cfg.targetZ ?? (sz + cfg.dirZ * (cfg.range || 20))) + pz * off; }
+        if (cfg.trajectory === 'LOBBED') {
+          pCfg.targetX = (cfg.targetX ?? (sx + cfg.dirX * (cfg.range || 20))) + px * off;
+          pCfg.targetZ = (cfg.targetZ ?? (sz + cfg.dirZ * (cfg.range || 20))) + pz * off;
+        }
         p.spawn(sx + px * off + cfg.dirX * ((owner.radius || 1) + 0.35), sz + pz * off + cfg.dirZ * ((owner.radius || 1) + 0.35), cfg.dirX, cfg.dirZ, pCfg, owner);
       });
       return;
-    }
-    if (isP && this.player.perks.includes('TWIN_CAST') && cfg.trajectory === 'SPREAD') {
-      const now = performance.now();
-      if (now - (this._lastSpreadShot || 0) > 60) {
-        this._lastSpreadShot = now;
-        const aim = this.player.input?.aimDir || { x: cfg.dirX, z: cfg.dirZ }, baseAng = Math.atan2(aim.x, aim.z), spread = (cfg.spreadAngle || 0.35) * 0.75;
-        [-spread, spread].forEach((off) => {
-          const p = this.projectiles.find((proj) => !proj.active);
-          if (p) { const edx = Math.sin(baseAng + off), edz = Math.cos(baseAng + off); p.spawn(sx + edx * ((owner.radius || 1) + 0.35), sz + edz * ((owner.radius || 1) + 0.35), edx, edz, cfg, owner); }
-        });
-      }
     }
     const p = this.projectiles.find((proj) => !proj.active);
     if (p) p.spawn(sx + cfg.dirX * ((owner.radius || 1) + 0.35), sz + cfg.dirZ * ((owner.radius || 1) + 0.35), cfg.dirX, cfg.dirZ, cfg, owner);
   }
 
   executeMelee(cfg, owner) {
-    if (owner.punchTimer !== undefined) owner.punchTimer = 0.15; this.particleSys.spawnBurst(owner.x + cfg.dirX * 1.1, 1.0, owner.z + cfg.dirZ * 1.1, 0xffaa44, 8, 4, 1.0, cfg.elements);
+    if (owner.punchTimer !== undefined) owner.punchTimer = 0.15;
+    this.particleSys.spawnBurst(owner.x + cfg.dirX * 1.1, 1.0, owner.z + cfg.dirZ * 1.1, 0xffaa44, 8, 4, 1.0, cfg.elements);
     if (this.sound) this.sound.playHit();
     const halfCos = Math.cos((cfg.arc || 1.75) / 2), range = Math.max(cfg.range || 2.2, ((owner?.radius ?? 1.0) + 1.0) * SEPARATION_FACTOR + 0.6);
     const tgts = ((owner === this.player || !!owner?.isPlayer) ? this.spawnManager.bots : [this.player, ...this.spawnManager.bots]).filter((b) => b !== owner);
-    const inCone = (t) => { const dx = t.x - owner.x, dz = t.z - owner.z, d = Math.hypot(dx, dz); return d <= range + (t.radius || 0.8) && (cfg.dirX * dx + cfg.dirZ * dz) / (d || 1) >= halfCos; };
+    const inCone = (t) => {
+      const dx = t.x - owner.x, dz = t.z - owner.z, d = Math.hypot(dx, dz);
+      return d <= range + (t.radius || 0.8) && (cfg.dirX * dx + cfg.dirZ * dz) / (d || 1) >= halfCos;
+    };
     tgts.forEach((t) => { if (!t.isDead && inCone(t)) this.applySpellHit(t, cfg, owner, t.x, t.z, cfg.dirX, cfg.dirZ); });
     this.spawnManager.chests?.forEach((c) => { if (!c.isDead && inCone(c) && c.takeDamage(cfg.damage)) this.spawnManager.dropLoot(c.x, c.z, c.isMythic ? 8 : 3, c.isMythic ? 1.0 : 0.35); });
     this.spawnManager.crystals?.forEach((c) => { if (!c.isDead && inCone(c) && c.takeDamage(cfg.damage)) this.triggerCrystalExplosion(c, tgts, this.spawnManager.chests); });
@@ -91,16 +113,21 @@ export class CombatResolver {
 
   playerShoot(input) {
     if (this.player.isDead || !this.player.spellSlot?.canCast() || this.player.status?.stunTimer > 0) return;
+    if (this.castWindup?.isWindingUp()) return;
     this.player.spellSlot.startCooldown();
     if (this.player.cooldownMult) this.player.spellSlot.cooldownTimer *= this.player.cooldownMult;
-    this.player.shootCooldown = this.player.spellSlot.cooldownTimer; this.player.triggerCastAnim?.();
+    this.player.shootCooldown = this.player.spellSlot.cooldownTimer;
     const tapasBonus = this.player.consumeTapasBonus ? this.player.consumeTapasBonus() : 0;
     const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, input.aimDir, input.dragRatio || 1.0, 1.0 + tapasBonus);
     if (tapasBonus > 0) this.particleSys?.spawnBurst(this.player.x, 0.8, this.player.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
-    if (this.questManager && this.player.currentSpell?.id !== 'fist') this.questManager.record('cast', 1);
-    this.sound.playCast(this.player.currentSpell.id);
-    if (this.astraVisuals && payloads[0]?.tier === 3) this.astraVisuals.spawnAstraRing(this.player.x, this.player.z);
-    payloads.forEach((payload) => this.executeCastPayload(payload, this.player));
+
+    // 0.1s wind-up (0.25s for Tier 3 Astra) anticipation, leans back & staff glows, then snaps forward
+    this.castWindup.start(payloads, input, this.player.currentSpell, (castPayloads) => {
+      if (this.questManager && this.player.currentSpell?.id !== 'fist') this.questManager.record('cast', 1);
+      this.sound.playCast(this.player.currentSpell?.id || this.player.currentSpell);
+      if (this.astraVisuals && castPayloads[0]?.tier === 3) this.astraVisuals.spawnAstraRing(this.player.x, this.player.z);
+      castPayloads.forEach((payload) => this.executeCastPayload(payload, this.player));
+    });
   }
 
   botShoot(bot, aimX, aimZ) {
@@ -120,22 +147,20 @@ export class CombatResolver {
   }
 
   spawnSubMunitions(x, z, cfg, owner) { spawnSubMunitions(this, x, z, cfg, owner); }
-
-  applySpellHit(target, cfg, owner, hitX, hitZ, dirX = null, dirZ = null) {
-    applySpellHit(this, target, cfg, owner, hitX, hitZ, dirX, dirZ);
-  }
-
-  detonateAoE(x, z, cfg, owner, directTarget = null, targets = [], hitObjects = null) {
-    detonateAoE(this, x, z, cfg, owner, directTarget, targets, hitObjects);
-  }
-
-  applyStatuses(target, cfg) {
-    applyStatuses(target, cfg, this.particleSys);
-  }
+  applySpellHit(target, cfg, owner, hitX, hitZ, dirX = null, dirZ = null) { applySpellHit(this, target, cfg, owner, hitX, hitZ, dirX, dirZ); }
+  detonateAoE(x, z, cfg, owner, directTarget = null, targets = [], hitObjects = null) { detonateAoE(this, x, z, cfg, owner, directTarget, targets, hitObjects); }
+  applyStatuses(target, cfg) { applyStatuses(target, cfg, this.particleSys); }
 
   handleKill(killer, victim, sourceSpellId = null) {
-    this.sound.playExplosion();
-    if (Math.hypot(victim.x - this.player.x, victim.z - this.player.z) <= 30) this.particleSys.spawnBurst(victim.x, 0.8, victim.z, victim.hero?.bodyColor || 0xff0055, 14, 6, 1.2, victim.currentSpell?.elements || null);
+    if (killer?.isPlayer) {
+      this.sound.playKillSting();
+      this.hitFeedback.triggerHitStop(true);
+    } else {
+      this.sound.playExplosion();
+    }
+    if (Math.hypot(victim.x - this.player.x, victim.z - this.player.z) <= 30) {
+      this.particleSys.spawnBurst(victim.x, 0.8, victim.z, victim.hero?.bodyColor || 0xff0055, 14, 6, 1.2, victim.currentSpell?.elements || null);
+    }
     this.spawnManager.dropLoot(victim.x, victim.z, KILL_GEM_DROP, 0.6);
     if (!killer) return;
     killer.kills = (killer.kills || 0) + 1;
@@ -155,12 +180,9 @@ export class CombatResolver {
       const tgts = (p.owner === this.player || !!p.owner?.isPlayer) ? bots : [this.player, ...bots.filter((b) => b !== p.owner)];
       if (!p.active && p.reachedMaxRange) {
         if (p.spellConfig?.sideEffect) this.sideEffectZones?.spawnZone(p.x, p.z, p.spellConfig.sideEffect, p.owner, p.spellConfig.id);
-        if (p.lobHeight > 0 || p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn) {
-          return this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, null, tgts);
-        }
+        if (p.lobHeight > 0 || p.spellConfig?.aoeRadius || p.spellConfig?.onImpactSpawn) return this.detonateAoE(p.x, p.z, p.spellConfig, p.owner, null, tgts);
       }
       if (!p.active) return;
-      // Surya Mirror reflection check
       if (p.lobHeight <= 0 && this.arenaInteractables && this.arenaInteractables.reflectProjectile(p)) return;
       if (p.lobHeight <= 0 && this.sceneManager.obelisks.some((o) => CollisionSystem.checkCircle(p.x, p.z, p.radius, o.x, o.z, o.radius))) {
         this.particleSys.spawnImpact(p.x, p.z, 0x888899, 1.2); p.despawn(); return;
@@ -195,6 +217,7 @@ export class CombatResolver {
   }
 
   update(dt, allActors, chests, crystals, bots) {
+    if (this.castWindup) this.castWindup.update(dt);
     if (this.telegraphTimer > 0 && (this.telegraphTimer -= dt) <= 0) this.telegraphMesh.visible = false;
     for (let i = this.spellDashes.length - 1; i >= 0; i--) {
       const d = this.spellDashes[i];
@@ -228,8 +251,9 @@ export class CombatResolver {
   resolveChain(originX, originZ, cfg, owner, directTarget, targets) { resolveChain(this, originX, originZ, cfg, owner, directTarget, targets); }
   resolveObeliskCollisions(actor) { resolveObeliskCollisions(this, actor); }
   reset() {
-    this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = []; this._lastSpreadShot = 0;
+    this.telegraphMesh.visible = false; this.telegraphTimer = 0; this.delayedStrikes = [];
     this.spellDashes.forEach((d) => { if (d.owner) { d.owner.isInvulnerable = false; d.owner.spellDash = false; } }); this.spellDashes = [];
+    if (this.castWindup) this.castWindup.cancel();
     if (this.sideEffectZones) this.sideEffectZones.reset();
     if (this.spellEffects) this.spellEffects.reset(); if (this.astraVisuals) this.astraVisuals.reset();
     projectileDeflect.reset();
