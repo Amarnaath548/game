@@ -4,6 +4,7 @@ import { makeLayout } from './layout.js';
 import { buildPlaza, buildMonuments } from './monuments.js';
 import { buildAgni, buildStepwell } from './structures.js';
 import { updateTreeOcclusion } from './vegTrees.js';
+import { buildStory } from './story.js';
 
 export class ArenaMap {
   constructor(scene, theme, opts = {}) {
@@ -33,6 +34,7 @@ export class ArenaMap {
     buildMonuments(this);
     buildAgni(this);
     buildStepwell(this);
+    buildStory(this);
     if (theme.vegetation) theme.vegetation(this);
     if (opts.applyEnvironment) this.applyEnvironment();
     this.root.updateMatrix();
@@ -96,9 +98,8 @@ export class ArenaMap {
   }
 
   updateTreeOcclusion(playerPos, cameraPos, dt) {
-    if (this.treeOcclusionGroups) {
-      updateTreeOcclusion(this, playerPos, cameraPos, dt);
-    }
+    if (this.treeOcclusionGroups) updateTreeOcclusion(this, playerPos, cameraPos, dt);
+    if (this.updateStory) this.updateStory(dt);
   }
 
   dispose() {
