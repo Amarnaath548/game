@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import {
   MAT_WOOD, MAT_SHIELD, GEO_CACHE,
-  SKIN_COLOR, HAIR_COLOR, BEAD_COLOR, CLAY_COLOR, CLOTH_SAND
+  SKIN_COLOR, HAIR_COLOR, BEAD_COLOR, CLAY_COLOR, CLOTH_SAND, MAT_OUTLINE_PLAYER
 } from './HeroMaterials.js';
 import { getBodyGeometries } from './HeroBody.js';
 import { attachArchetypeVisuals } from './HeroArchetypes.js';
 import { buildTierVisuals } from './HeroTierVisuals.js';
 import { buildBotVisual } from './BotVisual.js';
+import { getBotStaticGeos, getBotHeadGeos } from './HeroOutlines.js';
 
 const mk = (hex) => new THREE.MeshLambertMaterial({ color: hex, flatShading: true, emissive: 0x000000 });
 
@@ -38,7 +39,7 @@ export function buildHeroVisual(actor, hero) {
   const hairMat = mk(elder ? 0xcbd5e1 : HAIR_COLOR);
   const beadMat = mk(BEAD_COLOR);
   const clayMat = mk(CLAY_COLOR);
-  const clothMat = mk(new THREE.Color(CLOTH_SAND).lerp(new THREE.Color(hero.bodyColor), 0.2).getHex());
+  const clothMat = mk(new THREE.Color(CLOTH_SAND).lerp(new THREE.Color(hero.bodyColor), 0.6).getHex());
   const woodMat = MAT_WOOD.clone();
   const glowMat = new THREE.MeshBasicMaterial({
     color: hero.accentColor, vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide
@@ -63,6 +64,15 @@ export function buildHeroVisual(actor, hero) {
   addMesh(torsoGroup, G.sash, bodyMat);
   addMesh(torsoGroup, G.necklace, beadMat, false);
   addMesh(torsoGroup, G.pouch, clayMat, false);
+
+  const sG = getBotStaticGeos(archetype, hero);
+  if (sG.outlineGeo) {
+    const outlineMesh = new THREE.Mesh(sG.outlineGeo, MAT_OUTLINE_PLAYER);
+    outlineMesh.scale.set(1.04, 1.04, 1.04);
+    outlineMesh.renderOrder = -1;
+    torsoGroup.add(outlineMesh);
+    actor.outlineMesh = outlineMesh;
+  }
   actor.visualMesh.add(torsoGroup);
 
   // 2. Head: faceted face (no eyes, no symbols), beard, hair, soft halo glow
@@ -71,6 +81,15 @@ export function buildHeroVisual(actor, hero) {
   addMesh(headGroup, G.headSkin, skinMat);
   addMesh(headGroup, G.hair, hairMat);
   addMesh(headGroup, G.beard, hairMat);
+
+  const hG = getBotHeadGeos(archetype);
+  if (hG.headOutlineGeo) {
+    const headOutline = new THREE.Mesh(hG.headOutlineGeo, MAT_OUTLINE_PLAYER);
+    headOutline.scale.set(1.04, 1.04, 1.04);
+    headOutline.renderOrder = -1;
+    headGroup.add(headOutline);
+    actor.headOutlineMesh = headOutline;
+  }
 
   const glow = new THREE.Mesh(G.glow, glowMat);
   glow.position.set(0, 0.03, -0.22);
@@ -114,6 +133,7 @@ export function buildHeroVisual(actor, hero) {
 
   actor.staffOrbMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff });
   actor.staffOrb = new THREE.Mesh(GEO_CACHE.staffOrb, actor.staffOrbMat);
+  actor.staffOrb.scale.setScalar(1.25);
   actor.staffOrb.position.set(0, 0.88, 0);
   staffGroup.add(actor.staffOrb);
 

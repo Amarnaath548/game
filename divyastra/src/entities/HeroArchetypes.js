@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import {
   MAT_GOLD, MAT_CRIMSON, MAT_ORANGE_FIRE, MAT_SEAFOAM,
-  MAT_STONE_GREY, MAT_ROCK
+  MAT_STONE_GREY, MAT_ROCK, getHeroMaterial, getEmissiveTipMaterial
 } from './HeroMaterials.js';
+import { PALETTE } from '../config/palette.js';
 import { buildBeadRing } from './HeroBody.js';
 
 export function attachArchetypeVisuals(actor, archetype, accentMat, headGroup, torsoGroup, staffGroup) {
@@ -45,8 +46,9 @@ function buildTapasviVisuals(actor, head, torso, staff, accentMat) {
   band.rotation.x = Math.PI / 2;
   head.add(band);
 
-  // Lotus staff mount
-  const mount = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.025, 6, 12), MAT_GOLD);
+  // Lotus staff mount (25% larger, emissive tip)
+  const mount = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.025, 6, 12), getEmissiveTipMaterial(PALETTE.gold));
+  mount.scale.setScalar(1.25);
   mount.position.set(0, 0.8, 0);
   mount.rotation.x = Math.PI / 2;
   staff.add(mount);
@@ -86,8 +88,9 @@ function buildAgniVisuals(actor, head, torso, staff, accentMat) {
   mantleR.rotation.z = -0.45;
   torso.add(mantleR);
 
-  // Spinning octahedron staff tip
-  const octaTip = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), MAT_ORANGE_FIRE);
+  // Spinning octahedron staff tip (25% larger, emissive sindoor)
+  const octaTip = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), getEmissiveTipMaterial(PALETTE.sindoor));
+  octaTip.scale.setScalar(1.25);
   octaTip.position.set(0, 0.88, 0);
   staff.add(octaTip);
   actor.spinningStaffTip = octaTip;
@@ -141,16 +144,17 @@ function buildJalaVisuals(actor, head, torso, staff, accentMat) {
   waveR.rotation.z = 0.2;
   torso.add(waveR);
 
-  // Crescent half-torus staff fork cradling the orb
-  const fork = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.03, 6, 12, Math.PI), MAT_SEAFOAM);
+  // Crescent half-torus staff fork cradling the orb (25% larger, emissive teal)
+  const fork = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.03, 6, 12, Math.PI), getEmissiveTipMaterial(PALETTE.elements.JALA));
+  fork.scale.setScalar(1.25);
   fork.position.set(0, 0.85, 0);
   fork.rotation.set(0, 0, Math.PI);
   staff.add(fork);
 }
 
 function buildPrithviVisuals(actor, head, torso, staff, accentMat) {
-  // Flat-topped stone circlet
-  const circlet = new THREE.Mesh(new THREE.CylinderGeometry(0.265, 0.265, 0.08, 8), MAT_STONE_GREY);
+  // Flat-topped stone circlet tinted with olive school colour
+  const circlet = new THREE.Mesh(new THREE.CylinderGeometry(0.265, 0.265, 0.08, 8), getHeroMaterial(PALETTE.elements.PRITHVI));
   circlet.position.set(0, 0.15, 0);
   head.add(circlet);
 
@@ -172,8 +176,9 @@ function buildPrithviVisuals(actor, head, torso, staff, accentMat) {
   rockR.rotation.set(-0.3, 0.4, 0.2);
   torso.add(rockR);
 
-  // Rough boulder staff tip
-  const boulder = new THREE.Mesh(new THREE.IcosahedronGeometry(0.12, 0), MAT_ROCK);
+  // Rough boulder staff tip (25% larger, emissive olive)
+  const boulder = new THREE.Mesh(new THREE.IcosahedronGeometry(0.12, 0), getEmissiveTipMaterial(PALETTE.elements.PRITHVI));
+  boulder.scale.setScalar(1.25);
   boulder.position.set(0, 0.88, 0);
   staff.add(boulder);
 }

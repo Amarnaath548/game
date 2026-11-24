@@ -15,7 +15,7 @@ export const COLORS = {
   STORM_RING: PALETTE.sindoor
 };
 
-export const HERO_VISUAL_SCALE = 1.4;
+export const HERO_VISUAL_SCALE = 1.568;
 export const QUALITY = 'auto'; // 'auto' | 'high' | 'low'
 
 export const BIOMES = {
@@ -111,9 +111,9 @@ export const BIOMES = {
 
 export const HEROES = [
   { id: 'tapasvi', name: 'Tapasvi', archetype: 'TAPASVI', bodyColor: PALETTE.saffron, accentColor: PALETTE.gold, hatType: 'JATA', extra: 'UTTARIYA' },
-  { id: 'agni', name: 'Agni Sadhaka', archetype: 'AGNI', bodyColor: PALETTE.elements.AGNI, accentColor: PALETTE.saffron, hatType: 'FLAME_CREST', extra: 'MANTLE' },
-  { id: 'jala', name: 'Jala Sadhaka', archetype: 'JALA', bodyColor: PALETTE.elements.JALA, accentColor: PALETTE.bone, hatType: 'TURBAN', extra: 'WAVE_PADS' },
-  { id: 'prithvi', name: 'Prithvi Sadhaka', archetype: 'PRITHVI', bodyColor: PALETTE.elements.PRITHVI, accentColor: PALETTE.saffron, hatType: 'CIRCLET', extra: 'ROCK_SHOULDERS' }
+  { id: 'agni', name: 'Agni Sadhaka', archetype: 'AGNI', bodyColor: PALETTE.sindoor, accentColor: PALETTE.sindoor, hatType: 'FLAME_CREST', extra: 'MANTLE' },
+  { id: 'jala', name: 'Jala Sadhaka', archetype: 'JALA', bodyColor: PALETTE.elements.JALA, accentColor: PALETTE.elements.JALA, hatType: 'TURBAN', extra: 'WAVE_PADS' },
+  { id: 'prithvi', name: 'Prithvi Sadhaka', archetype: 'PRITHVI', bodyColor: PALETTE.elements.PRITHVI, accentColor: PALETTE.elements.PRITHVI, hatType: 'CIRCLET', extra: 'ROCK_SHOULDERS' }
 ];
 
 /** Safe hero lookup — falls back to HEROES[0] if id is not found (e.g. old saved id). */
@@ -141,7 +141,7 @@ export const CAMERA_CONFIG = {
   PITCH_BIAS: 1.0,
   LERP_SPEED: 0.1,
   AIM_LOOKAHEAD: 4.5,
-  LOOK_FORWARD: 3.0,
+  LOOK_FORWARD: -1.3,
   SHAKE_AMPLITUDE: 0.12,
   SHAKE_DURATION: 0.15,
   SHAKE_DMG_THRESHOLD: 25,
@@ -151,7 +151,8 @@ export const CAMERA_CONFIG = {
 export const CAMERA_PHONE = {
   OFFSET_Y: 12,
   OFFSET_Z: 8.5,
-  LOOK_FORWARD: 1.5
+  LOOK_FORWARD: -0.4,
+  AIM_LOOKAHEAD: 1.5
 };
 
 export const PLAYER_BASE = {

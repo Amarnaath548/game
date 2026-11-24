@@ -128,51 +128,58 @@
 .kill-feed-actor { color: #f1f5f9; }
 .kill-feed-action-red { color: #C8431E; font-weight: 900; margin: 0 3px; }
 
-/* BOTTOM AREA: CHUNKY HP/XP BARS */
+/* BOTTOM AREA: SHRUNK SINGLE-LINE PLAYER STATUS PANEL */
 #player-status {
   position: absolute;
-  bottom: calc(54px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(6px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
-  width: 230px;
-  max-width: calc(100vw - 32px);
+  width: 260px;
+  max-width: 260px;
+  height: 36px;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   pointer-events: none;
-  background: rgba(27, 31, 59, 0.9);
-  border: 2px solid #000;
-  padding: 5px 9px;
-  border-radius: 10px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+  background: rgba(27, 31, 59, 0.7);
+  border: 1.5px solid rgba(0, 0, 0, 0.7);
+  padding: 0 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
   z-index: 22;
 }
-.status-labels {
-  display: flex;
-  justify-content: space-between;
+#player-lvl-text {
   font-size: 11px;
   font-weight: 900;
   color: #f8fafc;
-  padding: 0 2px;
+  white-space: nowrap;
   text-shadow: 0 1px 2px #000;
 }
-.bar-container {
-  width: 100%;
-  height: 15px;
+#player-hp-text {
+  font-size: 10px;
+  font-weight: 800;
+  color: #7FA650;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px #000;
+}
+#player-status .bar-xp {
+  position: relative;
+  flex: 1;
+  height: 10px;
   background: rgba(15, 17, 26, 0.95);
-  border: 2px solid #000;
-  border-radius: 8px;
+  border: 1px solid #000;
+  border-radius: 5px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
   box-sizing: border-box;
 }
-.bar-xp { position: relative; height: 12px; border-radius: 4px; }
 .xp-bar-label {
   position: absolute;
   right: 6px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 900;
   color: #f8fafc;
   text-shadow: 0 1px 2px #000;
@@ -182,10 +189,10 @@
 #hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #7FA650, #6A8A3E); transition: width 0.15s ease-out; }
 #xp-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #E3B04B, #E08A2E); transition: width 0.15s ease-out; }
 
-/* SPELL BAR: SHRUNK */
+/* SPELL BAR: SITS ABOVE PLAYER STATUS */
 #spell-bar {
   position: absolute;
-  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(46px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -279,9 +286,9 @@
 
 /* MOBILE LANDSCAPE COMPACT OVERRIDES */
 @media (max-height: 440px) {
-  #player-status { bottom: calc(48px + env(safe-area-inset-bottom, 0px)); width: 210px; padding: 3px 7px; }
-  .bar-container { height: 12px; }
-  .bar-xp { height: 6px; }
+  #player-status { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); width: 260px; max-width: 260px; height: 32px; padding: 0 8px; }
+  #player-status .bar-xp { height: 8px; }
+  #spell-bar { bottom: calc(42px + env(safe-area-inset-bottom, 0px)); }
   #spell-panel { transform: scale(0.82); }
   #spell-indicator {
     bottom: calc(92px + env(safe-area-inset-bottom, 0px));

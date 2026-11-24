@@ -22,10 +22,22 @@ export function updateVisibilityCulling(sceneManager, spawnManager, arenaInterac
   player.visible = true;
 
   // Bots pass
+  const isLowQuality = sceneManager.qualityTier === 'LOW';
   if (spawnManager?.bots) {
     for (let i = 0; i < spawnManager.bots.length; i++) {
       const bot = spawnManager.bots[i];
       if (bot.isDead) continue;
+
+      const dx = bot.x - camX;
+      const dz = bot.z - camZ;
+      const distSq = dx * dx + dz * dz;
+
+      // Skip outlines on LOW quality for bots beyond 30 units (30^2 = 900)
+      if (bot.outlineMesh) {
+        const showOutline = !(isLowQuality && distSq > 900);
+        bot.outlineMesh.visible = showOutline;
+        if (bot.headOutlineMesh) bot.headOutlineMesh.visible = showOutline;
+      }
 
       const isChasingOrAttacking = bot.isChasingOrAttacking
         ? bot.isChasingOrAttacking(player)
@@ -35,9 +47,7 @@ export function updateVisibilityCulling(sceneManager, spawnManager, arenaInterac
         bot.visible = true;
         if (bot.group) bot.group.visible = true;
       } else {
-        const dx = bot.x - camX;
-        const dz = bot.z - camZ;
-        const isFar = (dx * dx + dz * dz) > CULL_DIST_SQ;
+        const isFar = distSq > CULL_DIST_SQ;
         const visible = !isFar;
         bot.visible = visible;
         if (bot.group) bot.group.visible = visible;

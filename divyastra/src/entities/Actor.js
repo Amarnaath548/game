@@ -2,37 +2,29 @@ import * as THREE from 'three';
 import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE } from '../config/constants.js';
 import { buildHeroVisual } from './HeroVisual.js';
 import { updateTierVisuals } from './HeroTierVisuals.js';
+import { setActorWobble } from './ActorAnim.js';
 
 export class Actor {
   constructor(scene, options = {}) {
     this.scene = scene;
-    this.x = options.x || 0;
-    this.z = options.z || 0;
+    this.x = options.x || 0; this.z = options.z || 0;
     this.radius = options.radius || PLAYER_BASE.RADIUS;
-    this.maxHp = options.maxHp || PLAYER_BASE.MAX_HP;
-    this.hp = this.maxHp;
-    this.baseSpeed = options.moveSpeed || PLAYER_BASE.MOVE_SPEED;
-    this.speed = this.baseSpeed;
-    this.isDead = false;
-    this.isInvulnerable = false;
-    this.shieldActive = false;
-    this.shieldHp = 0;
-    this.shieldTimer = 0;
+    this.maxHp = options.maxHp || PLAYER_BASE.MAX_HP; this.hp = this.maxHp;
+    this.baseSpeed = options.moveSpeed || PLAYER_BASE.MOVE_SPEED; this.speed = this.baseSpeed;
+    this.isDead = false; this.isInvulnerable = false;
+    this.shieldActive = false; this.shieldHp = 0; this.shieldTimer = 0;
     this.kbTimer = 0; this.kbVx = 0; this.kbVz = 0;
-    this.lastX = this.x; this.lastZ = this.z;
-    this.vx = 0; this.vz = 0;
+    this.lastX = this.x; this.lastZ = this.z; this.vx = 0; this.vz = 0;
     this.spellDash = false; this.damageTakenMult = 1.0; this.damageTakenTimer = 0;
     this.onDeath = null; this._killCredited = false;
     this.status = { chillTimer: 0, chillFactor: 1.0, burnTimer: 0, burnDps: 0, poisonTimer: 0, poisonDps: 0, stunTimer: 0, dotOwner: null, dotSpellId: null };
 
-    // Hero configuration
     this.hero = options.hero || (options.heroId ? HEROES.find(h => h.id === options.heroId) : null) || HEROES[0];
     if (options.robeColor && !options.hero) {
       this.hero = { ...this.hero, bodyColor: options.robeColor, accentColor: options.hatColor || this.hero.accentColor };
     }
     this.isBot = !!options.isBot;
 
-    // Visuals
     this.group = new THREE.Group();
     this.visualMesh = new THREE.Group();
     this.visualMesh.scale.setScalar(HERO_VISUAL_SCALE);
@@ -40,8 +32,7 @@ export class Actor {
     this.scene.add(this.group);
 
     buildHeroVisual(this, this.hero);
-    this.robeMat = this.bodyMat;
-    this.hatMat = this.accentMat;
+    this.robeMat = this.bodyMat; this.hatMat = this.accentMat;
 
     this.hitTimer = 0; this.walkTime = 0; this.wobbleZ = 0; this.leanX = 0; this.leanZ = 0;
     this.punchTimer = 0; this.castTimer = 0; this.orbTimer = 0; this.isDying = false; this.deathTimer = 0;
@@ -82,13 +73,11 @@ export class Actor {
   }
 
   applyDamageReduction(mult = 0.7, duration = 4.0) {
-    this.damageTakenMult = mult; this.damageTakenTimer = duration;
-    this._showShield(0x8b5a2b);
+    this.damageTakenMult = mult; this.damageTakenTimer = duration; this._showShield(0x8b5a2b);
   }
 
   applyShield(amount = 80, duration = 3.0) {
-    this.shieldHp = amount; this.shieldTimer = duration; this.shieldActive = true;
-    this._showShield(0x38bdf8);
+    this.shieldHp = amount; this.shieldTimer = duration; this.shieldActive = true; this._showShield(0x38bdf8);
   }
 
   takeDamage(amount, sourceSpell = null) {
@@ -163,7 +152,7 @@ export class Actor {
         this.orbTimer -= dt;
         if (this.staffOrb) {
           const pulse = 1.0 + 0.35 * Math.sin(Math.max(0, Math.min(1, 1.0 - this.orbTimer / 0.2)) * Math.PI);
-          this.staffOrb.scale.setScalar((this.tierBaseScale || 1.0) * pulse);
+          this.staffOrb.scale.setScalar((this.tierBaseScale || 1.25) * pulse);
         }
       }
     } else {
@@ -191,8 +180,11 @@ export class Actor {
     if (this.status.stunTimer > 0) {
       this.status.stunTimer -= dt; this.speed = 0;
     } else if (this.status.chillTimer > 0) {
-      this.status.chillTimer -= dt; this.speed = Math.max(this.baseSpeed * 0.3, this.baseSpeed * this.status.chillFactor);
-    } else { this.speed = this.baseSpeed; }
+      this.status.chillTimer -= dt;
+      this.speed = Math.max(this.baseSpeed * 0.3, this.baseSpeed * this.status.chillFactor);
+    } else {
+      this.speed = this.baseSpeed;
+    }
 
     if (this.status.burnTimer > 0) {
       this.status.burnTimer -= dt; this.takeDamage(this.status.burnDps * dt);
@@ -208,36 +200,7 @@ export class Actor {
   }
 
   setWobble(isMoving, dt, moveX = 0, moveZ = 0, isDashing = false) {
-    let targetLeanX = 0, targetLeanZ = 0;
-    if (isMoving && !isDashing) {
-      this.walkTime += dt * 14;
-      this.visualMesh.position.y = Math.abs(Math.sin(this.walkTime)) * 0.28;
-      this.wobbleZ = Math.sin(this.walkTime) * 0.08;
-      if (this.leftLeg && this.rightLeg) {
-        this.leftLeg.rotation.x = Math.sin(this.walkTime) * 0.45; this.rightLeg.rotation.x = -Math.sin(this.walkTime) * 0.45;
-      }
-      if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) this.leftArm.rotation.x = -Math.sin(this.walkTime) * 0.35;
-      if (this.headGroup) this.headGroup.rotation.y = Math.sin(this.walkTime * 0.5) * 0.08;
-      const len = Math.hypot(moveX, moveZ);
-      if (len > 0.01) {
-        const nx = moveX / len, nz = moveZ / len, ang = this.visualMesh.rotation.y;
-        targetLeanX = (nx * Math.sin(ang) + nz * Math.cos(ang)) * 0.12;
-        targetLeanZ = -(nx * Math.cos(ang) - nz * Math.sin(ang)) * 0.12;
-      }
-    } else {
-      this.visualMesh.position.y = THREE.MathUtils.lerp(this.visualMesh.position.y, 0, 0.2);
-      this.wobbleZ = THREE.MathUtils.lerp(this.wobbleZ || 0, 0, 0.2);
-      if (this.leftLeg && this.rightLeg) {
-        this.leftLeg.rotation.x = THREE.MathUtils.lerp(this.leftLeg.rotation.x, 0, 0.2);
-        this.rightLeg.rotation.x = THREE.MathUtils.lerp(this.rightLeg.rotation.x, 0, 0.2);
-      }
-      if (this.leftArm && this.punchTimer <= 0 && this.castTimer <= 0) this.leftArm.rotation.x = THREE.MathUtils.lerp(this.leftArm.rotation.x, 0, 0.2);
-      if (this.headGroup) this.headGroup.rotation.y = THREE.MathUtils.lerp(this.headGroup.rotation.y || 0, 0, 0.2);
-    }
-    this.leanX = THREE.MathUtils.lerp(this.leanX || 0, targetLeanX, 0.15);
-    this.leanZ = THREE.MathUtils.lerp(this.leanZ || 0, targetLeanZ, 0.15);
-    this.visualMesh.rotation.x = this.leanX;
-    this.visualMesh.rotation.z = (this.wobbleZ || 0) + this.leanZ;
+    setActorWobble(this, isMoving, dt, moveX, moveZ, isDashing);
   }
 
   die() {
@@ -246,6 +209,7 @@ export class Actor {
     this._hideShield();
     if (!this.isBot) for (const m of this.visualMats || this.heroMats || []) m.transparent = true;
   }
+
   destroyVisuals() {
     if (this.isPlayer) { this.group.visible = false; return; }
     this.scene.remove(this.group);
@@ -254,5 +218,6 @@ export class Actor {
       this.shieldMesh?.material?.dispose();
     }
   }
+
   destroy() { this.isDead = true; this.isDying = false; this.destroyVisuals(); }
 }

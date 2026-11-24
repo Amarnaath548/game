@@ -28,8 +28,35 @@ export const MAT_SHIELD = new THREE.MeshBasicMaterial({
   wireframe: true
 });
 
+// Shared inverted-hull outline materials (back-face, flat solid colour, no lighting)
+export const MAT_OUTLINE_PLAYER = new THREE.MeshBasicMaterial({
+  color: PALETTE.gold,
+  side: THREE.BackSide
+});
+
+export const MAT_OUTLINE_ENEMY = new THREE.MeshBasicMaterial({
+  color: 0x15172B,
+  side: THREE.BackSide
+});
+
 const matCache = new Map();
 const glowMatCache = new Map();
+const tipMatCache = new Map();
+
+/**
+ * Returns or creates a shared emissive tip MeshLambertMaterial for staff heads.
+ */
+export function getEmissiveTipMaterial(hexColor) {
+  const key = Number(hexColor);
+  if (!tipMatCache.has(key)) {
+    tipMatCache.set(key, new THREE.MeshLambertMaterial({
+      color: key,
+      emissive: key,
+      flatShading: true
+    }));
+  }
+  return tipMatCache.get(key);
+}
 
 /**
  * Returns or creates a shared MeshLambertMaterial for a given color.
