@@ -54,19 +54,19 @@ export function buildRuins(map, rng, diyaFlames, glowSpots) {
     const pRubble2 = toW(-1.9, 0.18, 1.4, 1.4);
     geosSh.push(part(new THREE.DodecahedronGeometry(0.3, 0), pRubble2.pos, pRubble2.rot));
 
-    // 4. Small shrine niche with a diya
+    // 4. Small shrine niche with a 2.2x diya
     const pNicheBase = toW(0.8, 0.25, -1.8, 0.2);
-    geosSh.push(part(new THREE.BoxGeometry(1.1, 0.5, 0.8), pNicheBase.pos, pNicheBase.rot));
-    const pNicheBack = toW(0.8, 0.95, -1.95, 0.2);
-    geosHi.push(part(new THREE.BoxGeometry(0.95, 1.1, 0.32), pNicheBack.pos, pNicheBack.rot));
-    const pNicheRoof = toW(0.8, 1.6, -1.8, 0.2 + Math.PI / 4);
-    geosHi.push(part(new THREE.ConeGeometry(0.78, 0.44, 4), pNicheRoof.pos, pNicheRoof.rot));
+    geosSh.push(part(new THREE.BoxGeometry(1.3, 0.5, 0.9), pNicheBase.pos, pNicheBase.rot));
+    const pNicheBack = toW(0.8, 1.05, -1.95, 0.2);
+    geosHi.push(part(new THREE.BoxGeometry(1.15, 1.3, 0.32), pNicheBack.pos, pNicheBack.rot));
+    const pNicheRoof = toW(0.8, 1.8, -1.8, 0.2 + Math.PI / 4);
+    geosHi.push(part(new THREE.ConeGeometry(0.95, 0.52, 4), pNicheRoof.pos, pNicheRoof.rot));
 
-    // Diya inside the niche
-    const pDiya = toW(0.8, 0.54, -1.72, 0.2);
-    diyaBowls.push(part(new THREE.CylinderGeometry(0.18, 0.08, 0.08, 6), pDiya.pos, pDiya.rot));
-    diyaFlames.push(part(new THREE.ConeGeometry(0.045, 0.12, 5), [pDiya.pos[0], 0.62, pDiya.pos[2]], [0, 0, 0]));
-    glowSpots.push([pDiya.pos[0], 0.68, pDiya.pos[2], 1.2]);
+    // 2.2x Diya inside the niche + glow sprite
+    const pDiya = toW(0.8, 0.58, -1.72, 0.2);
+    diyaBowls.push(part(new THREE.CylinderGeometry(0.40, 0.18, 0.18, 7), pDiya.pos, pDiya.rot));
+    diyaFlames.push(part(new THREE.ConeGeometry(0.10, 0.26, 5), [pDiya.pos[0], 0.76, pDiya.pos[2]], [0, 0, 0]));
+    glowSpots.push([pDiya.pos[0], 0.82, pDiya.pos[2], 1.0]);
 
     // Biome-specific accents
     if (snowMat) {
@@ -74,7 +74,7 @@ export function buildRuins(map, rng, diyaFlames, glowSpots) {
       geosSnow.push(part(new THREE.BoxGeometry(1.28, 0.14, 0.62), [pWall2.pos[0], 1.18, pWall2.pos[2]], pWall2.rot));
       geosSnow.push(part(new THREE.BoxGeometry(0.55, 0.14, 1.8), [pLintel.pos[0], 2.85, pLintel.pos[2]], pLintel.rot));
       geosSnow.push(part(new THREE.BoxGeometry(0.46, 0.12, 1.8), [pFallen.pos[0], 0.46, pFallen.pos[2]], pFallen.rot));
-      geosSnow.push(part(new THREE.ConeGeometry(0.65, 0.35, 4), [pNicheRoof.pos[0], 1.76, pNicheRoof.pos[2]], pNicheRoof.rot));
+      geosSnow.push(part(new THREE.ConeGeometry(0.80, 0.40, 4), [pNicheRoof.pos[0], 1.98, pNicheRoof.pos[2]], pNicheRoof.rot));
     } else if (sandMat) {
       geosSand.push(part(new THREE.DodecahedronGeometry(1.0, 0), [pWall1.pos[0], 0.18, pWall1.pos[2]], [0, 0, 0], [1.9, 0.36, 1.3]));
       geosSand.push(part(new THREE.DodecahedronGeometry(0.9, 0), [pFallen.pos[0], 0.15, pFallen.pos[2]], [0, 0, 0], [1.4, 0.3, 1.6]));
