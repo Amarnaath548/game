@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { part, merge, lambert } from './geo.js';
 
-export function buildRuins(map, rng, diyaFlames, glowSpots) {
+export function buildRuins(map, rng, glowSpots) {
   const T = map.theme, stone = T.stone;
   const hiMat = lambert(stone.hi), shMat = lambert(stone.sh);
   const snowMat = T.snowCap ? lambert(T.snowCap) : null;
@@ -9,7 +9,6 @@ export function buildRuins(map, rng, diyaFlames, glowSpots) {
   const leafMat = T.id === 'autumn' ? lambert(0xB8532A) : null;
 
   const geosHi = [], geosSh = [], geosSnow = [], geosSand = [], geosLeaves = [];
-  const diyaBowls = [];
   const CLUSTER_COUNT = 7;
 
   for (let c = 0; c < CLUSTER_COUNT; c++) {
@@ -54,19 +53,13 @@ export function buildRuins(map, rng, diyaFlames, glowSpots) {
     const pRubble2 = toW(-1.9, 0.18, 1.4, 1.4);
     geosSh.push(part(new THREE.DodecahedronGeometry(0.3, 0), pRubble2.pos, pRubble2.rot));
 
-    // 4. Small shrine niche with a 2.2x diya
+    // 4. Small shrine niche
     const pNicheBase = toW(0.8, 0.25, -1.8, 0.2);
     geosSh.push(part(new THREE.BoxGeometry(1.3, 0.5, 0.9), pNicheBase.pos, pNicheBase.rot));
     const pNicheBack = toW(0.8, 1.05, -1.95, 0.2);
     geosHi.push(part(new THREE.BoxGeometry(1.15, 1.3, 0.32), pNicheBack.pos, pNicheBack.rot));
     const pNicheRoof = toW(0.8, 1.8, -1.8, 0.2 + Math.PI / 4);
     geosHi.push(part(new THREE.ConeGeometry(0.95, 0.52, 4), pNicheRoof.pos, pNicheRoof.rot));
-
-    // 2.2x Diya inside the niche + glow sprite
-    const pDiya = toW(0.8, 0.58, -1.72, 0.2);
-    diyaBowls.push(part(new THREE.CylinderGeometry(0.40, 0.18, 0.18, 7), pDiya.pos, pDiya.rot));
-    diyaFlames.push(part(new THREE.ConeGeometry(0.10, 0.26, 5), [pDiya.pos[0], 0.76, pDiya.pos[2]], [0, 0, 0]));
-    glowSpots.push([pDiya.pos[0], 0.82, pDiya.pos[2], 1.0]);
 
     // Biome-specific accents
     if (snowMat) {
@@ -99,5 +92,4 @@ export function buildRuins(map, rng, diyaFlames, glowSpots) {
   if (geosSnow.length && snowMat) addM(merge(geosSnow), snowMat, false);
   if (geosSand.length && sandMat) addM(merge(geosSand), sandMat, false);
   if (geosLeaves.length && leafMat) addM(merge(geosLeaves), leafMat, false);
-  if (diyaBowls.length) addM(merge(diyaBowls), lambert(0x8C3F21), false);
 }

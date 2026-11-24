@@ -48,11 +48,10 @@ export function buildStory(map) {
   const isLow = quality === 'LOW';
 
   const sharedTime = { value: 0 };
-  const diyaFlameMat = new THREE.MeshBasicMaterial({ color: 0xFFAA22, transparent: true, opacity: 0.95 });
-  const diyaBowls = [], diyaFlames = [], glowSpots = [];
+  const glowSpots = [];
   const stoneHi = [], stoneSh = [];
 
-  // --- 1. Plaza Edge Ruins (r ~ 11.5 - 12.5) & 2.2x Diyas ---
+  // --- 1. Plaza Edge Ruins (r ~ 11.5 - 12.5) ---
   // Ruin A: Broken Lotus Ring & Stepped Base at r ~ 12.5, a ~ 25°
   const rA = 12.5, aA = 0.44, cxA = Math.cos(aA) * rA, czA = Math.sin(aA) * rA;
   stoneSh.push(part(new THREE.CylinderGeometry(2.2, 2.5, 0.22, 14), [cxA, 0.11, czA]));
@@ -70,31 +69,17 @@ export function buildStory(map) {
   stoneSh.push(part(new THREE.BoxGeometry(0.55, 0.5, 2.4), [cxB + 0.6, 3.2, czB - 0.4], [0.2, aB, 0.25]));
   stoneSh.push(part(new THREE.BoxGeometry(0.8, 0.35, 0.8), [cxB, 3.45, czB], [0, aB, 0]));
 
-  // Ruin C: Shrine Niche with 2.2x Diya at r ~ 12.2, a ~ 205°
+  // Ruin C: Shrine Niche at r ~ 12.2, a ~ 205°
   const rC = 12.2, aC = 3.58, cxC = Math.cos(aC) * rC, czC = Math.sin(aC) * rC;
   stoneSh.push(part(new THREE.BoxGeometry(1.4, 0.55, 1.0), [cxC, 0.27, czC], [0, aC, 0]));
   stoneHi.push(part(new THREE.BoxGeometry(1.2, 1.3, 0.4), [cxC, 1.15, czC], [0, aC, 0]));
   stoneHi.push(part(new THREE.ConeGeometry(1.0, 0.55, 4), [cxC, 2.05, czC], [0, aC + Math.PI / 4, 0]));
-  diyaBowls.push(part(new THREE.CylinderGeometry(0.4, 0.2, 0.18, 7), [cxC, 0.62, czC], [0, aC, 0]));
-  diyaFlames.push(part(new THREE.ConeGeometry(0.1, 0.28, 5), [cxC, 0.82, czC]));
-  glowSpots.push([cxC, 0.88, czC, 1.0]);
 
   // Ruin D: Toppled Pillar at r ~ 12.5, a ~ 335°
   const rD = 12.5, aD = -0.44, cxD = Math.cos(aD) * rD, czD = Math.sin(aD) * rD;
   stoneSh.push(part(new THREE.CylinderGeometry(0.48, 0.56, 0.8, 8), [cxD, 0.4, czD]));
   stoneHi.push(part(new THREE.CylinderGeometry(0.42, 0.46, 3.2, 8), [cxD + 0.8, 0.35, czD - 0.6], [0.15, aD + 0.5, 1.46]));
   stoneSh.push(part(new THREE.BoxGeometry(0.65, 0.45, 0.65), [cxD + 2.3, 0.22, czD - 1.6], [0.1, aD, 0.2]));
-
-  // 8 plaza diyas scaled by 2.2x with visible warm glow sprites (r ~ 1.2u)
-  const diyaBowlGeo = new THREE.CylinderGeometry(0.48, 0.24, 0.2, 8);
-  const diyaFlameGeo = new THREE.ConeGeometry(0.11, 0.31, 6);
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
-    const dx = Math.cos(a) * 14.1, dz = Math.sin(a) * 14.1;
-    diyaBowls.push(part(diyaBowlGeo, [dx, 0.1, dz]));
-    diyaFlames.push(part(diyaFlameGeo, [dx, 0.28, dz]));
-    glowSpots.push([dx, 0.38, dz, 1.0]);
-  }
 
   // --- 2. Path Banners (6u Tall, 2u Wide Flag) and Markers ---
   const poleWood = [], saffronFlags = [], indigoFlags = [], stoneMarkers = [], markerDecals = [];
@@ -175,7 +160,7 @@ export function buildStory(map) {
     padMesh.instanceMatrix.needsUpdate = true; padMesh.updateMatrix(); map.root.add(padMesh);
     flowerMesh.instanceMatrix.needsUpdate = true; flowerMesh.updateMatrix(); map.root.add(flowerMesh);
 
-    buildRuins(map, rng, diyaFlames, glowSpots);
+    buildRuins(map, rng, glowSpots);
     map.layout.anchors.braziers?.forEach(([bx, bz]) => glowSpots.push([bx, 1.45, bz, 1.25]));
     if (L.agni) {
       [[-8.5, -8.5], [8.5, -8.5], [-8.5, 8.5], [8.5, 8.5]].forEach(([ax, az]) => {
@@ -184,7 +169,7 @@ export function buildStory(map) {
     }
   }
 
-  // --- 4. Glow Sprites Billboard Mesh (r ~ 1.2u) ---
+  // --- 4. Glow Sprites Billboard Mesh (for Braziers) ---
   if (glowSpots.length) {
     const glowTex = createGlowTexture();
     const glowGeo = new THREE.PlaneGeometry(2.4, 2.4);
@@ -212,8 +197,6 @@ export function buildStory(map) {
   };
   if (stoneHi.length) addMesh(merge(stoneHi), lambert(T.stone.hi));
   if (stoneSh.length) addMesh(merge(stoneSh), lambert(T.stone.sh));
-  if (diyaBowls.length) addMesh(merge(diyaBowls), lambert(0x8C3F21), false);
-  if (diyaFlames.length) addMesh(merge(diyaFlames), diyaFlameMat, false);
   if (poleWood.length) addMesh(merge(poleWood), lambert(0x5A3A22));
   if (saffronFlags.length) addMesh(merge(saffronFlags), makeBannerMat(0xDE5D14, sharedTime), false);
   if (indigoFlags.length) addMesh(merge(indigoFlags), makeBannerMat(0x2A3D7C, sharedTime), false);
@@ -222,6 +205,5 @@ export function buildStory(map) {
 
   map.updateStory = (dt) => {
     sharedTime.value += dt;
-    diyaFlameMat.opacity = 0.88 + Math.sin(sharedTime.value * 7.5) * 0.08 + Math.sin(sharedTime.value * 16.2) * 0.04;
   };
 }
