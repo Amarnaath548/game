@@ -13,6 +13,7 @@ import { SpellIndicator } from './SpellIndicator.js';
 import { LevelSelectView } from './LevelSelectView.js';
 import { showEndGameModal } from './EndGameModal.js';
 import { LobbyShell } from './LobbyShell.js';
+import { elementIcon, iconGold } from './icons.js';
 
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
@@ -27,6 +28,7 @@ export class UIManager {
     this.spellbookContainer = get('spellbook-container'); this.questsBadgeEl = get('quests-badge'); this.playMatchBtn = get('play-match-btn'); this.hud = get('hud');
     this.aliveCountEl = get('alive-count'); this.zoneStatusEl = get('zone-status'); this.hpFillEl = get('hp-fill'); this.xpFillEl = get('xp-fill'); this.lvlTextEl = get('player-lvl-text'); this.hpTextEl = get('player-hp-text');
     this.perkOverlay = get('perk-overlay'); this.endModal = get('end-modal'); this.endTitle = get('end-title'); this.endSubtitle = get('end-subtitle'); this.rewardTrophy = get('reward-trophy'); this.rewardGold = get('reward-gold'); this.modalLobbyBtn = get('modal-lobby-btn'); this.modalPlayAgainBtn = get('modal-play-again-btn');
+    this.dashBtn = get('dash-btn');
 
     this.pickFlow = new PickFlow(this);
     this.elementPicker = this.pickFlow.elementPicker;
@@ -39,7 +41,7 @@ export class UIManager {
       this.onHeroChange?.(h);
     });
     this.stavesView = new StavesView(this.stavesContainer, this.meta, () => this.renderLobby());
-    if (this.questManager) this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => this.lobbyGold.textContent = this.meta.data.gold);
+    if (this.questManager) this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => { this.lobbyGold.textContent = this.meta.data.gold; });
     if (this.spellbookContainer && this.spellbookManager) this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
     if (this.campaignManager) this.levelSelectView = new LevelSelectView(this.campaignManager, {
       onLevelSelected: () => {
@@ -89,7 +91,7 @@ export class UIManager {
   initSpellPanel() {
     const bar = document.getElementById('spell-bar');
     if (!bar) return;
-    bar.innerHTML = `<div id="spell-panel" style="display:flex;align-items:center;gap:10px;background:rgba(27,31,59,0.92);border:2px solid #E3B04B;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.6);text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:900;color:#fff;">Agni Bana</span><span id="spell-side-tag" style="display:none;font-size:9px;font-weight:900;padding:1px 5px;border-radius:4px;letter-spacing:0.5px;"></span><span id="spell-tier-label" style="display:none;font-size:10px;font-weight:800;background:#15172B;color:#E3B04B;padding:1px 6px;border-radius:999px;">Astra</span><span id="tapas-indicator" style="display:none;font-size:9px;font-weight:900;background:#E3B04B;color:#15172B;padding:1px 5px;border-radius:4px;box-shadow:0 0 8px #E3B04B;">TAPAS +40%</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
+    bar.innerHTML = `<div id="spell-panel" class="dv-panel" style="display:flex;align-items:center;gap:10px;padding:6px 14px;text-shadow:0 1px 2px #000;"><div style="display:flex;flex-direction:column;gap:2px;"><div style="display:flex;align-items:center;gap:6px;"><span id="spell-name-label" style="font-size:13px;font-weight:700;color:#fff;">Agni Bana</span><span id="spell-side-tag" style="display:none;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;letter-spacing:0.5px;"></span><span id="spell-tier-label" style="display:none;font-size:10px;font-weight:700;background:#15172B;color:#E3B04B;padding:1px 6px;border-radius:999px;">Astra</span><span id="tapas-indicator" style="display:none;font-size:9px;font-weight:700;background:#E3B04B;color:#15172B;padding:1px 5px;border-radius:4px;box-shadow:0 0 8px #E3B04B;">TAPAS +40%</span></div><div id="spell-chips-box" style="display:flex;gap:4px;"></div></div></div>`;
     this.spellNameEl = document.getElementById('spell-name-label');
     this.spellSideTagEl = document.getElementById('spell-side-tag');
     this.spellTierEl = document.getElementById('spell-tier-label');
@@ -131,8 +133,8 @@ export class UIManager {
     this.upgradesContainer.innerHTML = '';
     UPGRADES.forEach((upg) => {
       const currentLevel = this.meta.data.upgradeLevels[upg.id] || 0, cost = this.meta.getUpgradeCost(upg.id), isMax = currentLevel >= upg.maxLevel;
-      const row = document.createElement('div'); row.className = 'upgrade-row';
-      row.innerHTML = `<div class="upg-info"><div class="upg-name">${upg.name} (Lv ${currentLevel}/${upg.maxLevel})</div><div class="upg-desc">${upg.desc}</div></div><button class="upg-btn" ${(!isMax && this.meta.data.gold >= cost) ? '' : 'disabled'}>${isMax ? 'MAX' : `${cost} 🪙`}</button>`;
+      const row = document.createElement('div'); row.className = 'upgrade-row dv-panel';
+      row.innerHTML = `<div class="upg-info"><div class="upg-name">${upg.name} (Lv ${currentLevel}/${upg.maxLevel})</div><div class="upg-desc">${upg.desc}</div></div><button class="upg-btn" ${(!isMax && this.meta.data.gold >= cost) ? '' : 'disabled'}>${isMax ? 'MAX' : `${cost} ${iconGold(13)}`}</button>`;
       if (!isMax) row.querySelector('.upg-btn').addEventListener('click', () => { if (this.meta.buyUpgrade(upg.id)) this.renderLobby(); });
       this.upgradesContainer.appendChild(row);
     });
@@ -169,10 +171,9 @@ export class UIManager {
     }
 
     if (!elements || elements.length === 0) { this.spellChipsEl.innerHTML = ''; return; }
-    const icons = { E: '🪨', F: '🔥', W: '💧' };
     this.spellChipsEl.innerHTML = elements.map((e) => {
       const color = ELEMENT_COLORS[e] ? `#${ELEMENT_COLORS[e].toString(16).padStart(6, '0')}` : '#888';
-      return `<span style="font-size:10px;font-weight:800;background:rgba(255,255,255,0.08);border:1px solid ${color};color:${color};padding:1px 6px;border-radius:4px;">${icons[e] || ''} ${ELEMENT_NAMES[e] || e}</span>`;
+      return `<span style="font-size:10px;font-weight:700;background:rgba(255,255,255,0.08);border:1px solid ${color};color:${color};padding:1px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">${elementIcon(e, 12)} ${ELEMENT_NAMES[e] || e}</span>`;
     }).join('');
   }
 
@@ -200,6 +201,11 @@ export class UIManager {
     this.updateSpellPanel(player);
     if (this.spellIndicator) this.spellIndicator.update(player);
     if (this.tapasIndicatorEl) this.tapasIndicatorEl.style.display = player.tapasActive ? 'inline-block' : 'none';
+
+    if (this.dashBtn) {
+      const isDashReady = (player.dashCooldownTimer || 0) <= 0;
+      this.dashBtn.classList.toggle('ready', isDashReady);
+    }
 
     if (this.castCdRing) {
       const cd = player.spellSlot ? player.spellSlot.getCooldownProgress() : Math.max(0, (player.shootCooldown || 0) / (player.currentSpell?.cooldown || 1));

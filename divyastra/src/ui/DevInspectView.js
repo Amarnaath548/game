@@ -24,7 +24,7 @@ export class DevInspectView {
   buildUI() {
     this.toggleBtn = document.createElement('button');
     this.toggleBtn.id = 'dev-inspect-toggle-btn';
-    this.toggleBtn.innerHTML = '🔍 DEV VIEW / INSPECT';
+    this.toggleBtn.innerHTML = '[DEV] VIEW / INSPECT';
     this.toggleBtn.style.display = this.isDev ? 'block' : 'none';
     this.toggleBtn.onclick = () => this.toggle();
     document.body.appendChild(this.toggleBtn);
@@ -196,7 +196,7 @@ export class DevInspectView {
     this.inspectHero = new DevInspectHero(this.sceneManager.scene);
     this.cameraCtrl.bind(); this.cameraCtrl.focusOn(0, 6.5, 0, 9, 25);
     this.overlay.style.display = 'block'; this.toggleBtn.style.display = 'block';
-    this.toggleBtn.textContent = '✖ CLOSE DEV VIEW';
+    this.toggleBtn.textContent = 'CLOSE DEV VIEW';
     this.updateMetrics();
   }
 
@@ -214,7 +214,7 @@ export class DevInspectView {
     this.restoreLayers();
     this.overlay.style.display = 'none';
     this.toggleBtn.style.display = this.isDev ? 'block' : 'none';
-    this.toggleBtn.textContent = '🔍 DEV VIEW / INSPECT';
+    this.toggleBtn.textContent = '[DEV] VIEW / INSPECT';
   }
 
   restoreLayers() {

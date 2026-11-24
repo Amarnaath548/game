@@ -1,4 +1,5 @@
 import { activeZoneSystem } from '../systems/ZoneSystem.js';
+import { iconSkull, iconSpeaker } from './icons.js';
 
 export class TopRightHUD {
   constructor(containerEl = null) {
@@ -11,24 +12,25 @@ export class TopRightHUD {
     }
     this.container.innerHTML = `
       <div class="top-counters">
-        <div class="top-counter-pill">
-          <span class="counter-icon">💎</span>
+        <div class="top-counter-pill dv-panel" id="counter-gems">
+          <img src="./lobby/icon_gem.png" class="counter-currency-img" alt="Gems" />
           <span id="match-gems-count" class="counter-num">0</span>
         </div>
-        <div class="top-counter-pill">
-          <span class="counter-icon">💀</span>
+        <div class="top-counter-pill dv-panel" id="counter-kills">
+          ${iconSkull(14)}
           <span id="match-kills-count" class="counter-num">0</span>
         </div>
       </div>
       <div class="top-subrow">
-        <div class="badge badge-zone">ZONE: <span id="zone-status">Safe</span> • <span id="zone-countdown" style="color:#E3B04B;">Next shrink 0:25</span></div>
-        <button id="hud-mute-btn" class="fs-btn hud-mute-btn" title="Toggle Sound">🔊</button>
+        <div class="badge badge-zone dv-panel" id="zone-badge">ZONE: <span id="zone-status">Safe</span> &bull; <span id="zone-countdown" style="color:#E3B04B;">Next shrink 0:25</span></div>
+        <button id="hud-mute-btn" class="fs-btn hud-mute-btn" title="Toggle Sound">${iconSpeaker(14)}</button>
       </div>
     `;
     this.gemsEl = this.container.querySelector('#match-gems-count');
     this.killsEl = this.container.querySelector('#match-kills-count');
     this.zoneStatusEl = this.container.querySelector('#zone-status');
     this.zoneCountdownEl = this.container.querySelector('#zone-countdown');
+    this.muteBtn = this.container.querySelector('#hud-mute-btn');
     this.lastGems = -1;
     this.lastKills = -1;
     this.lastSafe = null;

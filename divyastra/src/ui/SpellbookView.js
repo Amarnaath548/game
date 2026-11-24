@@ -1,4 +1,5 @@
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
+import { elementIcon, renderStars } from './icons.js';
 
 export class SpellbookView {
   constructor(container, spellbookManager) {
@@ -11,7 +12,6 @@ export class SpellbookView {
     this.container.innerHTML = '';
     const tiers = this.spellbook.getAllSpellsByTier();
     const tierLabels = { 1: 'MANTRA', 2: 'SHASTRA', 3: 'ASTRA' };
-    const icons = { E: '🪨', F: '🔥', W: '💧' };
 
     [1, 2, 3].forEach((tierNum) => {
       const tierSpells = tiers[tierNum] || [];
@@ -20,8 +20,8 @@ export class SpellbookView {
       section.style.cssText = 'margin-bottom:16px;';
 
       const heading = document.createElement('div');
-      heading.style.cssText = 'font-size:13px;font-weight:900;color:#E3B04B;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px;';
-      heading.innerHTML = `<span>${tierLabels[tierNum]} (TIER ${tierNum})</span> <span style="font-size:11px;color:#94a3b8;font-weight:700;">(${tierSpells.length} Spells)</span>`;
+      heading.style.cssText = "font-family:'Yatra One',cursive,sans-serif;font-size:14px;color:#E3B04B;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px;";
+      heading.innerHTML = `<span>${tierLabels[tierNum]} (TIER ${tierNum})</span> <span style="font-family:'Rubik',sans-serif;font-size:11px;color:#94a3b8;font-weight:700;">(${tierSpells.length} Spells)</span>`;
       section.appendChild(heading);
 
       const grid = document.createElement('div');
@@ -31,20 +31,20 @@ export class SpellbookView {
         const entry = this.spellbook.getEntry(spell.id);
         const isReached = entry && entry.reached;
         const card = document.createElement('div');
-        card.className = `spellbook-card ${isReached ? 'unlocked' : 'locked'}`;
+        card.className = `spellbook-card dv-panel ${isReached ? 'unlocked' : 'locked'}`;
 
         const borderCol = isReached ? `#${(spell.color || 0xE3B04B).toString(16).padStart(6, '0')}` : '#3B4262';
         card.style.cssText = `background:rgba(27,31,59,0.92);border:1.5px solid ${borderCol};border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,0.5);`;
 
         const chipsHtml = (spell.elements || []).map((e) => {
           const col = isReached && ELEMENT_COLORS[e] ? `#${ELEMENT_COLORS[e].toString(16).padStart(6, '0')}` : '#64748b';
-          return `<span style="font-size:9px;font-weight:800;border:1px solid ${col};color:${col};padding:1px 4px;border-radius:3px;">${icons[e] || ''} ${ELEMENT_NAMES[e] || e}</span>`;
+          return `<span style="font-size:9px;font-weight:700;border:1px solid ${col};color:${col};padding:1px 4px;border-radius:3px;display:inline-flex;align-items:center;gap:3px;">${elementIcon(e, 11)} ${ELEMENT_NAMES[e] || e}</span>`;
         }).join(' ');
 
         if (!isReached) {
           card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:12px;font-weight:900;color:#64748b;">???</span>
+              <span style="font-size:12px;font-weight:700;color:#64748b;">???</span>
               <span style="font-size:10px;color:#475569;">Locked</span>
             </div>
             <div style="display:flex;gap:3px;margin:2px 0;">${chipsHtml}</div>
@@ -52,7 +52,6 @@ export class SpellbookView {
           `;
         } else {
           const starCount = entry.stars || 0;
-          const starsStr = '★'.repeat(starCount) + '☆'.repeat(5 - starCount);
           const nextMs = this.spellbook.getNextMilestone(entry.kills);
           const progressText = nextMs ? `${entry.kills} / ${nextMs} kills` : `${entry.kills} kills (MAX)`;
           const dmgBonus = starCount * 5;
@@ -60,8 +59,8 @@ export class SpellbookView {
 
           card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:12px;font-weight:900;color:#fff;">${spell.name}</span>
-              <span style="font-size:11px;font-weight:800;color:#E3B04B;" title="${starCount} Siddhi">${starsStr}</span>
+              <span style="font-size:12px;font-weight:700;color:#fff;">${spell.name}</span>
+              <span style="display:inline-flex;gap:1px;color:#E3B04B;" title="${starCount} Siddhi">${renderStars(starCount, 5, 12)}</span>
             </div>
             ${loreHtml}
             <div style="display:flex;gap:3px;margin:1px 0;">${chipsHtml}</div>
@@ -79,4 +78,3 @@ export class SpellbookView {
     });
   }
 }
-

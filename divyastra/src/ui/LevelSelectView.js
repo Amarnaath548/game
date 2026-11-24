@@ -1,6 +1,7 @@
 import { LEVELS } from '../config/levels.js';
 import { DIFFICULTIES } from '../config/difficulty.js';
 import { BIOMES } from '../config/constants.js';
+import { iconLock, iconMap, iconSwords, renderStars } from './icons.js';
 
 export class LevelSelectView {
   constructor(campaignManager, callbacks = {}) {
@@ -22,12 +23,12 @@ export class LevelSelectView {
 
     const header = document.createElement('div');
     header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; width:100%; max-width:980px; margin-bottom:14px;';
-    
+
     const backBtn = document.createElement('button');
     backBtn.textContent = '← BACK';
     backBtn.style.cssText = `
       background: #334155; color: #f8fafc; border: 1px solid #475569;
-      padding: 6px 14px; border-radius: 8px; font-weight: 800; font-size: 12px;
+      padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 12px;
       cursor: pointer; letter-spacing: 0.5px; transition: background 0.15s;
     `;
     backBtn.onmouseenter = () => { backBtn.style.background = '#475569'; };
@@ -40,7 +41,7 @@ export class LevelSelectView {
     const titleBox = document.createElement('div');
     titleBox.style.cssText = 'text-align: center;';
     titleBox.innerHTML = `
-      <div style="font-size:22px; font-weight:900; color:#E3B04B; letter-spacing:1.5px; text-shadow:0 0 16px rgba(227,176,75,0.5);">CAMPAIGN MISSIONS</div>
+      <div style="font-family:'Yatra One',cursive,sans-serif; font-size:22px; color:#E3B04B; letter-spacing:1.5px; text-shadow:0 0 16px rgba(227,176,75,0.5);">CAMPAIGN MISSIONS</div>
       <div style="font-size:11px; font-weight:700; color:#94a3b8; letter-spacing:0.5px;">Select a trial to prove your mastery</div>
     `;
 
@@ -84,7 +85,7 @@ export class LevelSelectView {
       const mapName = (BIOMES[level.biome] || BIOMES.GRASS).name;
 
       const card = document.createElement('div');
-      card.className = `level-card ${unlocked ? 'unlocked' : 'locked'}`;
+      card.className = `level-card dv-panel ${unlocked ? 'unlocked' : 'locked'}`;
       card.style.cssText = `
         flex: 0 0 200px; min-width: 200px; scroll-snap-align: start;
         background: ${unlocked ? 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)' : 'rgba(15, 23, 42, 0.75)'};
@@ -116,24 +117,19 @@ export class LevelSelectView {
         };
       }
 
-      let starsHtml = '';
-      for (let s = 1; s <= 3; s++) {
-        starsHtml += `<span style="color:${s <= stars ? '#E3B04B' : '#475569'}; font-size:16px; margin:0 1px;">★</span>`;
-      }
-
       card.innerHTML = `
         <div style="width:100%;">
-          ${!unlocked ? '<div style="font-size:24px; margin-bottom:4px;">🔒</div>' : ''}
-          <div style="font-size:10px; font-weight:800; color:#E3B04B; text-transform:uppercase; letter-spacing:1px;">Level ${level.id}</div>
-          <div style="font-size:16px; font-weight:900; color:#fff; margin:2px 0 6px 0;">${level.name}</div>
-          <div style="display:inline-block; background:${diff.badgeColor}; color:#000; font-weight:900; font-size:10px; padding:2px 8px; border-radius:999px; margin-bottom:8px; text-transform:uppercase;">${diff.name}</div>
-          <div style="font-size:11px; font-weight:700; color:#cbd5e1; margin-bottom:3px;">🗺️ ${mapName}</div>
-          <div style="font-size:11px; font-weight:700; color:#94a3b8; margin-bottom:6px;">⚔️ ${level.botCount} Bots</div>
+          ${!unlocked ? `<div style="margin-bottom:4px;color:#cbd5e1;">${iconLock(20)}</div>` : ''}
+          <div style="font-size:10px; font-weight:700; color:#E3B04B; text-transform:uppercase; letter-spacing:1px;">Level ${level.id}</div>
+          <div style="font-family:'Yatra One',cursive,sans-serif; font-size:16px; color:#fff; margin:2px 0 6px 0;">${level.name}</div>
+          <div style="display:inline-block; background:${diff.badgeColor}; color:#000; font-weight:700; font-size:10px; padding:2px 8px; border-radius:999px; margin-bottom:8px; text-transform:uppercase;">${diff.name}</div>
+          <div style="font-size:11px; font-weight:700; color:#cbd5e1; margin-bottom:3px; display:flex; align-items:center; justify-content:center; gap:4px;">${iconMap(13)} ${mapName}</div>
+          <div style="font-size:11px; font-weight:700; color:#94a3b8; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:4px;">${iconSwords(13)} ${level.botCount} Bots</div>
           <div style="font-size:10px; color:#64748b; line-height:1.2; margin-bottom:8px;">${level.description}</div>
         </div>
         <div style="width:100%; border-top:1px solid rgba(255,255,255,0.08); padding-top:8px;">
-          <div style="margin-bottom:4px;">${starsHtml}</div>
-          <div style="font-size:9px; font-weight:800; color:#E08A2E; text-transform:uppercase;">Goal: Top ${level.completeRank}</div>
+          <div style="margin-bottom:4px; color:#E3B04B; display:flex; justify-content:center; gap:2px;">${renderStars(stars, 3, 15)}</div>
+          <div style="font-size:9px; font-weight:700; color:#E08A2E; text-transform:uppercase;">Goal: Top ${level.completeRank}</div>
         </div>
       `;
 

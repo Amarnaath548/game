@@ -48,7 +48,7 @@ export class StavesView {
       const iconSrc = getStaffIconSrc(staff.id);
 
       const card = document.createElement('div');
-      card.className = `staff-card ${isSelected ? 'selected equipped' : isUnlocked ? 'owned' : 'locked'}`;
+      card.className = `staff-card dv-panel ${isSelected ? 'selected equipped' : isUnlocked ? 'owned' : 'locked'}`;
       card.style.background = `radial-gradient(circle at 50% 36px, ${accentHex}2a 0%, transparent 68%), linear-gradient(180deg, #131d36 0%, #0a1020 100%)`;
 
       let btnHtml;
@@ -57,9 +57,9 @@ export class StavesView {
       } else if (isUnlocked) {
         btnHtml = `<button class="staff-action-btn btn-equip btn-select">EQUIP</button>`;
       } else if (canAfford) {
-        btnHtml = `<button class="staff-action-btn btn-unlock">UNLOCK (${staff.cost} <img src="./lobby/icon_gold.png" class="btn-coin" alt="🪙" />)</button>`;
+        btnHtml = `<button class="staff-action-btn btn-unlock">UNLOCK (${staff.cost} <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" />)</button>`;
       } else {
-        btnHtml = `<button class="staff-action-btn btn-unlock btn-unaffordable" disabled>UNLOCK (<span class="price-unaffordable">${staff.cost}</span> <img src="./lobby/icon_gold.png" class="btn-coin" alt="🪙" />)</button>`;
+        btnHtml = `<button class="staff-action-btn btn-unlock btn-unaffordable" disabled>UNLOCK (<span class="price-unaffordable">${staff.cost}</span> <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" />)</button>`;
       }
 
       card.innerHTML = `

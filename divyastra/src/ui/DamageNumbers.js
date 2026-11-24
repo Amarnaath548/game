@@ -23,7 +23,7 @@ export class DamageNumbers {
       el.style.transform = 'translate(-50%, -50%)';
       el.style.fontWeight = '900';
       el.style.fontSize = '18px';
-      el.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+      el.style.fontFamily = "'Rubik', sans-serif";
       el.style.webkitTextStroke = '1px #000000';
       el.style.display = 'none';
       el.style.willChange = 'transform, opacity';

@@ -64,7 +64,7 @@ export function renderPerkSelection(container, onPick, player = null) {
   const shuffled = [...available].sort(() => 0.5 - Math.random()).slice(0, 3);
   shuffled.forEach((perk, idx) => {
     const card = document.createElement('div');
-    card.className = 'perk-card';
+    card.className = 'perk-card dv-panel';
     card.innerHTML = `<div class="perk-title">(${idx + 1}) ${perk.title}</div><div class="perk-desc">${perk.desc}</div>`;
     card.addEventListener('click', () => {
       container.style.display = 'none';

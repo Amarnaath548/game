@@ -45,11 +45,11 @@ export class FloatingBarSystem {
 
       const lvl = document.createElement('span');
       lvl.className = 'overhead-lvl';
-      lvl.style.cssText = 'font-size:9px;font-weight:900;color:#fff;background:rgba(27,31,59,0.92);padding:0 3px;border-radius:3px;border:1px solid #000;line-height:1.2;';
+      lvl.style.cssText = 'font-size:9px;font-weight:700;color:#fff;background:rgba(27,31,59,0.92);padding:0 3px;border-radius:3px;border:1px solid #000;line-height:1.2;font-family:Rubik,sans-serif;';
 
       const name = document.createElement('span');
       name.className = 'overhead-name';
-      name.style.cssText = 'font-size:11px;font-weight:800;color:#f8fafc;text-shadow:0 1px 3px #000,0 0 2px #000;line-height:1.2;';
+      name.style.cssText = 'font-size:11px;font-weight:700;color:#f8fafc;text-shadow:0 1px 3px #000,0 0 2px #000;line-height:1.2;font-family:Rubik,sans-serif;';
 
       header.appendChild(lvl);
       header.appendChild(name);

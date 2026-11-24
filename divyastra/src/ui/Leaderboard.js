@@ -1,3 +1,5 @@
+import { iconCrown, iconPeople } from './icons.js';
+
 export class Leaderboard {
   constructor(containerEl = null) {
     this.container = containerEl || document.getElementById('leaderboard');
@@ -8,9 +10,9 @@ export class Leaderboard {
       hud.appendChild(this.container);
     }
     this.container.innerHTML = `
-      <div class="leaderboard-header">
-        <span class="leaderboard-title">👑 LEADERS</span>
-        <span class="leaderboard-alive">👥 <span id="alive-count">12</span></span>
+      <div class="leaderboard-header dv-panel">
+        <span class="leaderboard-title">${iconCrown(14)} LEADERS</span>
+        <span class="leaderboard-alive">${iconPeople(13)} <span id="alive-count">12</span></span>
       </div>
       <div id="leaderboard-rows" class="leaderboard-rows"></div>
     `;
@@ -48,7 +50,7 @@ export class Leaderboard {
     while (this.rowEls.length < top5.length) {
       const row = document.createElement('div');
       row.className = 'leaderboard-row';
-      row.innerHTML = `<span class="lb-name"></span><span class="lb-score"></span>`;
+      row.innerHTML = `<span class="lb-name-col"><span class="lb-rank"></span><span class="lb-name"></span></span><span class="lb-score"></span>`;
       this.rowsContainer.appendChild(row);
       this.rowEls.push(row);
     }
@@ -59,11 +61,13 @@ export class Leaderboard {
         const item = top5[i];
         row.style.display = 'flex';
         row.className = `leaderboard-row ${item.isPlayer ? 'lb-player' : ''}`;
+        const rankEl = row.querySelector('.lb-rank');
         const nameEl = row.querySelector('.lb-name');
         const scoreEl = row.querySelector('.lb-score');
         const dName = item.actor.displayName || item.actor.name || (item.isPlayer ? 'Player' : 'Bot');
-        nameEl.textContent = `${item.rank}. ${dName}`;
-        scoreEl.textContent = `${item.actor.kills || 0}`;
+        if (rankEl) rankEl.textContent = `${item.rank}.`;
+        if (nameEl) nameEl.textContent = dName;
+        if (scoreEl) scoreEl.textContent = `${item.actor.kills || 0}`;
       } else {
         row.style.display = 'none';
       }
@@ -73,7 +77,7 @@ export class Leaderboard {
   reset() {
     this.timer = 0;
     if (this.rowEls) {
-      this.rowEls.forEach((r) => r.style.display = 'none');
+      this.rowEls.forEach((r) => { r.style.display = 'none'; });
     }
   }
 }

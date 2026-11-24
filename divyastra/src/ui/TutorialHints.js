@@ -25,10 +25,11 @@ export class TutorialHints {
 
     this.container = document.createElement('div');
     this.container.id = 'tutorial-hint-banner';
-    this.container.style.cssText = 'position:absolute;top:calc(66px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:none;align-items:center;gap:8px;background:rgba(27,31,59,0.85);border:1px solid #E3B04B;border-radius:12px;padding:5px 12px;box-shadow:0 3px 10px rgba(0,0,0,0.5);z-index:35;pointer-events:auto;max-width:60%;';
+    this.container.className = 'dv-panel';
+    this.container.style.cssText = 'position:absolute;top:calc(66px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:none;align-items:center;gap:8px;padding:6px 14px;z-index:35;pointer-events:auto;max-width:60%;font-family:Rubik,sans-serif;';
 
     this.textEl = document.createElement('span');
-    this.textEl.style.cssText = 'font-size:12px;font-weight:700;color:#f8fafc;white-space:normal;text-align:center;line-height:1.3;';
+    this.textEl.style.cssText = 'font-size:12px;font-weight:500;color:#f8fafc;white-space:normal;text-align:center;line-height:1.3;font-family:Rubik,sans-serif;';
 
     this.skipBtn = document.createElement('button');
     this.skipBtn.textContent = 'Skip tips';

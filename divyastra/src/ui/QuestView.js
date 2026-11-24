@@ -1,3 +1,5 @@
+import { iconGold } from './icons.js';
+
 export class QuestView {
   constructor(container, tabBadgeEl, questManager, metaProgression, onClaim) {
     this.container = container;
@@ -21,13 +23,13 @@ export class QuestView {
       const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
 
       const card = document.createElement('div');
-      card.className = `quest-card ${q.claimed ? 'claimed' : isComplete ? 'claimable' : ''}`;
+      card.className = `quest-card dv-panel ${q.claimed ? 'claimed' : isComplete ? 'claimable' : ''}`;
 
       const btnHtml = q.claimed
         ? `<button class="quest-btn quest-btn-claimed" disabled>CLAIMED</button>`
         : isComplete
-          ? `<button class="quest-btn quest-btn-claim">CLAIM (+${q.goldReward} 🪙)</button>`
-          : `<button class="quest-btn quest-btn-progress" disabled>+${q.goldReward} 🪙</button>`;
+          ? `<button class="quest-btn quest-btn-claim">CLAIM (+${q.goldReward} ${iconGold(13)})</button>`
+          : `<button class="quest-btn quest-btn-progress" disabled>+${q.goldReward} ${iconGold(13)}</button>`;
 
       card.innerHTML = `
         <div class="quest-info">
@@ -52,4 +54,3 @@ export class QuestView {
     });
   }
 }
-

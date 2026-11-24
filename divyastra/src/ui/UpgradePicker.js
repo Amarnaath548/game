@@ -65,7 +65,7 @@ export class UpgradePicker {
     wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;z-index:40;transform:translateY(40px);';
 
     const header = document.createElement('div');
-    header.style.cssText = 'color:#f8fafc;font-size:13px;font-weight:900;text-shadow:0 2px 4px #000;letter-spacing:1px;text-transform:uppercase;';
+    header.style.cssText = "font-family:'Yatra One',cursive,sans-serif;color:#f8fafc;font-size:14px;text-shadow:0 2px 4px #000;letter-spacing:1px;text-transform:uppercase;";
     header.innerHTML = `${schoolName} UPGRADE &bull; <span id="upgrade-timer-text" style="color:#E3B04B;">5s</span>`;
     wrapper.appendChild(header);
 
@@ -75,7 +75,7 @@ export class UpgradePicker {
     this.currentUpgrades.forEach((upg, index) => {
       const desc = UPGRADE_DESCRIPTIONS[upg.id] || '';
       const card = document.createElement('div');
-      card.className = 'element-pick-card upgrade-pick-card';
+      card.className = 'element-pick-card upgrade-pick-card dv-panel';
       card.style.cssText = `width:160px;min-height:96px;background:rgba(27,31,59,0.95);border:2px solid ${colorHex};border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.6);transition:transform 0.15s,box-shadow 0.15s;text-align:center;user-select:none;`;
       card.innerHTML = `
         <div style="font-size:11px;font-weight:800;color:#94a3b8;">(${index + 1}) CHOOSE</div>

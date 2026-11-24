@@ -1,14 +1,15 @@
 import { ELEMENT_COLORS } from '../config/spellRegistry.js';
 import { PALETTE } from '../config/palette.js';
+import { iconFist, iconFlame, iconDroplet, iconRock, iconSparkle, iconStar, iconSwords } from './icons.js';
 
 const PERK_ICONS = {
-  TWIN_CAST: '♊',
-  GIANT_ARCANA: '✴️',
-  SNIPER_VELOCITY: '🎯',
-  VAMPIRIC_SOUL: '🩸',
-  WINDWALKER: '💨',
-  ARCANE_SHIELD: '🛡️',
-  EXECUTIONER: '⚔️'
+  TWIN_CAST: iconSparkle(13),
+  GIANT_ARCANA: iconStar(13),
+  SNIPER_VELOCITY: iconSparkle(13),
+  VAMPIRIC_SOUL: iconDroplet(13),
+  WINDWALKER: iconSparkle(13),
+  ARCANE_SHIELD: iconRock(13),
+  EXECUTIONER: iconSwords(13)
 };
 
 export class SpellIndicator {
@@ -23,14 +24,14 @@ export class SpellIndicator {
     this.container.innerHTML = `
       <div id="spell-ind-cd" class="spell-ind-cd">
         <div id="spell-ind-orb" class="spell-ind-orb">
-          <span id="spell-ind-icon">✨</span>
-          <span id="spell-ind-radius" class="spell-ind-radius" style="position:absolute;bottom:-2px;right:-2px;font-size:9px;font-weight:900;color:#fff;background:rgba(0,0,0,0.7);padding:0 3px;border-radius:4px;display:none;"></span>
+          <span id="spell-ind-icon">${iconFist(22)}</span>
+          <span id="spell-ind-radius" class="spell-ind-radius" style="position:absolute;bottom:-2px;right:-2px;font-size:9px;font-weight:700;color:#fff;background:rgba(0,0,0,0.7);padding:0 3px;border-radius:4px;display:none;"></span>
         </div>
       </div>
       <div id="spell-ind-info" style="position:absolute;bottom:-18px;right:0;display:flex;align-items:center;justify-content:flex-end;gap:3px;white-space:nowrap;pointer-events:none;">
-        <span id="spell-ind-name" style="font-size:9px;font-weight:900;text-shadow:0 1px 3px #000;"></span>
+        <span id="spell-ind-name" style="font-size:9px;font-weight:700;text-shadow:0 1px 3px #000;"></span>
         <span id="spell-ind-side" style="display:none;"></span>
-        <span id="spell-ind-tier" style="display:none;font-size:8px;font-weight:900;background:#334155;padding:0 4px;border-radius:999px;">Astra</span>
+        <span id="spell-ind-tier" style="display:none;font-size:8px;font-weight:700;background:#334155;padding:0 4px;border-radius:999px;">Astra</span>
       </div>
     `;
     this.cdEl = this.container.querySelector('#spell-ind-cd');
@@ -50,9 +51,18 @@ export class SpellIndicator {
     }
 
     this.lastColor = null;
+    this.lastSpellId = null;
     this.lastDeg = -1;
     this.lastScale = 1.0;
     this.lastBadgesHtml = '';
+  }
+
+  getSpellIcon(spell) {
+    if (!spell || spell.id === 'fist') return iconFist(22);
+    if (spell.id === 'fire' || spell.elements?.[0] === 'F') return iconFlame(20);
+    if (spell.id === 'water' || spell.elements?.[0] === 'W') return iconDroplet(20);
+    if (spell.id === 'earth' || spell.elements?.[0] === 'E') return iconRock(20);
+    return iconSparkle(20);
   }
 
   update(player) {
@@ -73,16 +83,18 @@ export class SpellIndicator {
       this.sideEl.style.display = 'none';
     }
 
-    if (this.lastColor !== colorHex) {
+    if (this.lastColor !== colorHex || this.lastSpellId !== spell.id) {
       if (this.orbEl) {
-        this.orbEl.style.background = `radial-gradient(circle at 35% 35%, #ffffff 0%, ${colorHex} 60%, rgba(0,0,0,0.7) 100%)`;
-        this.orbEl.style.boxShadow = `0 0 10px ${colorHex}88`;
+        this.orbEl.style.background = '#15172B';
+        this.orbEl.style.border = '2.5px solid #E3B04B';
+        this.orbEl.style.color = colorHex;
+        this.orbEl.style.setProperty('--spell-glow', colorHex);
       }
       if (this.iconEl) {
-        const icons = { fist: '👊', fire: '🔥', water: '💧', earth: '🪨' };
-        this.iconEl.textContent = icons[spell.id] || (spell.elements?.[0] ? { F: '🔥', W: '💧', E: '🪨' }[spell.elements[0]] : '✨');
+        this.iconEl.innerHTML = this.getSpellIcon(spell);
       }
       this.lastColor = colorHex;
+      this.lastSpellId = spell.id;
     }
 
     const isGiant = player.perks?.includes('GIANT_ARCANA');
@@ -105,7 +117,7 @@ export class SpellIndicator {
 
     if (this.badgeRow) {
       const perks = player.perks || [];
-      const html = perks.map((p) => `<span class="perk-badge" title="${p}">${PERK_ICONS[p] || '⭐'}</span>`).join('');
+      const html = perks.map((p) => `<span class="perk-badge" title="${p}">${PERK_ICONS[p] || iconStar(12)}</span>`).join('');
       if (this.lastBadgesHtml !== html) {
         this.lastBadgesHtml = html;
         this.badgeRow.innerHTML = html;
@@ -119,6 +131,17 @@ export class SpellIndicator {
     const fillProgress = Math.max(0, Math.min(1, 1 - cdRatio));
     const sweepDeg = Math.round(fillProgress * 360);
 
+    const isReady = cdRatio <= 0.01;
+    if (this.orbEl) {
+      if (isReady) {
+        this.orbEl.classList.add('ready');
+        this.orbEl.style.boxShadow = `0 0 16px ${colorHex}, inset 0 0 8px ${colorHex}55`;
+      } else {
+        this.orbEl.classList.remove('ready');
+        this.orbEl.style.boxShadow = 'none';
+      }
+    }
+
     if (this.lastDeg !== sweepDeg) {
       if (this.cdEl) {
         const sweepColor = cdRatio > 0 ? '#E08A2E' : colorHex;
@@ -130,6 +153,7 @@ export class SpellIndicator {
 
   reset() {
     this.lastColor = null;
+    this.lastSpellId = null;
     this.lastDeg = -1;
     this.lastScale = 1.0;
     this.lastBadgesHtml = '';

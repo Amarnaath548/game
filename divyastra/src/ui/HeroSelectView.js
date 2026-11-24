@@ -1,4 +1,5 @@
 import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES } from '../config/constants.js';
+import { iconGold } from './icons.js';
 
 export function getSilhouetteClass(hero) {
   const arch = (hero.archetype || hero.hatType || '').toLowerCase();
@@ -22,11 +23,9 @@ export class HeroSelectView {
 
     const savedUnlocked = localStorage.getItem('magica_unlocked_heroes');
     const rawUnlocked = savedUnlocked ? JSON.parse(savedUnlocked) : DEFAULT_UNLOCKED_HEROES;
-    // Filter out removed hero ids so old saves don't break
     const unlockedHeroes = rawUnlocked.filter((id) => VALID_HERO_IDS.includes(id));
     if (!unlockedHeroes.includes('tapasvi')) unlockedHeroes.push('tapasvi');
 
-    // Sanitise selected hero — fall back to 'tapasvi' if the saved id no longer exists
     const safeSelected = VALID_HERO_IDS.includes(selectedHeroId) ? selectedHeroId : 'tapasvi';
 
     HEROES.forEach((hero) => {
@@ -34,7 +33,7 @@ export class HeroSelectView {
       const isUnlocked = unlockedHeroes.includes(hero.id);
 
       const card = document.createElement('div');
-      card.className = `hero-card ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`;
+      card.className = `hero-card dv-panel ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`;
 
       const bodyHex = '#' + hero.bodyColor.toString(16).padStart(6, '0');
       const accentHex = '#' + hero.accentColor.toString(16).padStart(6, '0');
@@ -53,12 +52,12 @@ export class HeroSelectView {
         </div>
         <div class="hero-card-content">
           <div class="hero-name">${hero.name}</div>
-          <div class="hero-traits">${hero.archetype || 'SEEKER'} • ${hero.extra.replace('_', ' ')}</div>
+          <div class="hero-traits">${hero.archetype || 'SEEKER'} &bull; ${hero.extra.replace('_', ' ')}</div>
           ${isSelected
             ? '<div class="hero-badge badge-active">SELECTED</div>'
             : isUnlocked
               ? '<button class="hero-btn-select">SELECT</button>'
-              : `<button class="hero-btn-unlock" ${this.meta.data.gold >= 150 ? '' : 'disabled'}>UNLOCK (150 🪙)</button>`
+              : `<button class="hero-btn-unlock" ${this.meta.data.gold >= 150 ? '' : 'disabled'}>UNLOCK (150 ${iconGold(13)})</button>`
           }
         </div>
       `;

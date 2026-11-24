@@ -22,7 +22,7 @@ export class KillFeed {
     }
 
     const row = document.createElement('div');
-    row.className = 'kill-feed-row';
+    row.className = 'kill-feed-row dv-panel';
 
     const kSpan = document.createElement('span');
     kSpan.className = isKillerPlayer ? 'kill-feed-player' : 'kill-feed-actor';

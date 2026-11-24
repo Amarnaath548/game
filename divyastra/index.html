@@ -7,28 +7,23 @@
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Yatra+One&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700&family=Yatra+One&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./src/style.css" />
   <link rel="stylesheet" href="./src/hud.css" />
   <link rel="stylesheet" href="./src/lobby.css" />
   <link rel="stylesheet" href="./src/panels.css" />
 </head>
 <body>
-  <!-- LOBBY SCREEN (Fixed 1024x572 Design Stage) -->
+  <!-- LOBBY SCREEN -->
   <div id="lobby-screen">
-    <!-- PRELOADER -->
     <div id="lobby-preloader" class="lobby-preloader">
       <div class="preloader-logo">DIVYASTRA</div>
     </div>
-
-    <!-- FULLSCREEN BACKGROUND (object-fit: cover behind stage) -->
     <div class="lobby-bg-cover">
       <img src="./lobby/bg_lobby.webp" alt="Lobby Background" class="lobby-bg-img" />
     </div>
 
-    <!-- FIXED 1024x572 DESIGN STAGE -->
     <div id="lobby-stage" class="lobby-stage">
-      <!-- 1. TOP BAR (y: 0-68) -->
       <header class="lobby-top-bar">
         <div class="lobby-logo">DIVYASTRA</div>
         <div class="lobby-trophy-badge">
@@ -62,18 +57,17 @@
             <span class="gear-sub">SETTINGS</span>
           </button>
           <div id="settings-popover" class="settings-popover" style="display:none;">
-            <div class="popover-row"><span>Audio</span><button id="mute-btn" class="fs-btn" title="Toggle Sound">🔊</button></div>
+            <div class="popover-row"><span>Audio</span><button id="mute-btn" class="fs-btn" title="Toggle Sound"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></button></div>
             <div class="popover-row"><span>Sound Vol</span><input type="range" id="sfx-vol-slider" min="0" max="1" step="0.05" value="0.8" class="vol-slider" /></div>
             <div class="popover-row"><span>Music Vol</span><input type="range" id="music-vol-slider" min="0" max="1" step="0.05" value="0.5" class="vol-slider" /></div>
-            <div class="popover-row"><span>Display</span><button id="fullscreen-btn" class="fs-btn" title="Toggle Fullscreen">⛶</button></div>
+            <div class="popover-row"><span>Display</span><button id="fullscreen-btn" class="fs-btn" title="Toggle Fullscreen"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button></div>
             <div class="popover-row"><span>Quality</span><select id="quality-select" class="quality-select"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option></select></div>
             <div class="popover-row"><span>Camera distance</span><select id="camera-select" class="quality-select"><option value="NEAR">Near</option><option value="NORMAL">Normal</option><option value="FAR">Far</option></select></div>
-            <div id="quality-restart-notice" class="popover-restart-notice" style="display:none;" title="Click to reload page">Restart needed ⟳</div>
+            <div id="quality-restart-notice" class="popover-restart-notice" style="display:none;" title="Click to reload page">Restart needed &#8635;</div>
           </div>
         </div>
       </header>
 
-      <!-- 2. LEFT COLUMN (3 Plaques, x: 28-200) -->
       <aside class="lobby-left-col">
         <button class="lobby-plaque-btn plaque-heroes" data-panel="heroes">
           <span class="plaque-dot dot-green"></span>
@@ -92,7 +86,6 @@
         </button>
       </aside>
 
-      <!-- 3. CENTER PEDESTAL & HERO (x: 390-640, hero ~514) -->
       <section class="lobby-center-showcase">
         <img src="./lobby/pedestal.png" class="lobby-pedestal-img" alt="Pedestal" />
         <div id="hero-glow-pulse" class="hero-glow-layer"></div>
@@ -113,10 +106,9 @@
         </div>
         <button id="hero-cycle-prev" class="hero-chevron-btn hero-btn-prev" aria-label="Previous Hero"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5 L8 12 L15 19" fill="none" stroke="#ffd166" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <button id="hero-cycle-next" class="hero-chevron-btn hero-btn-next" aria-label="Next Hero"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 5 L16 12 L9 19" fill="none" stroke="#ffd166" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <button id="lobby-hero-lock" class="hero-lock-badge" style="display:none;">🔒 UNLOCK (150 🪙)</button>
+        <button id="lobby-hero-lock" class="hero-lock-badge" style="display:none;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:2px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>UNLOCK (150 <img src="./lobby/icon_gold.png" alt="Gold" style="width:14px;height:14px;vertical-align:middle;" />)</button>
       </section>
 
-      <!-- 4. PLAY PANEL (Bottom-Right, x: 750-1024, y: 420-572) -->
       <aside class="lobby-play-panel">
         <button id="play-match-btn" class="play-btn-large">PLAY</button>
         <div class="next-level-row">
@@ -126,7 +118,6 @@
         <span id="lobby-arena-label" class="arena-label" style="display:none;"></span>
       </aside>
 
-      <!-- 5. BOTTOM TABS (x: 24-690, y: 520-572) -->
       <nav class="lobby-bottom-tabs">
         <button class="bottom-tab-btn active" data-tab="shop">SHOP</button>
         <button class="bottom-tab-btn" data-tab="clan">CLAN</button>
@@ -135,9 +126,8 @@
       </nav>
     </div>
 
-    <!-- FULLSCREEN OVERLAY SHEET FOR PANELS -->
     <div id="lobby-sheet-overlay" class="lobby-sheet-overlay" style="display:none;">
-      <div class="lobby-sheet-card">
+      <div class="lobby-sheet-card dv-panel">
         <div class="lobby-sheet-header">
           <h2 id="lobby-sheet-title" class="sheet-title">HEROES</h2>
           <div class="sheet-header-right">
@@ -155,20 +145,18 @@
       </div>
     </div>
 
-    <!-- TINY TOAST -->
     <div id="lobby-toast" class="lobby-toast">Coming soon</div>
   </div>
 
-  <!-- VIGNETTE OVERLAY -->
   <div id="vignette-overlay" class="vignette-overlay"></div>
 
   <!-- IN-GAME HUD -->
   <div id="hud">
     <!-- TOP-LEFT LEADERBOARD -->
     <div id="leaderboard">
-      <div class="leaderboard-header">
-        <span class="leaderboard-title">👑 LEADERS</span>
-        <span class="leaderboard-alive">👥 <span id="alive-count">12</span></span>
+      <div class="leaderboard-header dv-panel">
+        <span class="leaderboard-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18h18l-2-11-5 5-4-7-4 7-5-5z"/><line x1="3" y1="20" x2="21" y2="20"/></svg> LEADERS</span>
+        <span class="leaderboard-alive"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span id="alive-count">12</span></span>
       </div>
       <div id="leaderboard-rows" class="leaderboard-rows"></div>
     </div>
@@ -176,29 +164,26 @@
     <!-- TOP-RIGHT CHUNKY COUNTERS -->
     <div id="top-right-hud">
       <div class="top-counters">
-        <div class="top-counter-pill" id="counter-gems">
-          <span class="counter-icon">💎</span>
+        <div class="top-counter-pill dv-panel" id="counter-gems">
+          <img src="./lobby/icon_gem.png" class="counter-currency-img" alt="Gems" />
           <span id="match-gems-count" class="counter-num">0</span>
         </div>
-        <div class="top-counter-pill" id="counter-kills">
-          <span class="counter-icon">💀</span>
+        <div class="top-counter-pill dv-panel" id="counter-kills">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18v3h6v-3"/><path d="M5 12c0-4.4 3.1-8 7-8s7 3.6 7 8c0 3.2-1.8 5.7-4 6.8V18H9v.8C6.8 17.7 5 15.2 5 12z"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/></svg>
           <span id="match-kills-count" class="counter-num">0</span>
         </div>
       </div>
       <div class="top-subrow">
-        <div class="badge badge-zone" id="zone-badge">ZONE: <span id="zone-status">Safe</span></div>
-        <button id="hud-mute-btn" class="fs-btn hud-mute-btn" title="Toggle Sound">🔊</button>
+        <div class="badge badge-zone dv-panel" id="zone-badge">ZONE: <span id="zone-status">Safe</span></div>
+        <button id="hud-mute-btn" class="fs-btn hud-mute-btn" title="Toggle Sound"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></button>
       </div>
     </div>
 
-    <!-- PRESERVED HIDDEN TOP-BAR FALLBACK -->
     <div id="top-bar" style="display:none;"></div>
-
-    <!-- BOTTOM-LEFT KILL FEED -->
     <div id="kill-feed"></div>
 
     <!-- BOTTOM-CENTER PLAYER STATUS (SINGLE-LINE PANEL) -->
-    <div id="player-status">
+    <div id="player-status" class="dv-panel">
       <span id="player-lvl-text">Lv 1 Pyromancer</span>
       <span id="player-hp-text">300 / 300</span>
       <div class="bar-container bar-xp">
@@ -215,38 +200,44 @@
     <div id="spell-indicator">
       <div id="spell-ind-cd" class="spell-ind-cd">
         <div id="spell-ind-orb" class="spell-ind-orb">
-          <span id="spell-ind-icon">✨</span>
+          <span id="spell-ind-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5z"/></svg></span>
         </div>
       </div>
     </div>
     <div id="perk-badge-row" class="perk-badge-row"></div>
-
     <div id="perk-overlay"></div>
 
     <div id="left-zone" class="touch-zone"></div>
     <div id="right-zone" class="touch-zone"></div>
     <div id="left-base" class="joystick-base"><div id="left-knob" class="joystick-knob"></div></div>
     <div id="right-base" class="joystick-base"><div id="right-knob" class="joystick-knob"></div></div>
-    <div id="dash-btn">DASH</div>
+    <div id="dash-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>DASH</span></div>
   </div>
 
   <!-- MATCH END MODAL -->
   <div id="end-modal">
-    <div id="end-title">#1 VICTORY ROYALE</div>
-    <div id="end-subtitle">You are the last Archmage standing!</div>
-
-    <div class="match-rewards-box">
-      <div id="reward-trophy" class="reward-pill trophy-val">+30 Trophies</div>
-      <div id="reward-gold" class="reward-pill gold-val">+150 Gold</div>
-    </div>
-    <div class="modal-actions">
-      <button id="modal-lobby-btn" class="modal-btn">Return to Lobby</button>
-      <button id="modal-play-again-btn" class="modal-btn">Play Again</button>
+    <div class="end-modal-card dv-panel" style="padding:24px 32px;display:flex;flex-direction:column;align-items:center;gap:12px;max-width:440px;width:90%;">
+      <div id="end-title">#1 VICTORY ROYALE</div>
+      <div id="end-subtitle">You are the last Archmage standing!</div>
+      <div class="match-rewards-box dv-panel" style="padding:10px 16px;">
+        <div id="reward-trophy" class="reward-pill trophy-val">+30 Trophies</div>
+        <div id="reward-gold" class="reward-pill gold-val">+150 Gold</div>
+      </div>
+      <div class="modal-actions">
+        <button id="modal-lobby-btn" class="modal-btn">Return to Lobby</button>
+        <button id="modal-play-again-btn" class="modal-btn">Play Again</button>
+      </div>
     </div>
   </div>
-  <!-- DEBUG & ROTATE OVERLAYS -->
+
   <div id="debug-overlay"></div>
-  <div id="rotate-device-overlay"><div class="rotate-card"><div class="rotate-icon">📱 ↷</div><div class="rotate-title">Rotate Your Phone</div><div class="rotate-sub">Divyastra plays in landscape mode</div></div></div>
+  <div id="rotate-device-overlay">
+    <div class="rotate-card">
+      <div class="rotate-icon"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#00f2ff" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/><path d="M18 9l3 3-3 3"/><path d="M21 12h-6"/></svg></div>
+      <div class="rotate-title">Rotate Your Phone</div>
+      <div class="rotate-sub">Divyastra plays in landscape mode</div>
+    </div>
+  </div>
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
