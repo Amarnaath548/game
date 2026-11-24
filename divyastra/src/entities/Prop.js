@@ -24,7 +24,7 @@ export class Chest {
     this.baseColor = isMythic ? 0xF2B01E : 0x8b5a2b;
     this.mat = new THREE.MeshLambertMaterial({ color: this.baseColor, flatShading: true, emissive: isMythic ? 0x5A3D00 : 0x000000 });
     const bandMat = new THREE.MeshLambertMaterial({ color: isMythic ? 0xB45309 : 0xD9A520, flatShading: true });
-    const goldMat = new THREE.MeshLambertMaterial({ color: 0xFFD54A, flatShading: true });
+    const goldMat = new THREE.MeshLambertMaterial({ color: PALETTE.gold, flatShading: true });
 
     this.bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), this.mat);
     this.bodyMesh.position.y = baseY + H / 2;
@@ -57,7 +57,7 @@ export class Chest {
       });
       const glow = new THREE.Mesh(
         new THREE.CircleGeometry(2.6, 20).rotateX(-Math.PI / 2),
-        new THREE.MeshBasicMaterial({ color: 0xFFD54A, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending })
+        new THREE.MeshBasicMaterial({ color: PALETTE.gold, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending })
       );
       glow.position.y = baseY + 0.03; glow.renderOrder = 15; this.group.add(glow);
     }

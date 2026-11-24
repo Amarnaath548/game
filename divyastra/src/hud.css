@@ -261,9 +261,9 @@
   width: 68px;
   height: 68px;
   border-radius: 50%;
-  background: rgba(183, 0, 255, 0.35);
-  border: 3px solid #b700ff;
-  color: #fff;
+  background: rgba(21, 23, 43, 0.88);
+  border: 3px solid #E3B04B;
+  color: #EFE6D2;
   font-weight: 900;
   font-size: 13px;
   display: flex;
@@ -271,11 +271,11 @@
   justify-content: center;
   pointer-events: auto;
   cursor: pointer;
-  box-shadow: 0 0 16px rgba(183, 0, 255, 0.5), 0 3px 8px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 0 16px rgba(227, 176, 75, 0.4), 0 3px 8px rgba(0, 0, 0, 0.7);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
   z-index: 25;
 }
-#dash-btn:active { transform: scale(0.92); background: rgba(183, 0, 255, 0.6); }
+#dash-btn:active { transform: scale(0.92); background: rgba(21, 23, 43, 0.98); border-color: #ffd369; }
 
 /* MOBILE LANDSCAPE COMPACT OVERRIDES */
 @media (max-height: 440px) {

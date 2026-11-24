@@ -19,7 +19,7 @@ export const snowTheme = {
   blockCapThickness: 1.4,
   blocks: [0x3B4656, 0x2F3947, 0x485567, 0x27303C, 0x3E4B5C],
   plaza: {
-    rim: 0x3F4B5A, mid: 0x4B5869, inner: 0x424F5F, seam: 0x5D6C7E,
+    rim: 0x3F4B5A, mid: 0x4B5869, inner: 0x4A5868, seam: 0x2C3642,
     dais: 0xB9AE98, daisTop: 0xCDD9E2, inlay: 0xE3B04B, glow: 0xE3B04B, snowRing: 0xDCE8F0
   },
   stone: { hi: 0x5A6677, sh: 0x3F4B5A },

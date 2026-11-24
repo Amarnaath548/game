@@ -18,7 +18,7 @@ export const desertTheme = {
   blocks: [0xC46E2E, 0xB05C24, 0xD27C38, 0x9E4E1C, 0xB8652A],
   rimHeight: 1.15,
   plaza: {
-    rim: 0x9E998E, mid: 0xB9AE98, inner: 0xABA18D, seam: 0x7E776C,
+    rim: 0x9E998E, mid: 0xB9AE98, inner: 0xC4B298, seam: 0x5D564B,
     dais: 0xC48F4E, daisTop: 0xD9A864, inlay: 0xE3B04B, glow: 0xE3B04B
   },
   stone: { hi: 0xCA9068, sh: 0xA87249 },

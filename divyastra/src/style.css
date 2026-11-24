@@ -2,6 +2,17 @@
 html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0e15; font-family: system-ui, -apple-system, sans-serif; touch-action: none; overscroll-behavior: none; -webkit-touch-callout: none; color: #fff; }
 #game-canvas { display: block; width: 100vw; height: 100vh; }
 
+/* Subtle full-screen vignette overlay */
+.vignette-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: radial-gradient(transparent 55%, rgba(21, 23, 43, 0.45) 100%);
+  z-index: 5;
+}
+
 /* ---------------- LOBBY PANELS & CARDS ---------------- */
 .tab-panel { display: none; height: 100%; overflow-y: auto; padding: 4px; }
 .tab-panel.active { display: block; }

@@ -1,8 +1,10 @@
 import * as THREE from 'three';
-import { COLORS, ARENA, CAMERA_CONFIG, CAMERA_PHONE, BIOMES } from '../config/constants.js';
-import { QUALITY_PRESETS, getSavedQuality, getLowerQualityTier, saveQuality } from '../config/quality.js';
+import { ARENA, CAMERA_CONFIG, CAMERA_PHONE, BIOMES } from '../config/constants.js';
+import { QUALITY_PRESETS, getSavedQuality } from '../config/quality.js';
 import { CameraZoom, isTouchDevice } from './CameraZoom.js';
 import { ShadowFollower } from './ShadowFollower.js';
+import { PostProcessingManager } from './PostProcessingManager.js';
+import { SceneQuality } from './SceneQuality.js';
 import { createMap } from '../maps/index.js';
 import {
   MYTHIC_CHEST, CHEST_COORDS, CRYSTAL_COORDS, BUSH_COORDS, PAD_COORDS, SURYA_COORDS, BRAZIER_COORDS
@@ -13,6 +15,7 @@ export class SceneManager {
   constructor() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(BIOMES.GRASS.skyColor);
+    this.scene.fog = new THREE.FogExp2(BIOMES.GRASS.fogColor, 0.012);
     this.camera = new THREE.PerspectiveCamera(CAMERA_CONFIG.FOV || 58, window.innerWidth / window.innerHeight, 0.5, 160);
 
     const initialTier = getSavedQuality();
@@ -24,11 +27,17 @@ export class SceneManager {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(preset.pixelRatio);
     this.renderer.setClearColor(BIOMES.GRASS.skyColor, 1.0);
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     const hasShadows = preset.shadows !== 'off' && !!preset.shadows;
     this.renderer.shadowMap.enabled = hasShadows;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     document.body.appendChild(this.renderer.domElement);
+
+    this.postProcessing = new PostProcessingManager(this.renderer, this.scene, this.camera, this.qualityTier);
+    this.quality = new SceneQuality(this);
 
     this.cameraTarget = new THREE.Vector3();
     this.cameraDesiredPos = new THREE.Vector3();
@@ -38,8 +47,6 @@ export class SceneManager {
     this.obelisks = []; this.obeliskMeshes = [];
     this.biomeHistory = loadBiomeHistory();
     this.nextBiomeKey = initNextBiome(this.biomeHistory);
-    this.qualityEvaluated = false;
-    this.matchFpsTimer = 0; this.matchFpsFrames = 0;
     this.particleSys = null;
     this.onQualityChange = null;
 
@@ -51,60 +58,10 @@ export class SceneManager {
     window.addEventListener('resize', () => this.onResize());
   }
 
-  onMatchStart() { this.qualityEvaluated = false; this.matchFpsTimer = 0; this.matchFpsFrames = 0; }
-
-  checkPerformanceFallback(dt, particleSys = null) {
-    if (this.qualityEvaluated) return;
-    this.matchFpsTimer += dt;
-    this.matchFpsFrames++;
-    if (this.matchFpsTimer >= 4.0) {
-      this.qualityEvaluated = true;
-      if (this.matchFpsFrames / this.matchFpsTimer < 40) {
-        this.stepDownQuality(particleSys);
-      }
-    }
-  }
-
-  stepDownQuality(particleSys = null) {
-    const nextTier = getLowerQualityTier(this.qualityTier);
-    if (nextTier !== this.qualityTier) {
-      this.applyQuality(nextTier, particleSys);
-      saveQuality(nextTier);
-      if (this.onQualityChange) this.onQualityChange(nextTier);
-    }
-  }
-
-  applyQuality(tier, particleSys = null) {
-    const preset = QUALITY_PRESETS[tier];
-    if (!preset) return;
-    this.qualityTier = tier;
-    this.renderer.setPixelRatio(preset.pixelRatio);
-
-    const hasShadows = preset.shadows !== 'off' && !!preset.shadows;
-    this.renderer.shadowMap.enabled = hasShadows;
-    if (this.dirLight) {
-      this.dirLight.castShadow = hasShadows;
-      if (hasShadows) {
-        const size = typeof preset.shadows === 'number' ? preset.shadows : (preset.shadowMapSize || 1024);
-        this.dirLight.shadow.mapSize.set(size, size);
-        if (this.shadowFollower) this.shadowFollower.applyCameraBounds();
-        if (this.dirLight.shadow.map) {
-          this.dirLight.shadow.map.dispose();
-          this.dirLight.shadow.map = null;
-        }
-      }
-    }
-    if (this.floorMesh) this.floorMesh.receiveShadow = hasShadows;
-
-    const ps = particleSys || this.particleSys;
-    if (ps) {
-      ps.particleScale = preset.particleScale;
-      if (ps.baseMaxParticles === undefined) ps.baseMaxParticles = ps.maxParticles;
-      ps.maxParticles = Math.floor(ps.baseMaxParticles * preset.particleScale);
-      if (ps.baseMaxRings === undefined) ps.baseMaxRings = ps.maxRings || 12;
-      ps.maxRings = Math.max(4, Math.floor(ps.baseMaxRings * preset.particleScale));
-    }
-  }
+  onMatchStart() { this.quality.onMatchStart(); }
+  checkPerformanceFallback(dt, particleSys = null) { this.quality.checkPerformanceFallback(dt, particleSys); }
+  stepDownQuality(particleSys = null) { this.quality.stepDownQuality(particleSys); }
+  applyQuality(tier, particleSys = null) { this.quality.applyQuality(tier, particleSys); }
 
   getNextBiomeName() {
     return (BIOMES[this.nextBiomeKey] || BIOMES.GRASS).name;
@@ -129,11 +86,11 @@ export class SceneManager {
     const preset = QUALITY_PRESETS[this.qualityTier] || QUALITY_PRESETS.HIGH;
     const hasShadows = preset.shadows !== 'off' && !!preset.shadows;
 
-    this.hemiLight = new THREE.HemisphereLight(0xFFFBEB, 0x3D6B24, 0.7);
+    this.hemiLight = new THREE.HemisphereLight(0x8FA8FF, 0x4A3A2A, 0.7);
     this.scene.add(this.hemiLight);
 
     const lightOffset = new THREE.Vector3(40, 65, 30);
-    this.dirLight = new THREE.DirectionalLight(0xFFF4D2, 1.45);
+    this.dirLight = new THREE.DirectionalLight(0xFFE2B0, 2.2);
     this.dirLight.position.copy(lightOffset);
     this.dirLight.target.position.set(0, 0, 0);
     this.dirLight.castShadow = hasShadows;
@@ -182,14 +139,25 @@ export class SceneManager {
     this.currentBiome = biome;
     this.scene.background.setHex(biome.skyColor);
     this.renderer.setClearColor(biome.skyColor, 1.0);
-    const near = biome.fogNear || 45, far = biome.fogFar || 140;
-    if (!this.scene.fog) this.scene.fog = new THREE.Fog(biome.fogColor, near, far);
-    else { this.scene.fog.color.setHex(biome.fogColor); this.scene.fog.near = near; this.scene.fog.far = far; }
+
+    const fogDensity = 0.012;
+    if (!this.scene.fog || !(this.scene.fog instanceof THREE.FogExp2)) {
+      this.scene.fog = new THREE.FogExp2(biome.fogColor, fogDensity);
+    } else {
+      this.scene.fog.color.setHex(biome.fogColor);
+      this.scene.fog.density = fogDensity;
+    }
     await this.buildMap(biome);
 
-    if (this.hemiLight) { this.hemiLight.color.setHex(0xFFFBEB); this.hemiLight.groundColor.setHex(0x3D6B24); this.hemiLight.intensity = 0.7; }
-    if (this.dirLight) { this.dirLight.color.setHex(0xFFF4D2); this.dirLight.intensity = 1.45; }
-    if (this.map && this.hemiLight && this.dirLight) this.map.applyLighting(this.hemiLight, this.dirLight);
+    if (this.hemiLight) {
+      this.hemiLight.color.setHex(0x8FA8FF);
+      this.hemiLight.groundColor.setHex(0x4A3A2A);
+      this.hemiLight.intensity = 0.7;
+    }
+    if (this.dirLight) {
+      this.dirLight.color.setHex(0xFFE2B0);
+      this.dirLight.intensity = 2.2;
+    }
     if (this.floorMat) this.floorMat.color.setHex(this.map?.floorColor ?? biome.floorColor);
     if (this.obeliskMeshes) {
       this.obeliskMeshes.forEach((mesh) => {
@@ -242,8 +210,12 @@ export class SceneManager {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     const preset = QUALITY_PRESETS[this.qualityTier] || QUALITY_PRESETS.HIGH;
     this.renderer.setPixelRatio(preset.pixelRatio);
+    if (this.postProcessing) this.postProcessing.setSize(window.innerWidth, window.innerHeight);
     if (this.zoom?.syncWithDevice) this.zoom.syncWithDevice();
   }
 
-  render() { this.renderer.render(this.scene, this.camera); }
+  render() {
+    if (this.postProcessing) this.postProcessing.render();
+    else this.renderer.render(this.scene, this.camera);
+  }
 }

@@ -17,8 +17,8 @@ export const autumnTheme = {
   cap: 0x9A7A3A,
   blocks: [0x9C5424, 0x86441C, 0xAC602C, 0x743814, 0x924C20],
   plaza: {
-    rim: 0x9E998E, mid: 0xB9AE98, inner: 0xABA18D, seam: 0x7E776C,
-    dais: 0xB9AE98, daisTop: 0xCEBFAB, inlay: 0xE3B04B, glow: 0xE3B04B
+    rim: 0x9E998E, mid: 0xB9AE98, inner: 0xC4B298, seam: 0x5D564B,
+    dais: 0xB9AE98, daisTop: 0xD6C7B2, inlay: 0xE3B04B, glow: 0xE3B04B
   },
   stone: { hi: 0xB9AE98, sh: 0x9E937E },
   snowCap: null,

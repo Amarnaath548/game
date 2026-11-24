@@ -16,8 +16,8 @@ export const grassTheme = {
   cap: 0x7A9A4A,
   blocks: [0xB86230, 0xA85324, 0xC46E3A, 0x984618, 0xB05C2B],
   plaza: {
-    rim: 0x9E998E, mid: 0xB9AE98, inner: 0xABA18D, seam: 0x7E776C,
-    dais: 0xB9AE98, daisTop: 0xCEBFAB, inlay: 0xE3B04B, glow: 0xE3B04B
+    rim: 0x9E998E, mid: 0xB9AE98, inner: 0xC4B298, seam: 0x5D564B,
+    dais: 0xB9AE98, daisTop: 0xD6C7B2, inlay: 0xE3B04B, glow: 0xE3B04B
   },
   stone: { hi: 0xB9AE98, sh: 0x9E937E },
   snowCap: null,
