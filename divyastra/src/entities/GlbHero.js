@@ -3,10 +3,15 @@ import { HERO_VISUAL_SCALE } from '../config/constants.js';
 import { HERO_FACING_OFFSET } from '../config/assets.js';
 import { GEO_CACHE, MAT_OUTLINE_PLAYER, MAT_OUTLINE_ENEMY, MAT_SHIELD } from './HeroMaterials.js';
 import {
-  MOTION_CONFIG, clamp01, easeOutCubic,
-  createCastTrail, createDashDust,
-  computeWalkTarget, computeIdleTarget, computeCastOffset, computeHitOffset, updateTrailAndDust
+  GLB_MOTION_CFG,
+  easeOutCubic,
+  createAttackTrail,
+  createDashDust,
+  triggerAttackTrail,
+  updateGlbMotion,
 } from './GlbHeroMotion.js';
+
+const DEG_TO_RAD = Math.PI / 180;
 
 function cloneActorMaterials(root) {
   const matMap = new Map(), mats = [], meshes = [];
@@ -42,27 +47,23 @@ function detectOrbMesh(meshes, box, size, center, mats) {
 export class GlbHero {
   constructor(wrapper, actor) {
     this.wrapper = wrapper; this.actor = actor;
-    this.idleTime = Math.random() * 2; this.stepPhase = 0; this.landTimer = 0;
-    this.swayX = 0; this.bobY = 0; this.leanX = 0; this.leanZ = 0; this.yawY = 0;
+    this.idleTime = Math.random() * 2; this.stepPhase = 0; this.landSquashTimer = 0;
+    this.leanX = 0; this.leanZ = 0; this.yawY = 0; this.swayX = 0; this.bobY = 0;
     this.scaleX = 1; this.scaleY = 1; this.scaleZ = 1;
     this.castState = 'NONE'; this.castT = 0; this.castDur = 0; this.externalWindup = false;
     this.hitTimer = 0; this.hitDirX = 0; this.hitDirZ = 0;
     this.wasDashing = false; this.deathElapsed = 0;
-    this.trailTimer = 0; this.dustTimer = 0;
-    this.trail = createCastTrail(wrapper);
-    this.dust = createDashDust(actor.scene);
-    this._target = { bobY: 0, swayX: 0, leanX: 0, leanZ: 0, yawY: 0, scaleY: 1, scaleXZ: 1 };
-    this._cast = { posZ: 0, rotX: 0, rotY: 0, scaleY: 1, scaleXZ: 1 };
-    this._hit = { posX: 0, posZ: 0, rotX: 0, rotZ: 0, scaleY: 1, scaleXZ: 1 };
+    this.trail = createAttackTrail(wrapper);
+    this.dust = createDashDust(actor.group);
   }
 
   reset() {
     this.castState = 'NONE'; this.externalWindup = false; this.hitTimer = 0;
-    this.landTimer = 0; this.wasDashing = false; this.deathElapsed = 0;
-    this.trailTimer = 0; this.dustTimer = 0;
-    this.trail.mesh.visible = false; this.dust.group.visible = false;
-    this.swayX = 0; this.bobY = 0; this.leanX = 0; this.leanZ = 0; this.yawY = 0;
+    this.landSquashTimer = 0; this.wasDashing = false; this.deathElapsed = 0;
+    this.leanX = 0; this.leanZ = 0; this.yawY = 0; this.swayX = 0; this.bobY = 0;
     this.scaleX = 1; this.scaleY = 1; this.scaleZ = 1;
+    if (this.trail) { this.trail.timer = 0; this.trail.mesh.visible = false; }
+    if (this.dust) { this.dust.timer = 0; for (const p of this.dust.puffs) p.visible = false; }
     this.wrapper.position.set(0, 0, 0); this.wrapper.rotation.set(0, 0, 0); this.wrapper.scale.set(1, 1, 1);
   }
 
@@ -70,18 +71,13 @@ export class GlbHero {
     this.externalWindup = true;
     this.castState = isTier3 ? 'CHARGE' : 'WINDUP';
     this.castT = 0;
-    this.castDur = isTier3 ? MOTION_CONFIG.attack.chargeDur : MOTION_CONFIG.attack.windupDur;
+    this.castDur = isTier3 ? GLB_MOTION_CFG.attack.chargeDur : GLB_MOTION_CFG.attack.windupDur;
   }
 
   triggerSnap() {
-    this.externalWindup = false;
-    this.castState = 'SNAP'; this.castT = 0; this.castDur = MOTION_CONFIG.attack.snapDur;
-    const elemColor = this.actor.currentSpell?.color || this.actor.spellSlot?.activeSpell?.color || 0xffaa44;
-    this.trail.mat.color.setHex(elemColor);
-    this.trail.mat.opacity = 0.9;
-    this.trail.mesh.rotation.y = -0.35;
-    this.trail.mesh.visible = true;
-    this.trailTimer = MOTION_CONFIG.attack.trailDuration;
+    this.externalWindup = false; this.castState = 'SNAP';
+    this.castT = 0; this.castDur = GLB_MOTION_CFG.attack.snapDur;
+    triggerAttackTrail(this.trail, this.actor);
   }
 
   cancelCast() { this.externalWindup = false; this.castState = 'NONE'; }
@@ -90,92 +86,28 @@ export class GlbHero {
     this.externalWindup = false;
     this.castState = isTier3 ? 'CHARGE' : 'WINDUP';
     this.castT = 0;
-    this.castDur = isTier3 ? MOTION_CONFIG.attack.chargeDur : MOTION_CONFIG.attack.windupDur;
+    this.castDur = isTier3 ? GLB_MOTION_CFG.attack.chargeDur : GLB_MOTION_CFG.attack.windupDur;
   }
 
   triggerHit(dirX = 0, dirZ = 0) {
     const len = Math.hypot(dirX, dirZ) || 1;
     this.hitDirX = dirX / len; this.hitDirZ = dirZ / len;
-    this.hitTimer = MOTION_CONFIG.hit.duration;
-    if (this.actor.hitTimer !== undefined) this.actor.hitTimer = Math.max(this.actor.hitTimer, MOTION_CONFIG.hit.duration);
+    this.hitTimer = GLB_MOTION_CFG.hit.dur;
+    this.actor.hitTimer = Math.max(this.actor.hitTimer || 0, GLB_MOTION_CFG.hit.dur);
     this.actor.setHeroEmissive?.(0xffffff);
   }
 
   updateDeath(dt) {
-    const cfg = MOTION_CONFIG.death;
     this.deathElapsed += dt;
-    const e = easeOutCubic(this.deathElapsed / cfg.duration);
-    this.wrapper.rotation.set(-cfg.pitchRad * e, 0, 0);
-    this.wrapper.position.set(0, (-cfg.dropY / HERO_VISUAL_SCALE) * e, 0);
+    const e = easeOutCubic(this.deathElapsed / GLB_MOTION_CFG.death.dur);
+    this.wrapper.rotation.set(GLB_MOTION_CFG.death.pitchDeg * DEG_TO_RAD * e, 0, 0);
+    this.wrapper.position.set(0, (GLB_MOTION_CFG.death.dropY / HERO_VISUAL_SCALE) * e, 0);
     this.wrapper.scale.set(1, 1, 1);
   }
 
   update(dt, isMoving = false, moveX = 0, moveZ = 0, isDashing = false) {
     if (this.actor.isDead) { this.updateDeath(dt); return; }
-
-    updateTrailAndDust(this, dt);
-
-    if (isDashing && !this.wasDashing) {
-      this.dustTimer = MOTION_CONFIG.dash.dustDuration;
-      this.dust.group.position.set(this.actor.x || 0, 0.14, this.actor.z || 0);
-      this.dust.group.visible = true;
-    }
-    this.wasDashing = isDashing;
-
-    const tgt = this._target;
-    tgt.bobY = 0; tgt.swayX = 0; tgt.leanX = 0; tgt.leanZ = 0; tgt.yawY = 0; tgt.scaleY = 1; tgt.scaleXZ = 1;
-    let tScaleX = 1, tScaleZ = 1;
-
-    if (this.castState === 'NONE') {
-      if (isDashing) {
-        const dCfg = MOTION_CONFIG.dash;
-        const dx = this.actor.dashVec?.x ?? moveX, dz = this.actor.dashVec?.z ?? moveZ;
-        const dLen = Math.hypot(dx, dz);
-        if (dLen > 0.01) {
-          const nx = dx / dLen, nz = dz / dLen, ang = this.actor.visualMesh.rotation.y;
-          tgt.leanX = (nx * Math.sin(ang) + nz * Math.cos(ang)) * dCfg.leanRad;
-          tgt.leanZ = -(nx * Math.cos(ang) - nz * Math.sin(ang)) * dCfg.leanRad;
-        } else {
-          tgt.leanX = dCfg.leanRad;
-        }
-        tScaleX = dCfg.stretchXY; tgt.scaleY = dCfg.stretchXY; tScaleZ = dCfg.stretchZ;
-      } else if (isMoving) {
-        computeWalkTarget(this, dt, moveX, moveZ, tgt);
-        tScaleX = tgt.scaleXZ; tScaleZ = tgt.scaleXZ;
-      } else {
-        computeIdleTarget(this, dt, tgt);
-        tScaleX = tgt.scaleXZ; tScaleZ = tgt.scaleXZ;
-      }
-    }
-
-    const damp = 1 - Math.exp(-MOTION_CONFIG.dampRate * dt);
-    this.bobY = THREE.MathUtils.lerp(this.bobY, tgt.bobY, damp);
-    this.swayX = THREE.MathUtils.lerp(this.swayX, tgt.swayX, damp);
-    this.leanX = THREE.MathUtils.lerp(this.leanX, tgt.leanX, damp);
-    this.leanZ = THREE.MathUtils.lerp(this.leanZ, tgt.leanZ, damp);
-    this.yawY = THREE.MathUtils.lerp(this.yawY, tgt.yawY, damp);
-    this.scaleX = THREE.MathUtils.lerp(this.scaleX, tScaleX, damp);
-    this.scaleY = THREE.MathUtils.lerp(this.scaleY, tgt.scaleY, damp);
-    this.scaleZ = THREE.MathUtils.lerp(this.scaleZ, tScaleZ, damp);
-
-    computeCastOffset(this, dt, this._cast);
-    computeHitOffset(this, dt, this._hit);
-
-    this.wrapper.position.set(
-      this.swayX + this._hit.posX,
-      this.bobY,
-      this._cast.posZ + this._hit.posZ
-    );
-    this.wrapper.rotation.set(
-      this.leanX + this._cast.rotX + this._hit.rotX,
-      this.yawY + this._cast.rotY,
-      this.leanZ + this._hit.rotZ
-    );
-    this.wrapper.scale.set(
-      this.scaleX * this._cast.scaleXZ * this._hit.scaleXZ,
-      this.scaleY * this._cast.scaleY * this._hit.scaleY,
-      this.scaleZ * this._cast.scaleXZ * this._hit.scaleXZ
-    );
+    updateGlbMotion(this, dt, isMoving, moveX, moveZ, isDashing);
   }
 }
 

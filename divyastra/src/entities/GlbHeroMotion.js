@@ -1,236 +1,316 @@
 import * as THREE from 'three';
 import { HERO_VISUAL_SCALE, PLAYER_BASE } from '../config/constants.js';
 
-const D2R = THREE.MathUtils.degToRad;
-export const clamp01 = (t) => Math.max(0, Math.min(1, t));
-export const easeOutCubic = (t) => 1 - Math.pow(1 - clamp01(t), 3);
-export const easeOutBack = (t) => { const x = clamp01(t) - 1; return 1 + 2.70158 * x * x * x + 1.70158 * x * x; };
-
-export const MOTION_CONFIG = {
-  dampRate: 16,
+export const GLB_MOTION_CFG = {
+  dampSpeed: 16,
   walk: {
     stepsPerSec: 3,
     hopHeight: 0.22,
-    landSquashY: 0.88,
-    landSquashXZ: 1.08,
-    landDuration: 0.06,
-    takeoffStretchY: 1.08,
-    takeoffStretchXZ: 0.95,
-    yawRockRad: D2R(10),
-    forwardLeanRad: D2R(14),
-    sideSway: 0.05
+    landSquashDur: 0.06,
+    landScaleY: 0.88,
+    landScaleXZ: 1.08,
+    takeoffScaleY: 1.08,
+    takeoffScaleXZ: 0.95,
+    yawDeg: 10,
+    leanDeg: 14,
+    sideSway: 0.05,
   },
   idle: {
     breathAmp: 0.025,
     breathHz: 0.6,
-    yawSwayRad: D2R(3),
-    yawSwayHz: 0.35
+    yawDeg: 3,
+    yawHz: 0.3,
   },
   attack: {
     chargeDur: 0.25,
+    chargePitchDeg: -5,
+    chargeScaleY: 0.96,
     windupDur: 0.12,
-    windupBackRad: D2R(18),
+    windupPitchDeg: -18,
     windupScaleY: 0.92,
-    windupBackOffset: 0.15,
+    windupBack: 0.15,
     snapDur: 0.07,
-    snapFwdOffset: 0.35,
-    snapPitchRad: D2R(14),
-    snapYawRad: D2R(20),
+    snapForward: 0.35,
+    snapPitchDeg: 14,
+    snapYawDeg: 20,
     snapScaleY: 1.1,
     recoverDur: 0.25,
-    trailDuration: 0.15
+    trailDur: 0.15,
+    trailOpacity: 0.9,
   },
   dash: {
-    leanRad: D2R(25),
-    stretchZ: 1.25,
-    stretchXY: 0.9,
-    dustDuration: 0.28
+    leanDeg: 25,
+    scaleZ: 1.25,
+    scaleXY: 0.9,
+    dustDur: 0.26,
+    dustSpread: 0.75,
   },
   hit: {
-    duration: 0.15,
+    dur: 0.15,
     recoilDist: 0.2,
-    leanRad: D2R(12),
-    squashY: 0.86,
-    squashXZ: 1.08
+    leanDeg: 12,
+    squashY: 0.85,
+    squashXZ: 1.08,
   },
   death: {
-    duration: 0.5,
-    dropY: 0.2,
-    pitchRad: D2R(80)
-  }
+    dur: 0.5,
+    pitchDeg: -80,
+    dropY: -0.2,
+  },
 };
 
-export function createCastTrail(parent) {
-  const geo = new THREE.RingGeometry(0.45, 0.95, 16, 1, -0.45, 1.7);
-  geo.rotateX(-Math.PI / 2);
+const D2R = Math.PI / 180;
+export const clamp01 = (t) => (t < 0 ? 0 : t > 1 ? 1 : t);
+export const easeOutCubic = (t) => 1 - Math.pow(1 - clamp01(t), 3);
+export const easeOutBack = (t) => {
+  const x = clamp01(t) - 1;
+  return 1 + 2.70158 * x * x * x + 1.70158 * x * x;
+};
+
+let SHARED_TRAIL_GEO = null;
+let SHARED_DUST_GEO = null;
+
+function getTrailGeo() {
+  if (!SHARED_TRAIL_GEO) {
+    SHARED_TRAIL_GEO = new THREE.RingGeometry(0.65, 1.15, 16, 1, -0.35, Math.PI * 0.85);
+    SHARED_TRAIL_GEO.rotateX(-Math.PI / 2);
+  }
+  return SHARED_TRAIL_GEO;
+}
+
+function getDustGeo() {
+  if (!SHARED_DUST_GEO) SHARED_DUST_GEO = new THREE.DodecahedronGeometry(0.18, 0);
+  return SHARED_DUST_GEO;
+}
+
+export function createAttackTrail(parent) {
   const mat = new THREE.MeshBasicMaterial({
-    color: 0xffaa44,
+    color: 0xffffff,
     transparent: true,
     opacity: 0,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
   });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(0.28, 1.05 / HERO_VISUAL_SCALE, 0.15);
+  const mesh = new THREE.Mesh(getTrailGeo(), mat);
+  mesh.position.set(0.1, 1.05 / HERO_VISUAL_SCALE, 0.15);
+  mesh.rotation.z = 0.18;
   mesh.visible = false;
-  mesh.renderOrder = 4;
+  mesh.renderOrder = 6;
   parent.add(mesh);
-  return { mesh, mat };
+  return { mesh, mat, timer: 0 };
 }
 
-export function createDashDust(scene) {
+export function triggerAttackTrail(trail, actor) {
+  if (!trail) return;
+  const color = actor.currentSpell?.color ?? actor.spellSlot?.activeSpell?.color ?? actor.hero?.accentColor ?? 0xffffff;
+  trail.mat.color.setHex(color);
+  trail.mat.opacity = GLB_MOTION_CFG.attack.trailOpacity;
+  trail.timer = GLB_MOTION_CFG.attack.trailDur;
+  trail.mesh.rotation.y = -0.5;
+  trail.mesh.scale.setScalar(0.85);
+  trail.mesh.visible = true;
+}
+
+export function createDashDust(parent) {
   const group = new THREE.Group();
-  const geo = new THREE.IcosahedronGeometry(0.18, 0);
-  const mat = new THREE.MeshBasicMaterial({
-    color: 0xe7dfd0,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false
-  });
+  const mat = new THREE.MeshBasicMaterial({ color: 0xe5e0d0, transparent: true, opacity: 0, depthWrite: false });
   const puffs = [];
+  const geo = getDustGeo();
   for (let i = 0; i < 4; i++) {
     const m = new THREE.Mesh(geo, mat);
-    const a = (i / 4) * Math.PI * 2 + 0.4;
-    m.userData.dx = Math.cos(a);
-    m.userData.dz = Math.sin(a);
+    m.visible = false;
     group.add(m);
     puffs.push(m);
   }
-  group.visible = false;
-  if (scene) scene.add(group);
-  return { group, mat, puffs };
+  group.position.y = 0.14;
+  parent.add(group);
+  return { group, mat, puffs, timer: 0 };
 }
 
-export function computeWalkTarget(hero, dt, moveX, moveZ, out) {
-  const cfg = MOTION_CONFIG.walk;
-  const base = hero.actor.baseSpeed || PLAYER_BASE.MOVE_SPEED;
-  const speedRatio = clamp01((hero.actor.speed || base) / base) || 1;
-  const prevStep = Math.floor(hero.stepPhase / Math.PI);
-  hero.stepPhase += dt * Math.PI * cfg.stepsPerSec * speedRatio;
-  if (Math.floor(hero.stepPhase / Math.PI) !== prevStep) {
-    hero.landTimer = cfg.landDuration;
-  }
-
-  const s = Math.sin(hero.stepPhase);
-  const absS = Math.abs(s);
-  out.bobY = absS * (cfg.hopHeight / HERO_VISUAL_SCALE);
-  out.swayX = s * (cfg.sideSway / HERO_VISUAL_SCALE);
-  out.yawY = s * cfg.yawRockRad;
-
-  if (hero.landTimer > 0) {
-    hero.landTimer = Math.max(0, hero.landTimer - dt);
-    out.scaleY = cfg.landSquashY;
-    out.scaleXZ = cfg.landSquashXZ;
-  } else {
-    const stretch = clamp01((absS - 0.15) * 1.4);
-    out.scaleY = THREE.MathUtils.lerp(1, cfg.takeoffStretchY, stretch);
-    out.scaleXZ = THREE.MathUtils.lerp(1, cfg.takeoffStretchXZ, stretch);
-  }
-
-  const mLen = Math.hypot(moveX, moveZ);
-  if (mLen > 0.01) {
-    const nx = moveX / mLen, nz = moveZ / mLen;
-    const ang = hero.actor.visualMesh.rotation.y;
-    const lean = cfg.forwardLeanRad * speedRatio;
-    out.leanX = (nx * Math.sin(ang) + nz * Math.cos(ang)) * lean;
-    out.leanZ = -(nx * Math.cos(ang) - nz * Math.sin(ang)) * lean;
+function triggerDashDust(dust) {
+  if (!dust) return;
+  dust.timer = GLB_MOTION_CFG.dash.dustDur;
+  dust.mat.opacity = 0.75;
+  for (let i = 0; i < dust.puffs.length; i++) {
+    const p = dust.puffs[i];
+    p.visible = true;
+    p.position.set(0, 0, 0);
+    p.scale.setScalar(0.6);
   }
 }
 
-export function computeIdleTarget(hero, dt, out) {
-  const cfg = MOTION_CONFIG.idle;
-  hero.idleTime += dt;
-  const breath = Math.sin(hero.idleTime * Math.PI * 2 * cfg.breathHz);
-  out.scaleY = 1 + cfg.breathAmp * breath;
-  out.yawY = Math.sin(hero.idleTime * Math.PI * 2 * cfg.yawSwayHz) * cfg.yawSwayRad;
-}
-
-export function computeCastOffset(hero, dt, out) {
-  out.posZ = 0; out.rotX = 0; out.rotY = 0; out.scaleY = 1; out.scaleXZ = 1;
-  if (hero.castState === 'NONE') return;
-
-  const cfg = MOTION_CONFIG.attack;
-  hero.castT += dt;
-  const p = clamp01(hero.castT / (hero.castDur || 0.1));
-  const invScale = 1 / HERO_VISUAL_SCALE;
-
-  if (hero.castState === 'CHARGE') {
-    const e = easeOutCubic(p);
-    out.rotX = -cfg.windupBackRad * 0.5 * e;
-    out.scaleY = THREE.MathUtils.lerp(1, cfg.windupScaleY, e * 0.5);
-    out.posZ = -cfg.windupBackOffset * 0.5 * invScale * e;
-    if (!hero.externalWindup && p >= 1) {
-      hero.castState = 'WINDUP'; hero.castT = 0; hero.castDur = cfg.windupDur;
-    }
-  } else if (hero.castState === 'WINDUP') {
-    const e = easeOutCubic(p);
-    out.rotX = -cfg.windupBackRad * e;
-    out.scaleY = THREE.MathUtils.lerp(1, cfg.windupScaleY, e);
-    out.posZ = -cfg.windupBackOffset * invScale * e;
-    if (!hero.externalWindup && p >= 1) {
-      hero.triggerSnap();
-    }
-  } else if (hero.castState === 'SNAP') {
-    const e = easeOutCubic(p);
-    out.posZ = THREE.MathUtils.lerp(-cfg.windupBackOffset, cfg.snapFwdOffset, e) * invScale;
-    out.rotX = THREE.MathUtils.lerp(-cfg.windupBackRad, cfg.snapPitchRad, e);
-    out.rotY = cfg.snapYawRad * e;
-    out.scaleY = THREE.MathUtils.lerp(cfg.windupScaleY, cfg.snapScaleY, e);
-    if (p >= 1) {
-      hero.castState = 'RECOVER'; hero.castT = 0; hero.castDur = cfg.recoverDur;
-    }
-  } else if (hero.castState === 'RECOVER') {
-    const e = 1 - easeOutBack(p);
-    out.posZ = cfg.snapFwdOffset * invScale * e;
-    out.rotX = cfg.snapPitchRad * e;
-    out.rotY = cfg.snapYawRad * e;
-    out.scaleY = THREE.MathUtils.lerp(1, cfg.snapScaleY, e);
-    if (p >= 1) hero.castState = 'NONE';
+function updateTrailAndDust(hero, dt) {
+  const tr = hero.trail;
+  if (tr && tr.timer > 0) {
+    tr.timer = Math.max(0, tr.timer - dt);
+    const p = 1 - tr.timer / GLB_MOTION_CFG.attack.trailDur;
+    tr.mat.opacity = (1 - p) * GLB_MOTION_CFG.attack.trailOpacity;
+    tr.mesh.rotation.y = -0.5 + p * 0.9;
+    tr.mesh.scale.setScalar(0.85 + p * 0.35);
+    if (tr.timer <= 0) tr.mesh.visible = false;
   }
-  out.scaleXZ = 1 / Math.sqrt(Math.max(0.5, out.scaleY));
-}
-
-export function computeHitOffset(hero, dt, out) {
-  out.posX = 0; out.posZ = 0; out.rotX = 0; out.rotZ = 0; out.scaleY = 1; out.scaleXZ = 1;
-  if (hero.hitTimer <= 0) return;
-
-  const cfg = MOTION_CONFIG.hit;
-  hero.hitTimer = Math.max(0, hero.hitTimer - dt);
-  const pulse = Math.sin(clamp01(1 - hero.hitTimer / cfg.duration) * Math.PI);
-  const ang = hero.actor.visualMesh.rotation.y;
-  const localX = hero.hitDirX * Math.cos(ang) - hero.hitDirZ * Math.sin(ang);
-  const localZ = hero.hitDirX * Math.sin(ang) + hero.hitDirZ * Math.cos(ang);
-  const dist = (cfg.recoilDist / HERO_VISUAL_SCALE) * pulse;
-
-  out.posX = localX * dist;
-  out.posZ = localZ * dist;
-  out.rotX = localZ * cfg.leanRad * pulse;
-  out.rotZ = -localX * cfg.leanRad * pulse;
-  out.scaleY = THREE.MathUtils.lerp(1, cfg.squashY, pulse);
-  out.scaleXZ = THREE.MathUtils.lerp(1, cfg.squashXZ, pulse);
-}
-
-export function updateTrailAndDust(hero, dt) {
-  if (hero.trailTimer > 0) {
-    hero.trailTimer = Math.max(0, hero.trailTimer - dt);
-    const p = 1 - hero.trailTimer / MOTION_CONFIG.attack.trailDuration;
-    hero.trail.mat.opacity = 0.9 * (1 - p);
-    hero.trail.mesh.rotation.y = -0.35 + p * 1.45;
-    if (hero.trailTimer <= 0) hero.trail.mesh.visible = false;
-  }
-
-  if (hero.dustTimer > 0) {
-    hero.dustTimer = Math.max(0, hero.dustTimer - dt);
-    const p = 1 - hero.dustTimer / MOTION_CONFIG.dash.dustDuration;
-    hero.dust.mat.opacity = 0.65 * (1 - p);
-    const spread = 0.15 + p * 0.75;
-    const sc = 0.9 * (1 - p * 0.45);
-    for (let i = 0; i < hero.dust.puffs.length; i++) {
-      const puff = hero.dust.puffs[i];
-      puff.position.set(puff.userData.dx * spread, p * 0.3, puff.userData.dz * spread);
+  const dust = hero.dust;
+  if (dust && dust.timer > 0) {
+    dust.timer = Math.max(0, dust.timer - dt);
+    const p = 1 - dust.timer / GLB_MOTION_CFG.dash.dustDur;
+    const spread = GLB_MOTION_CFG.dash.dustSpread * easeOutCubic(p);
+    dust.mat.opacity = (1 - p) * 0.75;
+    const sc = 0.6 + p * 1.1;
+    for (let i = 0; i < dust.puffs.length; i++) {
+      const puff = dust.puffs[i];
+      const angle = (i * Math.PI) * 0.5 + 0.4;
+      puff.position.set(Math.cos(angle) * spread, p * 0.25, Math.sin(angle) * spread);
       puff.scale.setScalar(sc);
+      if (dust.timer <= 0) puff.visible = false;
     }
-    if (hero.dustTimer <= 0) hero.dust.group.visible = false;
   }
+}
+
+export function updateGlbMotion(hero, dt, isMoving, moveX, moveZ, isDashing) {
+  const cfg = GLB_MOTION_CFG;
+  const damp = 1 - Math.exp(-cfg.dampSpeed * dt);
+  const isAttacking = hero.castState !== 'NONE';
+  const ang = hero.actor.visualMesh.rotation.y;
+  const sinA = Math.sin(ang);
+  const cosA = Math.cos(ang);
+
+  if (isDashing && !hero.wasDashing) triggerDashDust(hero.dust);
+  hero.wasDashing = isDashing;
+
+  let tBob = 0, tSwayX = 0, tLeanX = 0, tLeanZ = 0, tYaw = 0;
+  let tScaleX = 1, tScaleY = 1, tScaleZ = 1;
+
+  if (isDashing) {
+    const mLen = Math.hypot(moveX, moveZ);
+    const dx = mLen > 0.01 ? moveX / mLen : sinA;
+    const dz = mLen > 0.01 ? moveZ / mLen : cosA;
+    const dashRad = cfg.dash.leanDeg * D2R;
+    tLeanX = (dx * sinA + dz * cosA) * dashRad;
+    tLeanZ = -(dx * cosA - dz * sinA) * dashRad;
+    tScaleX = cfg.dash.scaleXY;
+    tScaleY = cfg.dash.scaleXY;
+    tScaleZ = cfg.dash.scaleZ;
+  } else if (isMoving && !isAttacking) {
+    const base = hero.actor.baseSpeed || PLAYER_BASE.MOVE_SPEED;
+    const speedRatio = clamp01((hero.actor.speed || base) / base) || 1;
+    const prevStep = Math.floor(hero.stepPhase / Math.PI);
+    hero.stepPhase += dt * Math.PI * cfg.walk.stepsPerSec * speedRatio;
+    if (Math.floor(hero.stepPhase / Math.PI) > prevStep) {
+      hero.landSquashTimer = cfg.walk.landSquashDur;
+    }
+
+    const s = Math.sin(hero.stepPhase);
+    const absS = Math.abs(s);
+    tBob = absS * (cfg.walk.hopHeight / HERO_VISUAL_SCALE);
+    tSwayX = s * (cfg.walk.sideSway / HERO_VISUAL_SCALE);
+    tYaw = s * (cfg.walk.yawDeg * D2R);
+
+    if (hero.landSquashTimer > 0) {
+      hero.landSquashTimer = Math.max(0, hero.landSquashTimer - dt);
+      tScaleY = cfg.walk.landScaleY;
+      tScaleX = cfg.walk.landScaleXZ;
+      tScaleZ = cfg.walk.landScaleXZ;
+    } else {
+      const stretch = clamp01(absS * 1.4);
+      tScaleY = 1 + (cfg.walk.takeoffScaleY - 1) * stretch;
+      const xz = 1 + (cfg.walk.takeoffScaleXZ - 1) * stretch;
+      tScaleX = xz;
+      tScaleZ = xz;
+    }
+
+    const mLen = Math.hypot(moveX, moveZ);
+    if (mLen > 0.01) {
+      const nx = moveX / mLen;
+      const nz = moveZ / mLen;
+      const leanRad = cfg.walk.leanDeg * D2R * speedRatio;
+      tLeanX = (nx * sinA + nz * cosA) * leanRad;
+      tLeanZ = -(nx * cosA - nz * sinA) * leanRad;
+    }
+  } else if (!isAttacking) {
+    hero.idleTime += dt;
+    const breath = Math.sin(hero.idleTime * Math.PI * 2 * cfg.idle.breathHz);
+    tScaleY = 1 + cfg.idle.breathAmp * breath;
+    tYaw = Math.sin(hero.idleTime * Math.PI * 2 * cfg.idle.yawHz) * (cfg.idle.yawDeg * D2R);
+  }
+
+  const scaleDamp = hero.landSquashTimer > 0 ? 1 : damp;
+  hero.bobY = THREE.MathUtils.lerp(hero.bobY, tBob, damp);
+  hero.swayX = THREE.MathUtils.lerp(hero.swayX, tSwayX, damp);
+  hero.leanX = THREE.MathUtils.lerp(hero.leanX, tLeanX, damp);
+  hero.leanZ = THREE.MathUtils.lerp(hero.leanZ, tLeanZ, damp);
+  hero.yawY = THREE.MathUtils.lerp(hero.yawY, tYaw, damp);
+  hero.scaleX = THREE.MathUtils.lerp(hero.scaleX, tScaleX, scaleDamp);
+  hero.scaleY = THREE.MathUtils.lerp(hero.scaleY, tScaleY, scaleDamp);
+  hero.scaleZ = THREE.MathUtils.lerp(hero.scaleZ, tScaleZ, scaleDamp);
+
+  let castPitch = 0, castYaw = 0, castPosZ = 0, castScaleY = 1, castScaleXZ = 1;
+  if (isAttacking) {
+    hero.castT += dt;
+    const p = clamp01(hero.castT / (hero.castDur || 0.1));
+    const ac = cfg.attack;
+    if (hero.castState === 'CHARGE') {
+      const e = easeOutCubic(p);
+      castPitch = ac.chargePitchDeg * D2R * e;
+      castScaleY = 1 + (ac.chargeScaleY - 1) * e;
+      castScaleXZ = 1 + (1 - ac.chargeScaleY) * 0.5 * e;
+      if (!hero.externalWindup && p >= 1) {
+        hero.castState = 'WINDUP'; hero.castT = 0; hero.castDur = ac.windupDur;
+      }
+    } else if (hero.castState === 'WINDUP') {
+      const e = easeOutCubic(p);
+      castPitch = ac.windupPitchDeg * D2R * e;
+      castScaleY = 1 + (ac.windupScaleY - 1) * e;
+      castScaleXZ = 1 + (1 - ac.windupScaleY) * 0.5 * e;
+      castPosZ = -(ac.windupBack / HERO_VISUAL_SCALE) * e;
+      if (!hero.externalWindup && p >= 1) {
+        hero.castState = 'SNAP'; hero.castT = 0; hero.castDur = ac.snapDur;
+        triggerAttackTrail(hero.trail, hero.actor);
+      }
+    } else if (hero.castState === 'SNAP') {
+      const e = easeOutCubic(p);
+      castPitch = THREE.MathUtils.lerp(ac.windupPitchDeg * D2R, ac.snapPitchDeg * D2R, e);
+      castYaw = ac.snapYawDeg * D2R * e;
+      castPosZ = THREE.MathUtils.lerp(-ac.windupBack / HERO_VISUAL_SCALE, ac.snapForward / HERO_VISUAL_SCALE, e);
+      castScaleY = THREE.MathUtils.lerp(ac.windupScaleY, ac.snapScaleY, e);
+      castScaleXZ = 1 - (castScaleY - 1) * 0.45;
+      if (p >= 1) {
+        hero.castState = 'RECOVER'; hero.castT = 0; hero.castDur = ac.recoverDur;
+      }
+    } else if (hero.castState === 'RECOVER') {
+      const e = 1 - easeOutBack(p);
+      castPitch = ac.snapPitchDeg * D2R * e;
+      castYaw = ac.snapYawDeg * D2R * e;
+      castPosZ = (ac.snapForward / HERO_VISUAL_SCALE) * e;
+      castScaleY = 1 + (ac.snapScaleY - 1) * e;
+      castScaleXZ = 1 - (castScaleY - 1) * 0.45;
+      if (p >= 1) hero.castState = 'NONE';
+    }
+  }
+
+  let hitX = 0, hitZ = 0, hitRotX = 0, hitRotZ = 0, hitScaleY = 1, hitScaleXZ = 1;
+  if (hero.hitTimer > 0) {
+    hero.hitTimer = Math.max(0, hero.hitTimer - dt);
+    const pulse = Math.sin(clamp01(1 - hero.hitTimer / cfg.hit.dur) * Math.PI);
+    const lx = hero.hitDirX * cosA - hero.hitDirZ * sinA;
+    const lz = hero.hitDirX * sinA + hero.hitDirZ * cosA;
+    const recoil = (cfg.hit.recoilDist / HERO_VISUAL_SCALE) * pulse;
+    hitX = -lx * recoil;
+    hitZ = -lz * recoil;
+    const hitRad = cfg.hit.leanDeg * D2R * pulse;
+    hitRotX = (hero.hitDirX * sinA + hero.hitDirZ * cosA) * hitRad;
+    hitRotZ = -(hero.hitDirX * cosA - hero.hitDirZ * sinA) * hitRad;
+    hitScaleY = 1 + (cfg.hit.squashY - 1) * pulse;
+    hitScaleXZ = 1 + (cfg.hit.squashXZ - 1) * pulse;
+  }
+
+  updateTrailAndDust(hero, dt);
+
+  hero.wrapper.position.set(hero.swayX + hitX, hero.bobY, castPosZ + hitZ);
+  hero.wrapper.rotation.set(hero.leanX + castPitch + hitRotX, hero.yawY + castYaw, hero.leanZ + hitRotZ);
+  hero.wrapper.scale.set(
+    hero.scaleX * castScaleXZ * hitScaleXZ,
+    hero.scaleY * castScaleY * hitScaleY,
+    hero.scaleZ * castScaleXZ * hitScaleXZ
+  );
 }
