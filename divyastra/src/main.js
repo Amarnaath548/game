@@ -35,7 +35,7 @@ import { assetLoader } from './core/AssetLoader.js';
 const sceneManager = new SceneManager();
 const input = new InputManager(sceneManager.camera);
 const sound = new SoundManager();
-const assetsReady = assetLoader.loadAll(sound.ctx);
+assetLoader.loadAll(sound.ctx);
 const meta = new MetaProgression();
 const questManager = new QuestManager();
 const spellbookManager = new SpellbookManager();
@@ -53,11 +53,6 @@ const arenaInteractables = new ArenaInteractables(sceneManager.scene, sceneManag
 
 // Player Entity
 const player = new Player(sceneManager.scene, input);
-assetsReady.then(() => {
-  if (player.hero && assetLoader.hasHeroModel(player.hero.id) && !player.glbHero && player.rebuildHeroVisual) {
-    player.rebuildHeroVisual(player.hero);
-  }
-});
 floatingBars.setPlayer(player);
 player.onTapasReadyCallback = () => { sound.playTapasReady(); tutorialHints.onTapasReady(); };
 player.onDamage = () => sound.playPlayerDamage();

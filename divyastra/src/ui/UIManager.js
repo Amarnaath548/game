@@ -72,14 +72,7 @@ export class UIManager {
       document.body.classList.add('in-match'); this.lobbyScreen.style.display = 'none'; this.hud.style.display = 'block';
       this.onStartMatch?.();
     };
-    this.playMatchBtn.addEventListener('click', async () => {
-      if (!assetLoader.loaded) {
-        this.playMatchBtn.textContent = 'Loading...';
-        this.playMatchBtn.disabled = true;
-        await assetLoader.waitForLoad(4000);
-        this.playMatchBtn.textContent = 'PLAY';
-        this.playMatchBtn.disabled = false;
-      }
+    this.playMatchBtn.addEventListener('click', () => {
       if (this.levelSelectView) this.levelSelectView.show();
       else startMatchUI();
     });

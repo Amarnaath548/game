@@ -2,7 +2,6 @@ import { ZoneSystem } from '../systems/ZoneSystem.js';
 import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE, VALID_HERO_IDS } from '../config/constants.js';
 import { getDevTools } from './DevTools.js';
 import { getDifficulty } from '../config/difficulty.js';
-import { assetLoader } from './AssetLoader.js';
 
 export class MatchManager {
   constructor(deps) {
@@ -41,8 +40,7 @@ export class MatchManager {
     const rawHeroId = localStorage.getItem('magica_selected_hero') || 'tapasvi';
     const selectedHeroId = VALID_HERO_IDS.includes(rawHeroId) ? rawHeroId : 'tapasvi';
     const hero = HEROES.find((h) => h.id === selectedHeroId) || HEROES[0];
-    const needsGlb = assetLoader.hasHeroModel(hero.id) && !this.player.glbHero;
-    if ((this.player.hero?.id !== hero.id || needsGlb) && this.player.rebuildHeroVisual) {
+    if (this.player.hero?.id !== hero.id && this.player.rebuildHeroVisual) {
       this.player.rebuildHeroVisual(hero);
     } else {
       this.player.hero = hero;
@@ -106,7 +104,6 @@ export class MatchManager {
     this.sceneManager.scene.remove(this.zoneSys.groundRing);
     this.zoneSys = new ZoneSystem(this.sceneManager.scene);
 
-    if (!assetLoader.loaded) await assetLoader.waitForLoad(4000);
     this.applyLobbyLoadout();
     await this.sceneManager.startMatchBiome(this.spawnManager.bushes, forcedBiome);
     this.spawnManager.startMatch(botCount);
