@@ -48,6 +48,9 @@ export class Actor {
     while (this.visualMesh.children.length > 0) this.visualMesh.remove(this.visualMesh.children[0]);
     buildHeroVisual(this, hero);
     this.robeMat = this.bodyMat; this.hatMat = this.accentMat;
+    if (!this.isBot && this.glbHero) {
+      console.info(`[Player] Rebuilt hero visual from GLB: ${hero.id}`);
+    }
   }
 
   setHeroEmissive(hex) {

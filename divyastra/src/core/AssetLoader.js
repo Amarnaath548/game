@@ -17,10 +17,12 @@ export class AssetLoader {
     this.audioCtx = null;
     this.gltfLoader = new GLTFLoader();
     this.loaded = false;
+    this._loadPromise = null;
   }
 
-  async loadAll(audioCtx = null) {
+  loadAll(audioCtx = null) {
     if (audioCtx) this.audioCtx = audioCtx;
+    if (this._loadPromise) return this._loadPromise;
     const tasks = [];
 
     // 1. Spell Icons
@@ -56,8 +58,19 @@ export class AssetLoader {
       tasks.push(this.loadAudio('bgm', ASSET_PATHS.bgm));
     }
 
-    await Promise.allSettled(tasks);
-    this.loaded = true;
+    this._loadPromise = Promise.allSettled(tasks).then(() => {
+      this.loaded = true;
+    });
+    return this._loadPromise;
+  }
+
+  waitForLoad(timeoutMs = 4000) {
+    if (this.loaded) return Promise.resolve();
+    const p = this._loadPromise || Promise.resolve();
+    return Promise.race([
+      p,
+      new Promise((resolve) => setTimeout(resolve, timeoutMs))
+    ]);
   }
 
   loadIcon(id, rawPath) {
