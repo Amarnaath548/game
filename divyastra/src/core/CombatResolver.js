@@ -132,9 +132,10 @@ export class CombatResolver {
 
   botShoot(bot, aimX, aimZ) {
     if (bot.isDead || !bot.spellSlot || bot.status?.stunTimer > 0) return;
-    bot.spellSlot.startCooldown(); bot.shootCooldown = bot.spellSlot.cooldownTimer; bot.triggerCastAnim?.();
+    bot.spellSlot.startCooldown(); bot.shootCooldown = bot.spellSlot.cooldownTimer;
     const tapasBonus = bot.consumeTapasBonus ? bot.consumeTapasBonus() : 0;
     const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, { x: aimX, z: aimZ }, 1.0, 1.0 + tapasBonus);
+    bot.triggerCastAnim?.(payloads[0]?.tier === 3);
     if (tapasBonus > 0) this.particleSys?.spawnBurst(bot.x, 0.8, bot.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
     if (this.astraVisuals && payloads[0]?.tier === 3 && Math.hypot(bot.x - this.player.x, bot.z - this.player.z) <= 30) this.astraVisuals.spawnAstraRing(bot.x, bot.z);
     payloads.forEach((payload) => this.executeCastPayload(payload, bot));

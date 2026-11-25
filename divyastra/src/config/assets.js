@@ -43,10 +43,10 @@ export const ASSET_PATHS = {
 
   // Hero 3D models per hero ID (.glb in public/models/heroes/)
   heroes: {
-    tapasvi: 'public/models/heroes/tapasvi.glb',
-    agni: 'public/models/heroes/agni.glb',
-    jala: 'public/models/heroes/jala.glb',
-    prithvi: 'public/models/heroes/prithvi.glb'
+    tapasvi: './models/heroes/tapasvi.glb',
+    agni: './models/heroes/agni.glb',
+    jala: './models/heroes/jala.glb',
+    prithvi: './models/heroes/prithvi.glb'
   },
 
   // Prop 3D models per prop key (.glb in public/models/props/)
@@ -79,4 +79,12 @@ export const ASSET_PATHS = {
 
   // Looping background music (.ogg in public/audio/)
   bgm: 'public/audio/bgm.ogg'
+};
+
+// Per-hero Y-axis facing offset in radians (models face +Z by default)
+export const HERO_FACING_OFFSET = {
+  tapasvi: 0,
+  agni: 0,
+  jala: 0,
+  prithvi: 0
 };

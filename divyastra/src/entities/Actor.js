@@ -51,7 +51,7 @@ export class Actor {
   }
 
   setHeroEmissive(hex) {
-    if (this.isBot) return;
+    if (this.isBot && !this.glbHero) return;
     for (const m of this.visualMats || this.heroMats || [this.bodyMat, this.accentMat]) m?.emissive?.setHex(hex);
   }
 
@@ -112,7 +112,14 @@ export class Actor {
   applyPoison(dps = 8, dur = 4.0, owner = null, spellId = null) { this._applyDot('poisonTimer', 'poisonDps', dps, dur, owner, spellId); }
   heal(amount) { if (!this.isDead) this.hp = Math.min(this.maxHp, this.hp + amount); }
 
-  triggerCastAnim() { this.castTimer = 0.23; this.orbTimer = 0.2; }
+  triggerCastAnim(isTier3 = false) {
+    this.castTimer = 0.23; this.orbTimer = 0.2;
+    this.glbHero?.triggerAttack(isTier3);
+  }
+
+  triggerHitAnim(dirX = 0, dirZ = 0) {
+    this.glbHero?.triggerHit(dirX, dirZ);
+  }
 
   applyKnockback(dirX, dirZ, distance = 2.5) {
     if (this.dashTimer > 0 || this.isInvulnerable || this.isDead) return;
@@ -125,9 +132,13 @@ export class Actor {
     if (this.isDead) {
       if (this.isDying) {
         this.deathTimer -= dt;
-        const progress = Math.max(0, this.deathTimer / 0.35), sc = progress * HERO_VISUAL_SCALE;
-        this.visualMesh.scale.set(sc, sc, sc);
-        this.setHeroOpacity(progress);
+        if (this.glbHero) {
+          this.glbHero.updateDeath(dt);
+        } else {
+          const progress = Math.max(0, this.deathTimer / 0.35), sc = progress * HERO_VISUAL_SCALE;
+          this.visualMesh.scale.set(sc, sc, sc);
+          this.setHeroOpacity(progress);
+        }
         if (this.deathTimer <= 0) { this.isDying = false; this.destroyVisuals(); }
       }
       return;
@@ -205,9 +216,9 @@ export class Actor {
 
   die() {
     if (this.isDead) return;
-    this.isDead = true; this.isDying = true; this.deathTimer = 0.35;
+    this.isDead = true; this.isDying = true; this.deathTimer = this.glbHero ? 1.5 : 0.35;
     this._hideShield();
-    if (!this.isBot) for (const m of this.visualMats || this.heroMats || []) m.transparent = true;
+    if (!this.isBot && !this.glbHero) for (const m of this.visualMats || this.heroMats || []) m.transparent = true;
   }
 
   destroyVisuals() {

@@ -1,4 +1,5 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { ASSET_PATHS } from '../config/assets.js';
 
 function toWebPath(path) {
@@ -94,6 +95,9 @@ export class AssetLoader {
         (gltf) => {
           if (gltf && gltf.scene) {
             this.models.set(key, gltf.scene);
+            if (key.startsWith('hero_')) {
+              console.info(`[AssetLoader] Hero GLB loaded: ${key.slice(5)} (${url})`);
+            }
           }
           resolve(gltf);
         },
@@ -155,7 +159,7 @@ export class AssetLoader {
 
   getHeroModel(heroId) {
     const scene = this.models.get(`hero_${heroId}`);
-    return scene ? scene.clone(true) : null;
+    return scene ? SkeletonUtils.clone(scene) : null;
   }
 
   hasHeroModel(heroId) {

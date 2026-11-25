@@ -4,6 +4,10 @@ import * as THREE from 'three';
  * Handles limb walk-cycle sway and movement lean for actors.
  */
 export function setActorWobble(actor, isMoving, dt, moveX = 0, moveZ = 0, isDashing = false) {
+  if (actor.glbHero) {
+    actor.glbHero.update(dt, isMoving, moveX, moveZ, isDashing);
+    return;
+  }
   let targetLeanX = 0, targetLeanZ = 0;
   if (isMoving && !isDashing) {
     actor.walkTime += dt * 14;

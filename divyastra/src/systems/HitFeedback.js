@@ -52,6 +52,7 @@ export class HitFeedback {
     if (isWithinRange && !target.isDead) {
       target.hitTimer = 0.08;
       target.setHeroEmissive?.(0xffffff);
+      target.triggerHitAnim?.(dirX ?? 0, dirZ ?? 0);
     }
 
     // 2. Hit-Stop: on any hit the player lands that does 25+ damage (or any kill)

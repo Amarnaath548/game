@@ -42,6 +42,7 @@ export class CastWindup {
     this.input = input;
     this.onFire = onFire;
     this.active = true;
+    this.player.glbHero?.startWindup(this.isTier3);
 
     const elemColor = spell?.color || 0xf97316;
     if (this.player.staffOrbMat) {
@@ -64,7 +65,7 @@ export class CastWindup {
     if (this.snapTimer > 0) {
       this.snapTimer = Math.max(0, this.snapTimer - dt);
       const ratio = this.snapTimer / 0.10;
-      this.player.visualMesh.rotation.x = ratio * 0.35; // Snap forward decay
+      if (!this.player.glbHero) this.player.visualMesh.rotation.x = ratio * 0.35; // Snap forward decay
       if (this.player.rightArm) this.player.rightArm.rotation.x = -1.1 * ratio;
       if (this.snapTimer <= 0 && this.player.staffOrbMat) {
         this.player.staffOrbMat.emissive?.setHex(0x000000);
@@ -80,7 +81,7 @@ export class CastWindup {
     this.timer -= dt;
 
     // Hero leans back during anticipation
-    this.player.visualMesh.rotation.x = -0.32;
+    if (!this.player.glbHero) this.player.visualMesh.rotation.x = -0.32;
     if (this.player.rightArm) this.player.rightArm.rotation.x = 0.65;
     if (this.player.staffShaft) this.player.staffShaft.rotation.x = 0.65;
 
@@ -97,7 +98,11 @@ export class CastWindup {
       this.active = false;
       this.glowRing.visible = false;
       this.snapTimer = 0.10; // Trigger snap forward
-      this.player.visualMesh.rotation.x = 0.35;
+      if (this.player.glbHero) {
+        this.player.glbHero.triggerSnap();
+      } else {
+        this.player.visualMesh.rotation.x = 0.35;
+      }
       if (this.player.rightArm) this.player.rightArm.rotation.x = -1.1;
       this.onFire?.(this.payloads, this.input);
     }
@@ -107,6 +112,7 @@ export class CastWindup {
     this.active = false;
     this.glowRing.visible = false;
     this.snapTimer = 0;
+    this.player.glbHero?.cancelCast();
     if (this.player.staffOrbMat) this.player.staffOrbMat.emissive?.setHex(0x000000);
   }
 }

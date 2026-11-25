@@ -9,6 +9,7 @@ import { attachArchetypeVisuals } from './HeroArchetypes.js';
 import { buildTierVisuals } from './HeroTierVisuals.js';
 import { buildBotVisual } from './BotVisual.js';
 import { getBotStaticGeos, getBotHeadGeos } from './HeroOutlines.js';
+import { buildGlbHero } from './GlbHero.js';
 
 const mk = (hex) => new THREE.MeshLambertMaterial({ color: hex, flatShading: true, emissive: 0x000000 });
 
@@ -26,16 +27,11 @@ function addMesh(parent, geo, mat, shadow = true) {
  * flash and fade together; see Actor.setHeroEmissive / setHeroOpacity.
  */
 export function buildHeroVisual(actor, hero) {
+  actor.glbHero = null;
+  actor.outlineMeshes = null;
   const customModel = assetLoader.getHeroModel(hero.id);
   if (customModel) {
-    customModel.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    actor.visualMesh.add(customModel);
-    actor.customModel = customModel;
+    buildGlbHero(actor, hero, customModel);
     return;
   }
   if (actor.isBot) {

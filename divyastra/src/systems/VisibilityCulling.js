@@ -35,8 +35,12 @@ export function updateVisibilityCulling(sceneManager, spawnManager, arenaInterac
       // Skip outlines on LOW quality for bots beyond 30 units (30^2 = 900)
       if (bot.outlineMesh) {
         const showOutline = !(isLowQuality && distSq > 900);
-        bot.outlineMesh.visible = showOutline;
-        if (bot.headOutlineMesh) bot.headOutlineMesh.visible = showOutline;
+        if (bot.outlineMeshes) {
+          for (let j = 0; j < bot.outlineMeshes.length; j++) bot.outlineMeshes[j].visible = showOutline;
+        } else {
+          bot.outlineMesh.visible = showOutline;
+          if (bot.headOutlineMesh) bot.headOutlineMesh.visible = showOutline;
+        }
       }
 
       const isChasingOrAttacking = bot.isChasingOrAttacking
