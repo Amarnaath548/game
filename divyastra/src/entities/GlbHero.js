@@ -1,15 +1,12 @@
 import * as THREE from 'three';
-import { HERO_VISUAL_SCALE, PLAYER_BASE } from '../config/constants.js';
+import { HERO_VISUAL_SCALE } from '../config/constants.js';
 import { HERO_FACING_OFFSET } from '../config/assets.js';
 import { GEO_CACHE, MAT_OUTLINE_PLAYER, MAT_OUTLINE_ENEMY, MAT_SHIELD } from './HeroMaterials.js';
-
-const DEG3 = THREE.MathUtils.degToRad(3), DEG5 = THREE.MathUtils.degToRad(5);
-const DEG8 = THREE.MathUtils.degToRad(8), DEG10 = THREE.MathUtils.degToRad(10);
-const DEG14 = THREE.MathUtils.degToRad(14), DEG80 = THREE.MathUtils.degToRad(80);
-
-const clamp01 = (t) => Math.max(0, Math.min(1, t));
-const easeOutCubic = (t) => 1 - Math.pow(1 - clamp01(t), 3);
-const easeOutBack = (t) => { const x = clamp01(t) - 1; return 1 + 2.70158 * x * x * x + 1.70158 * x * x; };
+import {
+  MOTION_CONFIG, clamp01, easeOutCubic,
+  createCastTrail, createDashDust,
+  computeWalkTarget, computeIdleTarget, computeCastOffset, computeHitOffset, updateTrailAndDust
+} from './GlbHeroMotion.js';
 
 function cloneActorMaterials(root) {
   const matMap = new Map(), mats = [], meshes = [];
@@ -45,117 +42,139 @@ function detectOrbMesh(meshes, box, size, center, mats) {
 export class GlbHero {
   constructor(wrapper, actor) {
     this.wrapper = wrapper; this.actor = actor;
-    this.idleTime = Math.random() * 2; this.stepPhase = 0;
-    this.leanX = 0; this.leanZ = 0; this.rollZ = 0; this.bobY = 0; this.scaleY = 1; this.scaleXZ = 1;
+    this.idleTime = Math.random() * 2; this.stepPhase = 0; this.landTimer = 0;
+    this.swayX = 0; this.bobY = 0; this.leanX = 0; this.leanZ = 0; this.yawY = 0;
+    this.scaleX = 1; this.scaleY = 1; this.scaleZ = 1;
     this.castState = 'NONE'; this.castT = 0; this.castDur = 0; this.externalWindup = false;
-    this.hitTimer = 0; this.hitDur = 0.12; this.hitDirX = 0; this.hitDirZ = 0;
-    this.deathElapsed = 0;
+    this.hitTimer = 0; this.hitDirX = 0; this.hitDirZ = 0;
+    this.wasDashing = false; this.deathElapsed = 0;
+    this.trailTimer = 0; this.dustTimer = 0;
+    this.trail = createCastTrail(wrapper);
+    this.dust = createDashDust(actor.scene);
+    this._target = { bobY: 0, swayX: 0, leanX: 0, leanZ: 0, yawY: 0, scaleY: 1, scaleXZ: 1 };
+    this._cast = { posZ: 0, rotX: 0, rotY: 0, scaleY: 1, scaleXZ: 1 };
+    this._hit = { posX: 0, posZ: 0, rotX: 0, rotZ: 0, scaleY: 1, scaleXZ: 1 };
   }
 
   reset() {
-    this.castState = 'NONE'; this.externalWindup = false; this.hitTimer = 0; this.deathElapsed = 0;
-    this.leanX = 0; this.leanZ = 0; this.rollZ = 0; this.bobY = 0; this.scaleY = 1; this.scaleXZ = 1;
+    this.castState = 'NONE'; this.externalWindup = false; this.hitTimer = 0;
+    this.landTimer = 0; this.wasDashing = false; this.deathElapsed = 0;
+    this.trailTimer = 0; this.dustTimer = 0;
+    this.trail.mesh.visible = false; this.dust.group.visible = false;
+    this.swayX = 0; this.bobY = 0; this.leanX = 0; this.leanZ = 0; this.yawY = 0;
+    this.scaleX = 1; this.scaleY = 1; this.scaleZ = 1;
     this.wrapper.position.set(0, 0, 0); this.wrapper.rotation.set(0, 0, 0); this.wrapper.scale.set(1, 1, 1);
   }
 
   startWindup(isTier3 = false) {
-    this.externalWindup = true; this.castState = isTier3 ? 'CHARGE' : 'WINDUP';
-    this.castT = 0; this.castDur = isTier3 ? 0.25 : 0.10;
+    this.externalWindup = true;
+    this.castState = isTier3 ? 'CHARGE' : 'WINDUP';
+    this.castT = 0;
+    this.castDur = isTier3 ? MOTION_CONFIG.attack.chargeDur : MOTION_CONFIG.attack.windupDur;
   }
 
-  triggerSnap() { this.externalWindup = false; this.castState = 'SNAP'; this.castT = 0; this.castDur = 0.08; }
+  triggerSnap() {
+    this.externalWindup = false;
+    this.castState = 'SNAP'; this.castT = 0; this.castDur = MOTION_CONFIG.attack.snapDur;
+    const elemColor = this.actor.currentSpell?.color || this.actor.spellSlot?.activeSpell?.color || 0xffaa44;
+    this.trail.mat.color.setHex(elemColor);
+    this.trail.mat.opacity = 0.9;
+    this.trail.mesh.rotation.y = -0.35;
+    this.trail.mesh.visible = true;
+    this.trailTimer = MOTION_CONFIG.attack.trailDuration;
+  }
+
   cancelCast() { this.externalWindup = false; this.castState = 'NONE'; }
 
   triggerAttack(isTier3 = false) {
-    this.externalWindup = false; this.castState = isTier3 ? 'CHARGE' : 'WINDUP';
-    this.castT = 0; this.castDur = isTier3 ? 0.25 : 0.10;
+    this.externalWindup = false;
+    this.castState = isTier3 ? 'CHARGE' : 'WINDUP';
+    this.castT = 0;
+    this.castDur = isTier3 ? MOTION_CONFIG.attack.chargeDur : MOTION_CONFIG.attack.windupDur;
   }
 
   triggerHit(dirX = 0, dirZ = 0) {
     const len = Math.hypot(dirX, dirZ) || 1;
-    this.hitDirX = dirX / len; this.hitDirZ = dirZ / len; this.hitTimer = this.hitDur;
+    this.hitDirX = dirX / len; this.hitDirZ = dirZ / len;
+    this.hitTimer = MOTION_CONFIG.hit.duration;
+    if (this.actor.hitTimer !== undefined) this.actor.hitTimer = Math.max(this.actor.hitTimer, MOTION_CONFIG.hit.duration);
+    this.actor.setHeroEmissive?.(0xffffff);
   }
 
   updateDeath(dt) {
+    const cfg = MOTION_CONFIG.death;
     this.deathElapsed += dt;
-    const e = easeOutCubic(this.deathElapsed / 0.5);
-    this.wrapper.rotation.set(-DEG80 * e, 0, 0);
-    this.wrapper.position.set(0, (-0.2 / HERO_VISUAL_SCALE) * e, 0);
+    const e = easeOutCubic(this.deathElapsed / cfg.duration);
+    this.wrapper.rotation.set(-cfg.pitchRad * e, 0, 0);
+    this.wrapper.position.set(0, (-cfg.dropY / HERO_VISUAL_SCALE) * e, 0);
     this.wrapper.scale.set(1, 1, 1);
   }
 
   update(dt, isMoving = false, moveX = 0, moveZ = 0, isDashing = false) {
     if (this.actor.isDead) { this.updateDeath(dt); return; }
 
-    const damp = 1 - Math.exp(-16 * dt);
-    let tBob = 0, tLeanX = 0, tLeanZ = 0, tRollZ = 0, tScaleY = 1, tScaleXZ = 1;
+    updateTrailAndDust(this, dt);
 
-    if (isMoving && !isDashing) {
-      const base = this.actor.baseSpeed || PLAYER_BASE.MOVE_SPEED;
-      const speedRatio = clamp01((this.actor.speed || base) / base) || 1;
-      this.stepPhase += dt * Math.PI * 2 * speedRatio;
-      const s = Math.sin(this.stepPhase), absS = Math.abs(s);
-      tBob = absS * (0.1 / HERO_VISUAL_SCALE);
-      const footfall = Math.max(0, 1 - absS * 4);
-      tScaleY = 1 - 0.04 * footfall; tScaleXZ = 1 + 0.02 * footfall; tRollZ = s * DEG3;
-      const mLen = Math.hypot(moveX, moveZ);
-      if (mLen > 0.01) {
-        const nx = moveX / mLen, nz = moveZ / mLen, ang = this.actor.visualMesh.rotation.y;
-        tLeanX = (nx * Math.sin(ang) + nz * Math.cos(ang)) * DEG8;
-        tLeanZ = -(nx * Math.cos(ang) - nz * Math.sin(ang)) * DEG8;
-      }
-    } else {
-      this.idleTime += dt;
-      const breath = Math.sin(this.idleTime * Math.PI);
-      tScaleY = 1 + 0.015 * breath;
-      tBob = (0.005 / HERO_VISUAL_SCALE) * (1 + breath);
+    if (isDashing && !this.wasDashing) {
+      this.dustTimer = MOTION_CONFIG.dash.dustDuration;
+      this.dust.group.position.set(this.actor.x || 0, 0.14, this.actor.z || 0);
+      this.dust.group.visible = true;
     }
+    this.wasDashing = isDashing;
 
-    this.bobY = THREE.MathUtils.lerp(this.bobY, tBob, damp);
-    this.leanX = THREE.MathUtils.lerp(this.leanX, tLeanX, damp);
-    this.leanZ = THREE.MathUtils.lerp(this.leanZ, tLeanZ, damp);
-    this.rollZ = THREE.MathUtils.lerp(this.rollZ, tRollZ, damp);
-    this.scaleY = THREE.MathUtils.lerp(this.scaleY, tScaleY, damp);
-    this.scaleXZ = THREE.MathUtils.lerp(this.scaleXZ, tScaleXZ, damp);
+    const tgt = this._target;
+    tgt.bobY = 0; tgt.swayX = 0; tgt.leanX = 0; tgt.leanZ = 0; tgt.yawY = 0; tgt.scaleY = 1; tgt.scaleXZ = 1;
+    let tScaleX = 1, tScaleZ = 1;
 
-    let castRotX = 0, castScaleY = 1, castScaleXZ = 1;
-    if (this.castState !== 'NONE') {
-      this.castT += dt;
-      const p = clamp01(this.castT / (this.castDur || 0.1));
-      if (this.castState === 'CHARGE') {
-        const e = easeOutCubic(p);
-        castRotX = -DEG5 * e; castScaleY = 1 - 0.04 * e; castScaleXZ = 1 + 0.02 * e;
-        if (!this.externalWindup && p >= 1) { this.castState = 'WINDUP'; this.castT = 0; this.castDur = 0.10; }
-      } else if (this.castState === 'WINDUP') {
-        castRotX = -DEG10 * easeOutCubic(p);
-        if (!this.externalWindup && p >= 1) { this.castState = 'SNAP'; this.castT = 0; this.castDur = 0.08; }
-      } else if (this.castState === 'SNAP') {
-        castRotX = THREE.MathUtils.lerp(-DEG10, DEG14, easeOutBack(p));
-        castScaleY = 1 + 0.06 * easeOutCubic(p); castScaleXZ = 1 - 0.03 * easeOutCubic(p);
-        if (p >= 1) { this.castState = 'RECOVER'; this.castT = 0; this.castDur = 0.20; }
-      } else if (this.castState === 'RECOVER') {
-        const e = 1 - easeOutCubic(p);
-        castRotX = DEG14 * e; castScaleY = 1 + 0.06 * e; castScaleXZ = 1 - 0.03 * e;
-        if (p >= 1) this.castState = 'NONE';
+    if (this.castState === 'NONE') {
+      if (isDashing) {
+        const dCfg = MOTION_CONFIG.dash;
+        const dx = this.actor.dashVec?.x ?? moveX, dz = this.actor.dashVec?.z ?? moveZ;
+        const dLen = Math.hypot(dx, dz);
+        if (dLen > 0.01) {
+          const nx = dx / dLen, nz = dz / dLen, ang = this.actor.visualMesh.rotation.y;
+          tgt.leanX = (nx * Math.sin(ang) + nz * Math.cos(ang)) * dCfg.leanRad;
+          tgt.leanZ = -(nx * Math.cos(ang) - nz * Math.sin(ang)) * dCfg.leanRad;
+        } else {
+          tgt.leanX = dCfg.leanRad;
+        }
+        tScaleX = dCfg.stretchXY; tgt.scaleY = dCfg.stretchXY; tScaleZ = dCfg.stretchZ;
+      } else if (isMoving) {
+        computeWalkTarget(this, dt, moveX, moveZ, tgt);
+        tScaleX = tgt.scaleXZ; tScaleZ = tgt.scaleXZ;
+      } else {
+        computeIdleTarget(this, dt, tgt);
+        tScaleX = tgt.scaleXZ; tScaleZ = tgt.scaleXZ;
       }
     }
 
-    let hitRotX = 0, hitRotZ = 0, hitScaleY = 1, hitScaleXZ = 1;
-    if (this.hitTimer > 0) {
-      this.hitTimer = Math.max(0, this.hitTimer - dt);
-      const pulse = Math.sin(clamp01(1 - this.hitTimer / this.hitDur) * Math.PI);
-      const ang = this.actor.visualMesh.rotation.y;
-      hitRotX = (this.hitDirX * Math.sin(ang) + this.hitDirZ * Math.cos(ang)) * DEG10 * pulse;
-      hitRotZ = -(this.hitDirX * Math.cos(ang) - this.hitDirZ * Math.sin(ang)) * DEG10 * pulse;
-      hitScaleY = 1 - 0.10 * pulse; hitScaleXZ = 1 + 0.05 * pulse;
-    }
+    const damp = 1 - Math.exp(-MOTION_CONFIG.dampRate * dt);
+    this.bobY = THREE.MathUtils.lerp(this.bobY, tgt.bobY, damp);
+    this.swayX = THREE.MathUtils.lerp(this.swayX, tgt.swayX, damp);
+    this.leanX = THREE.MathUtils.lerp(this.leanX, tgt.leanX, damp);
+    this.leanZ = THREE.MathUtils.lerp(this.leanZ, tgt.leanZ, damp);
+    this.yawY = THREE.MathUtils.lerp(this.yawY, tgt.yawY, damp);
+    this.scaleX = THREE.MathUtils.lerp(this.scaleX, tScaleX, damp);
+    this.scaleY = THREE.MathUtils.lerp(this.scaleY, tgt.scaleY, damp);
+    this.scaleZ = THREE.MathUtils.lerp(this.scaleZ, tScaleZ, damp);
 
-    this.wrapper.position.set(0, this.bobY, 0);
-    this.wrapper.rotation.set(this.leanX + castRotX + hitRotX, 0, this.leanZ + this.rollZ + hitRotZ);
+    computeCastOffset(this, dt, this._cast);
+    computeHitOffset(this, dt, this._hit);
+
+    this.wrapper.position.set(
+      this.swayX + this._hit.posX,
+      this.bobY,
+      this._cast.posZ + this._hit.posZ
+    );
+    this.wrapper.rotation.set(
+      this.leanX + this._cast.rotX + this._hit.rotX,
+      this.yawY + this._cast.rotY,
+      this.leanZ + this._hit.rotZ
+    );
     this.wrapper.scale.set(
-      this.scaleXZ * castScaleXZ * hitScaleXZ,
-      this.scaleY * castScaleY * hitScaleY,
-      this.scaleXZ * castScaleXZ * hitScaleXZ
+      this.scaleX * this._cast.scaleXZ * this._hit.scaleXZ,
+      this.scaleY * this._cast.scaleY * this._hit.scaleY,
+      this.scaleZ * this._cast.scaleXZ * this._hit.scaleXZ
     );
   }
 }
