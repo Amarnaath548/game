@@ -1,3 +1,21 @@
+import { SEPARATION_FACTOR } from '../config/constants.js';
+
+export function executeMeleeHit(resolver, cfg, owner) {
+  if (owner.punchTimer !== undefined) owner.punchTimer = 0.15;
+  resolver.particleSys.spawnBurst(owner.x + cfg.dirX * 1.1, 1.0, owner.z + cfg.dirZ * 1.1, 0xffaa44, 8, 4, 1.0, cfg.elements);
+  if (resolver.sound) resolver.sound.playHit();
+  const halfCos = Math.cos((cfg.arc || 1.75) / 2);
+  const range = Math.max(cfg.range || 2.2, ((owner?.radius ?? 1.0) + 1.0) * SEPARATION_FACTOR + 0.6);
+  const tgts = ((owner === resolver.player || !!owner?.isPlayer) ? resolver.spawnManager.bots : [resolver.player, ...resolver.spawnManager.bots]).filter((b) => b !== owner);
+  const inCone = (t) => {
+    const dx = t.x - owner.x, dz = t.z - owner.z, d = Math.hypot(dx, dz);
+    return d <= range + (t.radius || 0.8) && (cfg.dirX * dx + cfg.dirZ * dz) / (d || 1) >= halfCos;
+  };
+  tgts.forEach((t) => { if (!t.isDead && inCone(t)) resolver.applySpellHit(t, cfg, owner, t.x, t.z, cfg.dirX, cfg.dirZ); });
+  resolver.spawnManager.chests?.forEach((c) => { if (!c.isDead && inCone(c) && c.takeDamage(cfg.damage)) resolver.spawnManager.dropLoot(c.x, c.z, c.isMythic ? 8 : 3, c.isMythic ? 1.0 : 0.35); });
+  resolver.spawnManager.crystals?.forEach((c) => { if (!c.isDead && inCone(c) && c.takeDamage(cfg.damage)) resolver.triggerCrystalExplosion(c, tgts, resolver.spawnManager.chests); });
+}
+
 export function resolveChain(resolver, originX, originZ, cfg, owner, directTarget, targets) {
   const chainTargets = cfg.chainTargets || 2, chainRange = cfg.chainRange || 6.0;
   let count = 0;

@@ -1,15 +1,16 @@
 import * as THREE from 'three';
-import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT, SEPARATION_FACTOR, AOE_SPLASH_DAMAGE_MULT } from '../config/constants.js';
+import { KILL_XP, KILL_GEM_DROP, BOT_DAMAGE_MULT, AOE_SPLASH_DAMAGE_MULT } from '../config/constants.js';
 import { getDifficulty } from '../config/difficulty.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js';
 import { SpellEffects } from '../systems/SpellEffects.js';
 import { HitFeedback } from '../systems/HitFeedback.js';
 import { projectileDeflect, destroyProjectilesInCircle } from '../systems/ProjectileDeflect.js';
 import { damageObjectsInCircle } from './EnvironmentDamage.js';
-import { resolveChain, spawnSubMunitions, resolveObeliskCollisions } from './CombatChain.js';
+import { resolveChain, spawnSubMunitions, resolveObeliskCollisions, executeMeleeHit } from './CombatChain.js';
 import { applySpellHit, detonateAoE, applyStatuses } from './SpellOnHit.js';
 import { SideEffectZones } from '../systems/SideEffectZones.js';
 import { CastWindup } from './CastWindup.js';
+import { prepareTipPayloads } from '../entities/StaffTip.js';
 
 export class CombatResolver {
   constructor(deps) {
@@ -17,7 +18,7 @@ export class CombatResolver {
     this.astraVisuals = deps.astraVisuals || null;
     this.arenaInteractables = deps.arenaInteractables || null;
     this.hitFeedback = new HitFeedback({ sceneManager: deps.sceneManager, player: deps.player });
-    this.castWindup = new CastWindup(deps.player, deps.sceneManager.scene);
+    this.castWindup = new CastWindup(deps.player, deps.sceneManager.scene, deps.particleSys);
     this.spellEffects = deps.spellEffects || new SpellEffects(deps.sceneManager.scene, deps.particleSys, this.astraVisuals);
     this.spellEffects.resolver = this;
     this.sideEffectZones = new SideEffectZones(deps.sceneManager.scene, deps.particleSys);
@@ -80,6 +81,9 @@ export class CombatResolver {
     }
     if (isP && this.player.perks.includes('TWIN_CAST') && (cfg.trajectory === 'LINEAR' || cfg.trajectory === 'LOBBED')) {
       const px = -cfg.dirZ, pz = cfg.dirX, twinDmg = Math.max(1, Math.round(cfg.damage * 0.85));
+      const baseX = cfg.tipX !== undefined ? cfg.tipX : sx + cfg.dirX * ((owner.radius || 1) + 0.35);
+      const baseZ = cfg.tipZ !== undefined ? cfg.tipZ : sz + cfg.dirZ * ((owner.radius || 1) + 0.35);
+      const baseY = cfg.tipY ?? 1.2;
       [-0.8, 0.8].forEach((off) => {
         const p = this.projectiles.find((proj) => !proj.active);
         if (!p) return;
@@ -88,28 +92,19 @@ export class CombatResolver {
           pCfg.targetX = (cfg.targetX ?? (sx + cfg.dirX * (cfg.range || 20))) + px * off;
           pCfg.targetZ = (cfg.targetZ ?? (sz + cfg.dirZ * (cfg.range || 20))) + pz * off;
         }
-        p.spawn(sx + px * off + cfg.dirX * ((owner.radius || 1) + 0.35), sz + pz * off + cfg.dirZ * ((owner.radius || 1) + 0.35), cfg.dirX, cfg.dirZ, pCfg, owner);
+        p.spawn(baseX + px * off, baseZ + pz * off, cfg.dirX, cfg.dirZ, pCfg, owner, baseY);
       });
       return;
     }
     const p = this.projectiles.find((proj) => !proj.active);
-    if (p) p.spawn(sx + cfg.dirX * ((owner.radius || 1) + 0.35), sz + cfg.dirZ * ((owner.radius || 1) + 0.35), cfg.dirX, cfg.dirZ, cfg, owner);
+    if (p) {
+      const ox = cfg.tipX !== undefined ? cfg.tipX : sx + cfg.dirX * ((owner.radius || 1) + 0.35);
+      const oz = cfg.tipZ !== undefined ? cfg.tipZ : sz + cfg.dirZ * ((owner.radius || 1) + 0.35);
+      p.spawn(ox, oz, cfg.dirX, cfg.dirZ, cfg, owner, cfg.tipY ?? 1.2);
+    }
   }
 
-  executeMelee(cfg, owner) {
-    if (owner.punchTimer !== undefined) owner.punchTimer = 0.15;
-    this.particleSys.spawnBurst(owner.x + cfg.dirX * 1.1, 1.0, owner.z + cfg.dirZ * 1.1, 0xffaa44, 8, 4, 1.0, cfg.elements);
-    if (this.sound) this.sound.playHit();
-    const halfCos = Math.cos((cfg.arc || 1.75) / 2), range = Math.max(cfg.range || 2.2, ((owner?.radius ?? 1.0) + 1.0) * SEPARATION_FACTOR + 0.6);
-    const tgts = ((owner === this.player || !!owner?.isPlayer) ? this.spawnManager.bots : [this.player, ...this.spawnManager.bots]).filter((b) => b !== owner);
-    const inCone = (t) => {
-      const dx = t.x - owner.x, dz = t.z - owner.z, d = Math.hypot(dx, dz);
-      return d <= range + (t.radius || 0.8) && (cfg.dirX * dx + cfg.dirZ * dz) / (d || 1) >= halfCos;
-    };
-    tgts.forEach((t) => { if (!t.isDead && inCone(t)) this.applySpellHit(t, cfg, owner, t.x, t.z, cfg.dirX, cfg.dirZ); });
-    this.spawnManager.chests?.forEach((c) => { if (!c.isDead && inCone(c) && c.takeDamage(cfg.damage)) this.spawnManager.dropLoot(c.x, c.z, c.isMythic ? 8 : 3, c.isMythic ? 1.0 : 0.35); });
-    this.spawnManager.crystals?.forEach((c) => { if (!c.isDead && inCone(c) && c.takeDamage(cfg.damage)) this.triggerCrystalExplosion(c, tgts, this.spawnManager.chests); });
-  }
+  executeMelee(cfg, owner) { executeMeleeHit(this, cfg, owner); }
 
   playerShoot(input) {
     if (this.player.isDead || !this.player.spellSlot?.canCast() || this.player.status?.stunTimer > 0) return;
@@ -123,9 +118,11 @@ export class CombatResolver {
 
     // 0.1s wind-up (0.25s for Tier 3 Astra) anticipation, leans back & staff glows, then snaps forward
     this.castWindup.start(payloads, input, this.player.currentSpell, (castPayloads) => {
+      if (input?.aimDir) this.player.visualMesh.rotation.y = Math.atan2(input.aimDir.x, input.aimDir.z);
       if (this.questManager && this.player.currentSpell?.id !== 'fist') this.questManager.record('cast', 1);
       this.sound.playCast(this.player.currentSpell?.id || this.player.currentSpell);
       if (this.astraVisuals && castPayloads[0]?.tier === 3) this.astraVisuals.spawnAstraRing(this.player.x, this.player.z);
+      prepareTipPayloads(this.player, castPayloads, input?.aimDir, this.castWindup, this.particleSys);
       castPayloads.forEach((payload) => this.executeCastPayload(payload, this.player));
     });
   }
@@ -135,9 +132,11 @@ export class CombatResolver {
     bot.spellSlot.startCooldown(); bot.shootCooldown = bot.spellSlot.cooldownTimer;
     const tapasBonus = bot.consumeTapasBonus ? bot.consumeTapasBonus() : 0;
     const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, { x: aimX, z: aimZ }, 1.0, 1.0 + tapasBonus);
+    bot.visualMesh.rotation.y = Math.atan2(aimX, aimZ);
     bot.triggerCastAnim?.(payloads[0]?.tier === 3);
     if (tapasBonus > 0) this.particleSys?.spawnBurst(bot.x, 0.8, bot.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
     if (this.astraVisuals && payloads[0]?.tier === 3 && Math.hypot(bot.x - this.player.x, bot.z - this.player.z) <= 30) this.astraVisuals.spawnAstraRing(bot.x, bot.z);
+    prepareTipPayloads(bot, payloads, { x: aimX, z: aimZ }, this.castWindup, this.particleSys);
     payloads.forEach((payload) => this.executeCastPayload(payload, bot));
   }
 

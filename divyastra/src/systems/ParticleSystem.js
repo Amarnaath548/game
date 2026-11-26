@@ -8,6 +8,8 @@ export class ParticleSystem {
     this.scene = scene;
     this.maxParticles = maxParticles;
     this.particleScale = 1.0;
+    this.qualityTier = 'HIGH';
+    this.activeCount = 0;
 
     // InstancedMesh for debris/sparks
     const geo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
@@ -20,9 +22,9 @@ export class ParticleSystem {
     this.particles = [];
     for (let i = 0; i < maxParticles; i++) {
       this.particles.push({
-        active: false, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0,
+        active: false, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, tx: 0, ty: 0, tz: 0,
         scale: 1, life: 0, maxLife: 0.5, color: new THREE.Color(1, 1, 1),
-        type: 'EMBER' // 'EMBER' (Agni rises), 'DROPLET' (Jala ripples), 'SHARD' (Prithvi stone)
+        type: 'EMBER' // 'EMBER', 'DROPLET', 'SHARD', 'SPIRAL'
       });
     }
     this.dummy = new THREE.Object3D();
@@ -128,12 +130,12 @@ export class ParticleSystem {
     this.spawnRing(x, z, colorHex, targetRadius, 0.4);
   }
 
-  spawnRing(x, z, colorHex, maxRadius = 3.0, duration = 0.4) {
+  spawnRing(x, z, colorHex, maxRadius = 3.0, duration = 0.4, y = 0.04) {
     for (let i = 0; i < this.maxRings; i++) {
       const r = this.rings[i];
       if (!r.active) {
         r.active = true; r.x = x; r.z = z; r.maxRadius = maxRadius; r.elapsed = 0; r.duration = duration;
-        r.mesh.position.set(x, 0.04, z);
+        r.mesh.position.set(x, y, z);
         r.mesh.material.color.setHex(colorHex);
         r.mesh.material.opacity = 0.9;
         r.mesh.scale.set(0.1, 1, 0.1);
@@ -143,35 +145,63 @@ export class ParticleSystem {
     }
   }
 
+  spawnMuzzleBurst(x, y, z, dirX, dirZ, colorHex = PALETTE.elements.AGNI, amount = 7, elementsOrStyle = null) {
+    this.tempColor.setHex(colorHex);
+    const style = Array.isArray(elementsOrStyle) && elementsOrStyle.length > 0 ? (ELEM_TO_STYLE[elementsOrStyle[0]] || 'EMBER') : 'EMBER';
+    const maxSpawn = Math.max(1, Math.round(amount * (this.particleScale || 1.0)));
+    const len = Math.hypot(dirX, dirZ) || 1, nx = dirX / len, nz = dirZ / len;
+    let spawned = 0;
+    for (let i = 0; i < this.maxParticles && spawned < maxSpawn; i++) {
+      const p = this.particles[i];
+      if (p.active) continue;
+      p.active = true; p.x = x; p.y = y; p.z = z; p.type = style;
+      const spread = (Math.random() - 0.5) * 0.7, spd = 7 + Math.random() * 6;
+      p.vx = (nx - nz * spread) * spd; p.vz = (nz + nx * spread) * spd; p.vy = (Math.random() - 0.3) * 3.0;
+      p.scale = 0.38 + Math.random() * 0.25; p.life = 0; p.maxLife = 0.18 + Math.random() * 0.12;
+      p.color.copy(this.tempColor); this.mesh.setColorAt(i, p.color); spawned++;
+    }
+    if (spawned > 0 && this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+  }
+
+  spawnSpiralParticle(actorX, actorZ, tipX, tipY, tipZ, colorHex = PALETTE.elements.AGNI) {
+    if (this.qualityTier === 'LOW' || this.activeCount >= this.maxParticles) return;
+    this.tempColor.setHex(colorHex);
+    for (let i = 0; i < this.maxParticles; i++) {
+      const p = this.particles[i];
+      if (p.active) continue;
+      const ang = Math.random() * Math.PI * 2, rad = 0.85 + Math.random() * 0.45;
+      p.active = true; p.type = 'SPIRAL'; p.vx = 0; p.vy = 0; p.vz = 0;
+      p.x = actorX + Math.cos(ang) * rad; p.y = 0.6 + Math.random() * 0.6; p.z = actorZ + Math.sin(ang) * rad;
+      p.tx = tipX; p.ty = tipY; p.tz = tipZ; p.scale = 0.42; p.life = 0; p.maxLife = 0.22;
+      p.color.copy(this.tempColor); this.mesh.setColorAt(i, p.color);
+      if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+      this.activeCount++;
+      break;
+    }
+  }
+
   update(dt) {
+    this.activeCount = 0;
     for (let i = 0; i < this.maxParticles; i++) {
       const p = this.particles[i];
       if (!p.active) continue;
-
       p.life += dt;
       if (p.life >= p.maxLife) {
         p.active = false;
-        this.dummy.position.set(0, -999, 0);
-        this.dummy.scale.set(0, 0, 0);
-        this.dummy.updateMatrix();
+        this.dummy.position.set(0, -999, 0); this.dummy.scale.set(0, 0, 0); this.dummy.updateMatrix();
         this.mesh.setMatrixAt(i, this.dummy.matrix);
         continue;
       }
-
-      if (p.type === 'EMBER') {
-        p.vy += 3 * dt;
-        p.vx += Math.sin(p.life * 12) * 2 * dt;
-      } else if (p.type === 'DROPLET') {
-        p.vy -= 22 * dt;
+      this.activeCount++;
+      if (p.type === 'SPIRAL') {
+        const dx = p.tx - p.x, dy = p.ty - p.y, dz = p.tz - p.z, invT = 1 / Math.max(0.04, p.maxLife - p.life);
+        p.x += (dx * invT - dz * 7.5) * dt; p.y += dy * invT * dt; p.z += (dz * invT + dx * 7.5) * dt;
       } else {
-        p.vy -= 28 * dt;
-      }
-      p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
-
-      if (p.y < 0.1) {
-        p.y = 0.1;
-        p.vy = p.type === 'EMBER' ? 1.5 : -p.vy * 0.35;
-        p.vx *= 0.7; p.vz *= 0.7;
+        if (p.type === 'EMBER') { p.vy += 3 * dt; p.vx += Math.sin(p.life * 12) * 2 * dt; }
+        else if (p.type === 'DROPLET') { p.vy -= 22 * dt; }
+        else { p.vy -= 28 * dt; }
+        p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+        if (p.y < 0.1) { p.y = 0.1; p.vy = p.type === 'EMBER' ? 1.5 : -p.vy * 0.35; p.vx *= 0.7; p.vz *= 0.7; }
       }
 
       const progress = p.life / p.maxLife;

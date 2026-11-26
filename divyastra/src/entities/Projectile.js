@@ -48,7 +48,7 @@ export class Projectile {
     }
   }
 
-  spawn(originX, originZ, dirX, dirZ, spellConfig, owner = 'player') {
+  spawn(originX, originZ, dirX, dirZ, spellConfig, owner = 'player', originY = 1.2) {
     this.active = true;
     this.reachedMaxRange = false;
     this.x = originX; this.z = originZ;
@@ -63,7 +63,8 @@ export class Projectile {
     this.maxRange = spellConfig.range || 24;
     this.distanceTraveled = 0;
     this.lobHeight = spellConfig.lobArcHeight || 0;
-    this.y = 1.2;
+    this.startY = originY;
+    this.y = originY;
     this.animTime = Math.random() * 10;
 
     if (this.mesh.parent) {
@@ -146,9 +147,10 @@ export class Projectile {
 
     if (this.lobHeight > 0) {
       const progress = Math.min(1.0, this.distanceTraveled / this.maxRange);
-      this.y = 1.2 + Math.sin(progress * Math.PI) * this.lobHeight;
+      this.y = THREE.MathUtils.lerp(this.startY ?? 1.2, 1.2, progress) + Math.sin(progress * Math.PI) * this.lobHeight;
     } else {
-      this.y = 1.2;
+      const t = Math.min(1.0, this.distanceTraveled / Math.min(this.maxRange, 6.0));
+      this.y = THREE.MathUtils.lerp(this.startY ?? 1.2, 1.2, t);
     }
     this.mesh.position.set(this.x, this.y, this.z);
 

@@ -3,6 +3,7 @@ import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE } from '../config/constants.js';
 import { buildHeroVisual } from './HeroVisual.js';
 import { updateTierVisuals } from './HeroTierVisuals.js';
 import { setActorWobble } from './ActorAnim.js';
+import { getActorStaffTipWorld } from './StaffTip.js';
 
 export class Actor {
   constructor(scene, options = {}) {
@@ -46,12 +47,16 @@ export class Actor {
   rebuildHeroVisual(hero) {
     this.hero = hero;
     this.rightArm = this.leftArm = this.leftLeg = this.rightLeg = this.staffShaft = null;
-    this.staffOrb = this.staffOrbMat = this.staffAccentMesh = this.staffAccentMat = null;
+    this.staffOrb = this.staffOrbMat = this.staffAccentMesh = this.staffAccentMat = this.staffTip = null;
     this.headGroup = this.haloGlow = this.headOutlineMesh = this.bodyMat = this.accentMat = null;
     this.spinningStaffTip = this.tierVisuals = this.shieldMesh = this.outlineMesh = this.outlineMeshes = null;
     while (this.visualMesh.children.length > 0) this.visualMesh.remove(this.visualMesh.children[0]);
     buildHeroVisual(this, hero);
     this.robeMat = this.bodyMat; this.hatMat = this.accentMat;
+  }
+
+  getStaffTipWorld(outVec3) {
+    return getActorStaffTipWorld(this, outVec3);
   }
 
   setHeroEmissive(hex) {

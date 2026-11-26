@@ -3,6 +3,7 @@ import { HERO_VISUAL_SCALE, PLAYER_BASE } from '../config/constants.js';
 import { HERO_FACING_OFFSET } from '../config/assets.js';
 import { GEO_CACHE, MAT_OUTLINE_PLAYER, MAT_OUTLINE_ENEMY, MAT_SHIELD } from './HeroMaterials.js';
 import { cloneActorMaterials } from './GlbHero.js';
+import { attachStaffTip } from './StaffTip.js';
 
 const CROSSFADE_DUR = 0.12;
 const DIST_CULL_SQ = 60 * 60;
@@ -237,5 +238,6 @@ export function buildGlbRiggedHero(actor, hero, rawModel, animations) {
   actor.visualMesh.add(actor.shieldMesh);
 
   actor.heroMats = mats; actor.visualMats = mats;
+  attachStaffTip(actor, rawModel);
   actor.glbHero = new GlbRiggedHero(animWrapper, rawModel, animations, actor);
 }

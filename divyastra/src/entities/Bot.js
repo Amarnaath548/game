@@ -194,7 +194,8 @@ export class Bot extends Actor {
     if (aimLen > 0.01) {
       const aimAngle = Math.atan2(aimX, aimZ);
       if (isVisible) {
-        this.visualMesh.rotation.y = THREE.MathUtils.lerp(this.visualMesh.rotation.y, aimAngle, 0.2);
+        const isCasting = this.castTimer > 0 || this.glbHero?.isCasting;
+        this.visualMesh.rotation.y = isCasting ? aimAngle : THREE.MathUtils.lerp(this.visualMesh.rotation.y, aimAngle, 0.2);
       }
     }
 

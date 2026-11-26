@@ -62,6 +62,7 @@ export class SceneQuality {
 
     const ps = particleSys || this.sm.particleSys;
     if (ps) {
+      ps.qualityTier = tier;
       ps.particleScale = preset.particleScale;
       if (ps.baseMaxParticles === undefined) ps.baseMaxParticles = ps.maxParticles;
       ps.maxParticles = Math.floor(ps.baseMaxParticles * preset.particleScale);
