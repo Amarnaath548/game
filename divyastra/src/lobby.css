@@ -14,6 +14,8 @@
   display: flex; align-items: center; justify-content: center; transition: opacity 0.35s ease;
 }
 .lobby-preloader.hidden { opacity: 0; pointer-events: none; }
+.preloader-inner { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.preloader-status { font-size: 13px; font-weight: 700; color: #cbd5e1; letter-spacing: 1px; }
 .preloader-logo { font-family: 'Yatra One', serif; font-size: 42px; color: #ffd166; text-shadow: 0 0 24px rgba(200, 150, 62, 0.8), 0 2px 4px #000; }
 .lobby-stage {
   position: absolute; width: 1024px; height: 572px; left: 50%; top: 50%;

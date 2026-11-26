@@ -2,6 +2,7 @@ import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES, BIOMES } from '../conf
 import { LEVELS } from '../config/levels.js';
 import { loadAndTrimHero, getHeroSrc } from './HeroImageTrim.js';
 import { StaffChip } from './StaffChip.js';
+import { assetLoader } from '../core/AssetLoader.js';
 
 const HERO_IMG = { tapasvi: 'hero_tapasvi.webp', jala: 'hero_jala.webp', prithvi: 'hero_prithvi.webp', agni: 'hero_agni.png' };
 
@@ -44,28 +45,19 @@ export class LobbyShell {
       './lobby/icon_granth.png', './lobby/icon_settings.png', './lobby/icon_heroes.png',
       './lobby/icon_staves.png', './lobby/icon_upgrades.png', './lobby/map_grass.png', './lobby/map_snow.png', './lobby/map_desert.png', './lobby/map_autumn.png'
     ];
-    let bgLoaded = false; let heroesPreloaded = false;
+    let bgLoaded = false, heroesPreloaded = false, assetsLoaded = assetLoader.loaded;
     const checkCritical = () => {
-      if (bgLoaded && heroesPreloaded && this.preloader) this.preloader.classList.add('hidden');
+      if (bgLoaded && heroesPreloaded && assetsLoaded && this.preloader) this.preloader.classList.add('hidden');
     };
     const bg = new Image();
     bg.onload = bg.onerror = () => { bgLoaded = true; checkCritical(); };
     bg.src = './lobby/bg_lobby.webp';
-
+    assetLoader.whenReady().then(() => { assetsLoaded = true; checkCritical(); });
     Promise.all(Object.entries(HERO_IMG).map(async ([id, file]) => {
-      try {
-        const src = await loadAndTrimHero(id, file);
-        const img = new Image();
-        img.src = src;
-        await img.decode();
-      } catch (_) {}
-    })).then(() => {
-      heroesPreloaded = true;
-      this.updateHeroDisplay();
-      checkCritical();
-    });
+      try { const img = new Image(); img.src = await loadAndTrimHero(id, file); await img.decode(); } catch (_) {}
+    })).then(() => { heroesPreloaded = true; this.updateHeroDisplay(); checkCritical(); });
     images.slice(2).forEach((src) => { const img = new Image(); img.src = src; });
-    setTimeout(() => { this.preloader?.classList.add('hidden'); }, 1200);
+    setTimeout(() => { this.preloader?.classList.add('hidden'); }, 4000);
   }
 
   bindEvents() {

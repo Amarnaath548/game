@@ -40,6 +40,7 @@ export class SceneManager {
     this.quality = new SceneQuality(this);
 
     this.cameraTarget = new THREE.Vector3();
+    this.scene.userData.cameraTarget = this.cameraTarget;
     this.cameraDesiredPos = new THREE.Vector3();
     this.cameraLookPos = new THREE.Vector3();
     this.hitShakeTimer = 0; this.hitShakeDuration = 0.15; this.hitShakeAmp = 0.12; this.trauma = 0;

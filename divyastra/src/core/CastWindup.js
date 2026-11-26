@@ -35,8 +35,9 @@ export class CastWindup {
 
   start(payloads, input, spell, onFire) {
     if (this.active || this.player.isDead) return;
+    const isRigged = !!this.player.glbHero?.isRigged;
     this.isTier3 = (payloads[0]?.tier === 3) || (spell?.tier === 3);
-    this.duration = this.isTier3 ? 0.25 : 0.10;
+    this.duration = isRigged ? (this.isTier3 ? 0.65 : 0.25) : (this.isTier3 ? 0.25 : 0.10);
     this.timer = this.duration;
     this.payloads = payloads;
     this.input = input;
@@ -62,11 +63,12 @@ export class CastWindup {
   }
 
   update(dt) {
+    const isRigged = !!this.player.glbHero?.isRigged;
     if (this.snapTimer > 0) {
       this.snapTimer = Math.max(0, this.snapTimer - dt);
       const ratio = this.snapTimer / 0.10;
       if (!this.player.glbHero) this.player.visualMesh.rotation.x = ratio * 0.35; // Snap forward decay
-      if (this.player.rightArm) this.player.rightArm.rotation.x = -1.1 * ratio;
+      if (!isRigged && this.player.rightArm) this.player.rightArm.rotation.x = -1.1 * ratio;
       if (this.snapTimer <= 0 && this.player.staffOrbMat) {
         this.player.staffOrbMat.emissive?.setHex(0x000000);
       }
@@ -80,10 +82,12 @@ export class CastWindup {
 
     this.timer -= dt;
 
-    // Hero leans back during anticipation
-    if (!this.player.glbHero) this.player.visualMesh.rotation.x = -0.32;
-    if (this.player.rightArm) this.player.rightArm.rotation.x = 0.65;
-    if (this.player.staffShaft) this.player.staffShaft.rotation.x = 0.65;
+    // Hero leans back during anticipation (skipped for rigged GLB heroes)
+    if (!isRigged) {
+      if (!this.player.glbHero) this.player.visualMesh.rotation.x = -0.32;
+      if (this.player.rightArm) this.player.rightArm.rotation.x = 0.65;
+      if (this.player.staffShaft) this.player.staffShaft.rotation.x = 0.65;
+    }
 
     // Tier 3 growing glow ring
     if (this.isTier3 && this.glowRing.visible) {
@@ -97,13 +101,14 @@ export class CastWindup {
     if (this.timer <= 0) {
       this.active = false;
       this.glowRing.visible = false;
-      this.snapTimer = 0.10; // Trigger snap forward
       if (this.player.glbHero) {
+        if (!isRigged) this.snapTimer = 0.10;
         this.player.glbHero.triggerSnap();
       } else {
+        this.snapTimer = 0.10;
         this.player.visualMesh.rotation.x = 0.35;
       }
-      if (this.player.rightArm) this.player.rightArm.rotation.x = -1.1;
+      if (!isRigged && this.player.rightArm) this.player.rightArm.rotation.x = -1.1;
       this.onFire?.(this.payloads, this.input);
     }
   }

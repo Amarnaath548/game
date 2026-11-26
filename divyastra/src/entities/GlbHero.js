@@ -13,11 +13,16 @@ import {
 
 const DEG_TO_RAD = Math.PI / 180;
 
-function cloneActorMaterials(root) {
+export function cloneActorMaterials(root) {
   const matMap = new Map(), mats = [], meshes = [];
   const cloneMat = (m) => {
     if (!m) return m;
-    if (!matMap.has(m)) { const c = m.clone(); matMap.set(m, c); mats.push(c); }
+    if (!matMap.has(m)) {
+      const c = m.clone();
+      if (m.transparent) c.userData.keepTransparent = true;
+      matMap.set(m, c);
+      mats.push(c);
+    }
     return matMap.get(m);
   };
   root.traverse((c) => {

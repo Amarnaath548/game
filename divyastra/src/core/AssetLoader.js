@@ -7,19 +7,39 @@ function toWebPath(path) {
   return path.startsWith('public/') ? `./${path.slice(7)}` : path;
 }
 
+const HERO_CLIP_STATES = ['idle', 'run', 'attack', 'hit', 'death'];
+
+function mapHeroClipStates(animations = []) {
+  const clips = animations.map((c) => c.name);
+  const mapped = [];
+  for (const state of HERO_CLIP_STATES) {
+    const match = animations.find((c) => c.name.toLowerCase() === state)
+      || animations.find((c) => c.name.toLowerCase().includes(state));
+    if (match) mapped.push(`${match.name}->${state}`);
+  }
+  return { clips, mapped };
+}
+
 export class AssetLoader {
   constructor() {
     this.icons = new Map();
     this.iconUrls = new Map();
     this.models = new Map();
+    this.modelAnimations = new Map();
     this.audioBuffers = new Map();
     this.rawAudio = new Map();
     this.audioCtx = null;
     this.gltfLoader = new GLTFLoader();
     this.loaded = false;
+    this._readyPromise = null;
+  }
+
+  whenReady() {
+    return this._readyPromise || Promise.resolve();
   }
 
   async loadAll(audioCtx = null) {
+    if (this._readyPromise) return this._readyPromise;
     if (audioCtx) this.audioCtx = audioCtx;
     const tasks = [];
 
@@ -56,8 +76,10 @@ export class AssetLoader {
       tasks.push(this.loadAudio('bgm', ASSET_PATHS.bgm));
     }
 
-    await Promise.allSettled(tasks);
-    this.loaded = true;
+    this._readyPromise = Promise.allSettled(tasks).then(() => {
+      this.loaded = true;
+    });
+    return this._readyPromise;
   }
 
   loadIcon(id, rawPath) {
@@ -95,8 +117,11 @@ export class AssetLoader {
         (gltf) => {
           if (gltf && gltf.scene) {
             this.models.set(key, gltf.scene);
+            const anims = gltf.animations || [];
+            this.modelAnimations.set(key, anims);
             if (key.startsWith('hero_')) {
-              console.info(`[AssetLoader] Hero GLB loaded: ${key.slice(5)} (${url})`);
+              const { clips, mapped } = mapHeroClipStates(anims);
+              console.info(`[HeroRig] ${key.slice(5)}: clips=[${clips.join(', ')}] -> states=[${mapped.join(', ')}]`);
             }
           }
           resolve(gltf);
@@ -160,6 +185,10 @@ export class AssetLoader {
   getHeroModel(heroId) {
     const scene = this.models.get(`hero_${heroId}`);
     return scene ? SkeletonUtils.clone(scene) : null;
+  }
+
+  getHeroAnimations(heroId) {
+    return this.modelAnimations.get(`hero_${heroId}`) || [];
   }
 
   hasHeroModel(heroId) {

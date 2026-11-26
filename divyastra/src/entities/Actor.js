@@ -45,6 +45,10 @@ export class Actor {
 
   rebuildHeroVisual(hero) {
     this.hero = hero;
+    this.rightArm = this.leftArm = this.leftLeg = this.rightLeg = this.staffShaft = null;
+    this.staffOrb = this.staffOrbMat = this.staffAccentMesh = this.staffAccentMat = null;
+    this.headGroup = this.haloGlow = this.headOutlineMesh = this.bodyMat = this.accentMat = null;
+    this.spinningStaffTip = this.tierVisuals = this.shieldMesh = this.outlineMesh = this.outlineMeshes = null;
     while (this.visualMesh.children.length > 0) this.visualMesh.remove(this.visualMesh.children[0]);
     buildHeroVisual(this, hero);
     this.robeMat = this.bodyMat; this.hatMat = this.accentMat;
@@ -218,6 +222,7 @@ export class Actor {
     if (this.isDead) return;
     this.isDead = true; this.isDying = true; this.deathTimer = this.glbHero ? 1.5 : 0.35;
     this._hideShield();
+    this.glbHero?.triggerDeath?.();
     if (!this.isBot && !this.glbHero) for (const m of this.visualMats || this.heroMats || []) m.transparent = true;
   }
 

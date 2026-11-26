@@ -10,6 +10,7 @@ import { buildTierVisuals } from './HeroTierVisuals.js';
 import { buildBotVisual } from './BotVisual.js';
 import { getBotStaticGeos, getBotHeadGeos } from './HeroOutlines.js';
 import { buildGlbHero } from './GlbHero.js';
+import { buildGlbRiggedHero, hasSkinnedMesh } from './GlbRiggedHero.js';
 
 const mk = (hex) => new THREE.MeshLambertMaterial({ color: hex, flatShading: true, emissive: 0x000000 });
 
@@ -31,7 +32,12 @@ export function buildHeroVisual(actor, hero) {
   actor.outlineMeshes = null;
   const customModel = assetLoader.getHeroModel(hero.id);
   if (customModel) {
-    buildGlbHero(actor, hero, customModel);
+    const animations = assetLoader.getHeroAnimations?.(hero.id) || [];
+    if (animations.length > 0 && hasSkinnedMesh(customModel)) {
+      buildGlbRiggedHero(actor, hero, customModel, animations);
+    } else {
+      buildGlbHero(actor, hero, customModel);
+    }
     return;
   }
   if (actor.isBot) {
