@@ -18,6 +18,8 @@ export class ZoneSystem {
     this.centerX = 0;
     this.centerZ = 0;
     this.isMatchOver = false;
+    this.isEndless = false;
+    this.minRadius = 0;
     this.initRadius = STORM_PHASES[0].startRadius;
 
     this.visuals = new ZoneVisuals(scene);
@@ -26,6 +28,11 @@ export class ZoneSystem {
 
     activeZoneSystem = this;
     if (typeof window !== 'undefined') window.__zoneSys = this;
+  }
+
+  setEndlessMode(steadyRadius = 52) {
+    this.isEndless = true;
+    this.minRadius = steadyRadius;
   }
 
   update(dt, actors = []) {
@@ -38,10 +45,9 @@ export class ZoneSystem {
     const duration = currentPhase.duration * (getDifficulty()?.zoneTimeMult ?? 1.0);
     const progress = Math.min(1.0, this.phaseTime / duration);
 
-    this.currentRadius = THREE.MathUtils.lerp(
-      currentPhase.startRadius,
-      currentPhase.endRadius,
-      progress
+    this.currentRadius = Math.max(
+      this.minRadius,
+      THREE.MathUtils.lerp(currentPhase.startRadius, currentPhase.endRadius, progress)
     );
 
     // Update visuals with current state & player

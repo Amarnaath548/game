@@ -119,9 +119,13 @@
       </section>
 
       <aside class="lobby-play-panel">
+        <div id="mode-toggle-bar" class="mode-toggle-bar" role="tablist" aria-label="Game Mode">
+          <button type="button" class="mode-toggle-btn active" data-mode="campaign">CAMPAIGN</button>
+          <button type="button" class="mode-toggle-btn" data-mode="endless">ENDLESS</button>
+        </div>
         <button id="play-match-btn" class="play-btn-large">PLAY</button>
         <div class="next-level-row">
-          <span class="next-level-text">NEXT: <span id="lobby-next-level-name">GRASS PLAINS</span></span>
+          <span class="next-level-text"><span id="lobby-next-prefix">NEXT:</span> <span id="lobby-next-level-name">GRASS PLAINS</span></span>
           <img id="lobby-next-map-thumb" src="./lobby/map_grass.png" class="next-map-thumb" alt="Map" />
         </div>
         <span id="lobby-arena-label" class="arena-label" style="display:none;"></span>

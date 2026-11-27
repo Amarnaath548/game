@@ -26,6 +26,7 @@ import { ArenaInteractables } from './systems/ArenaInteractables.js';
 import { getDevTools } from './core/DevTools.js';
 import { DevInspectView } from './ui/DevInspectView.js';
 import { CampaignManager } from './core/CampaignManager.js';
+import { EndlessManager } from './core/EndlessManager.js';
 import { setDifficulty } from './config/difficulty.js';
 import { SettingsView } from './ui/SettingsView.js';
 import { updateVisibilityCulling } from './systems/VisibilityCulling.js';
@@ -40,6 +41,7 @@ const meta = new MetaProgression();
 const questManager = new QuestManager();
 const spellbookManager = new SpellbookManager();
 const campaignManager = new CampaignManager();
+const endlessManager = new EndlessManager();
 const tutorialHints = new TutorialHints();
 const particleSys = new ParticleSystem(sceneManager.scene, 400);
 sceneManager.particleSys = particleSys;
@@ -88,12 +90,12 @@ const combatResolver = new CombatResolver({
 });
 const matchManager = new MatchManager({
   sceneManager, sound, meta, ui: null, banners, floatingBars, damageNumbers, killFeed,
-  particleSys, player, spawnManager, combatResolver, projectiles, projPool, gemPool, orbPool, questManager, spellbookManager, arenaInteractables, campaignManager
+  particleSys, player, spawnManager, combatResolver, projectiles, projPool, gemPool, orbPool, questManager, spellbookManager, arenaInteractables, campaignManager, endlessManager
 });
 
 // UI
 const ui = new UIManager(meta, {
-  questManager, spellbookManager, sceneManager, banners, campaignManager,
+  questManager, spellbookManager, sceneManager, banners, campaignManager, endlessManager,
   onSpellChange: (spellKey) => player.setSpell(spellKey),
   onCastRequested: () => { input.fireReleased = true; },
   onHeroChange: (hero) => {
@@ -107,6 +109,7 @@ const ui = new UIManager(meta, {
 });
 matchManager.ui = ui; combatResolver.ui = ui;
 campaignManager.setDeps({ matchManager, ui, banners });
+endlessManager.setDeps({ matchManager, spawnManager, banners, player, campaignManager });
 
 const origShowLevelUp = ui.showLevelUp.bind(ui);
 ui.showLevelUp = (p, lvl) => { origShowLevelUp(p, lvl); tutorialHints.onLevelUp(lvl); };

@@ -2,6 +2,7 @@ import { ZoneSystem } from '../systems/ZoneSystem.js';
 import { PLAYER_BASE, HEROES, HERO_VISUAL_SCALE, VALID_HERO_IDS } from '../config/constants.js';
 import { getDevTools } from './DevTools.js';
 import { getDifficulty } from '../config/difficulty.js';
+import { ENDLESS_CONFIG } from '../config/endless.js';
 import { assetLoader } from './AssetLoader.js';
 
 export class MatchManager {
@@ -21,6 +22,7 @@ export class MatchManager {
     this.projectiles = deps.projectiles;
     this.projPool = deps.projPool;
     this.campaignManager = deps.campaignManager || null;
+    this.endlessManager = deps.endlessManager || null;
     this.gemPool = deps.gemPool;
     this.orbPool = deps.orbPool;
     this.questManager = deps.questManager;
@@ -28,6 +30,7 @@ export class MatchManager {
     this.arenaInteractables = deps.arenaInteractables;
 
     this.zoneSys = new ZoneSystem(this.sceneManager.scene);
+    this.mode = 'campaign';
     this.matchActive = false;
     this.isGameOver = false;
     this.isPaused = false;
@@ -97,7 +100,8 @@ export class MatchManager {
     }
   }
 
-  async startMatch(forcedBiome = null, botCount = null) {
+  async startMatch(forcedBiome = null, botCount = null, mode = 'campaign') {
+    this.mode = mode;
     this.spawnManager.cleanup();
     this.projectiles.forEach((p) => p.despawn());
     this.spawnManager.gems.forEach((g) => g.despawn());
@@ -109,8 +113,10 @@ export class MatchManager {
     this.sceneManager.scene.remove(this.zoneSys.forcefield);
     this.sceneManager.scene.remove(this.zoneSys.groundRing);
     this.zoneSys = new ZoneSystem(this.sceneManager.scene);
+    if (this.mode === 'endless') this.zoneSys.setEndlessMode(ENDLESS_CONFIG.STEADY_ZONE_RADIUS);
 
     this.applyLobbyLoadout();
+    this.player.allowInfiniteLevels = (this.mode === 'endless');
     await this.sceneManager.startMatchBiome(this.spawnManager.bushes, forcedBiome);
     this.spawnManager.startMatch(botCount);
     if (this.arenaInteractables) this.arenaInteractables.spawn();
@@ -121,7 +127,7 @@ export class MatchManager {
     if (this.spellbookManager) this.spellbookManager.onMatchStart();
     this.isGameOver = false;
     this.matchActive = true;
-    if (this.banners && !this.campaignManager?.currentLevelId) {
+    if (this.banners && !this.campaignManager?.currentLevelId && this.mode !== 'endless') {
       this.banners.showMatchStartBanner('Arena Match', getDifficulty()?.name || 'Normal');
     }
   }
@@ -198,6 +204,7 @@ export class MatchManager {
     // Storm Zone & Out-of-bounds damage
     const devTools = getDevTools();
     if (!devTools.pauseZone) this.zoneSys.update(dt, [this.player, ...this.spawnManager.bots]);
+    if (this.mode === 'endless') this.endlessManager?.update(dt);
 
     // Overhead Floating Health Bars for bots & damage numbers
     this.floatingBars.update(this.getAllAliveActors(), this.player, this.spawnManager.bushes);
@@ -215,12 +222,17 @@ export class MatchManager {
       if (this.player.isDead && !this.player.isDying) {
         this.isGameOver = true;
         this.matchActive = false;
-        const place = aliveActors.length + 1;
-        if (!devT.cheatsUsed && this.questManager) this.questManager.record('matchEnd', { placement: place, survivalTime: this.matchTime, level: this.player.level });
-        const finished = (!devT.cheatsUsed && this.questManager) ? this.questManager.getQuestsCompletedThisMatch() : [];
-        const campRes = this.campaignManager?.currentLevelId ? this.campaignManager.completeLevel(this.campaignManager.currentLevelId, place, this.player.kills, false) : null;
-        this.ui.showEndGame(false, place, this.player, finished, this.spellbookManager?.getMatchSummary(), devT.cheatsUsed, campRes);
-      } else if (aliveActors.length === 1 && aliveActors[0] === this.player) {
+        if (this.mode === 'endless' && this.endlessManager) {
+          const endlessRes = this.endlessManager.finishRun(this.matchTime, this.player.kills);
+          this.ui.showEndGame(false, 1, this.player, [], this.spellbookManager?.getMatchSummary(), devT.cheatsUsed, null, endlessRes);
+        } else {
+          const place = aliveActors.length + 1;
+          if (!devT.cheatsUsed && this.questManager) this.questManager.record('matchEnd', { placement: place, survivalTime: this.matchTime, level: this.player.level });
+          const finished = (!devT.cheatsUsed && this.questManager) ? this.questManager.getQuestsCompletedThisMatch() : [];
+          const campRes = this.campaignManager?.currentLevelId ? this.campaignManager.completeLevel(this.campaignManager.currentLevelId, place, this.player.kills, false) : null;
+          this.ui.showEndGame(false, place, this.player, finished, this.spellbookManager?.getMatchSummary(), devT.cheatsUsed, campRes);
+        }
+      } else if (this.mode !== 'endless' && aliveActors.length === 1 && aliveActors[0] === this.player) {
         this.isGameOver = true;
         this.matchActive = false;
         if (!devT.cheatsUsed && this.questManager) this.questManager.record('matchEnd', { placement: 1, survivalTime: this.matchTime, level: this.player.level });

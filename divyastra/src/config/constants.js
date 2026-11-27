@@ -180,6 +180,15 @@ export const LEVEL_TABLE = [
   { level: 8, xpReq: 1380, hpBonus: 80, dmgBonus: 12, rewardType: 'STAT_BOOST' }
 ];
 
+export function getLevelConfig(level, allowInfinite = false) {
+  const exact = LEVEL_TABLE.find((lvl) => lvl.level === level);
+  if (exact) return exact;
+  if (!allowInfinite || level <= 8) return null;
+  const extra = level - 8;
+  const xpReq = 1380 + extra * 350 + 30 * extra * (extra + 1);
+  return { level, xpReq, hpBonus: 60, dmgBonus: 10, rewardType: 'STAT_BOOST' };
+}
+
 export const TAPAS_DELAY = 1.2;
 export const TAPAS_BONUS = 0.4;
 export const TAPAS_HEAL_PCT_PER_SEC = 0.04;

@@ -45,6 +45,14 @@ export const PERK_POOL = [
   }
 ];
 
+export const STACKABLE_PERK_POOL = [
+  { id: 'ENDLESS_POWER', title: 'Arcane Surge', desc: '+10% Spell Damage (Stackable)', stackable: true },
+  { id: 'ENDLESS_VITALITY', title: 'Prana Font', desc: '+60 Max HP & Heal 80 HP (Stackable)', stackable: true },
+  { id: 'ENDLESS_HASTE', title: 'Swift Mantra', desc: '-8% Spell Cooldown (Stackable)', stackable: true },
+  { id: 'ENDLESS_SWIFT', title: 'Vayu Stride', desc: '+8% Movement Speed (Stackable)', stackable: true },
+  { id: 'ENDLESS_WISDOM', title: 'Rishi Insight', desc: '+15% XP Gain (Stackable)', stackable: true }
+];
+
 export function renderPerkSelection(container, onPick, player = null) {
   if (!container) return;
   container.innerHTML = '';
@@ -56,12 +64,13 @@ export function renderPerkSelection(container, onPick, player = null) {
     return true;
   });
 
-  if (available.length === 0) {
+  const pool = available.length > 0 ? available : (player?.allowInfiniteLevels ? STACKABLE_PERK_POOL : []);
+  if (pool.length === 0) {
     container.style.display = 'none';
     return;
   }
 
-  const shuffled = [...available].sort(() => 0.5 - Math.random()).slice(0, 3);
+  const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 3);
   shuffled.forEach((perk, idx) => {
     const card = document.createElement('div');
     card.className = 'perk-card dv-panel';

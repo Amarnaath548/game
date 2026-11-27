@@ -1,14 +1,16 @@
 import { iconSparkle, iconBook, iconStar, iconUnlock, iconSwords, iconTrophy, iconGold, renderStars } from './icons.js';
+import { formatEndlessTime } from '../config/endless.js';
 
 export function showEndGameModal(ctx) {
   const {
     meta, endModal, endTitle, endSubtitle, rewardTrophy, rewardGold,
     modalPlayAgainBtn, modalLobbyBtn, campaignManager,
     isVictory, place, player, finishedQuests = [], spellbookSummary = null,
-    devCheated = false, campRes = null
+    devCheated = false, campRes = null, endlessRes = null
   } = ctx;
 
-  const results = devCheated
+  const isEndless = Boolean(endlessRes);
+  const results = (devCheated || isEndless)
     ? { trophyChange: 0, newTrophies: meta.data.trophies, goldEarned: 0, newGold: meta.data.gold }
     : meta.applyMatchResults(place);
 
@@ -16,7 +18,12 @@ export function showEndGameModal(ctx) {
   const heroName = player?.hero?.name || 'Archmage';
   const kills = player?.kills || 0;
 
-  if (campRes) {
+  if (isEndless) {
+    endTitle.innerHTML = endlessRes.isNewBest
+      ? `<span class="title-win">NEW HIGH SCORE!</span>`
+      : `<span class="title-loss">ENDLESS RUN OVER</span>`;
+    endSubtitle.textContent = `${heroName} survived ${formatEndlessTime(endlessRes.survivalTime)} (Tier ${endlessRes.tier}).`;
+  } else if (campRes) {
     endTitle.innerHTML = campRes.completed
       ? `<span class="title-win">Level complete!</span>`
       : `<span class="title-loss">DEFEAT - #${place}</span>`;
@@ -57,11 +64,19 @@ export function showEndGameModal(ctx) {
     ? `<div class="quest-done-pill" style="background:#C8431E;border-color:#E08A2E;color:#fff;font-weight:700;">DEV MATCH - no rewards</div>`
     : '';
 
-  statsEl.innerHTML = `${devHtml}<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place}</b></div><div class="stat-pill">Kills: <b>${kills} ${iconSwords(13)}</b></div>${campStarsHtml}${unlockedHtml}${questHtml}${newSpellHtml}${starHtml}`;
-
-  const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
-  rewardTrophy.innerHTML = `${tSign} ${iconTrophy(14)} (${results.newTrophies})`;
-  rewardGold.innerHTML = `+${results.goldEarned} ${iconGold(14)} (${results.newGold})`;
+  const endlessPill = isEndless && endlessRes.isNewBest
+    ? `<div class="quest-done-pill" style="background:#E3B04B;border-color:#EFE6D2;color:#15172B;font-weight:700;">${iconTrophy(12)} Personal Best!</div>`
+    : '';
+  if (isEndless) {
+    statsEl.innerHTML = `${devHtml}${endlessPill}<div class="stat-pill">Score: <b>${endlessRes.score.toLocaleString()}</b></div><div class="stat-pill">Best: <b>${endlessRes.bestScore.toLocaleString()}</b></div><div class="stat-pill">Time: <b>${formatEndlessTime(endlessRes.survivalTime)}</b></div><div class="stat-pill">Kills: <b>${kills} ${iconSwords(13)}</b></div><div class="stat-pill">Tier: <b>${endlessRes.tier}</b></div>${newSpellHtml}${starHtml}`;
+    rewardTrophy.innerHTML = `Score Mode`;
+    rewardGold.innerHTML = `Best: ${endlessRes.bestScore.toLocaleString()} pts`;
+  } else {
+    statsEl.innerHTML = `${devHtml}<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place}</b></div><div class="stat-pill">Kills: <b>${kills} ${iconSwords(13)}</b></div>${campStarsHtml}${unlockedHtml}${questHtml}${newSpellHtml}${starHtml}`;
+    const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
+    rewardTrophy.innerHTML = `${tSign} ${iconTrophy(14)} (${results.newTrophies})`;
+    rewardGold.innerHTML = `+${results.goldEarned} ${iconGold(14)} (${results.newGold})`;
+  }
 
   modalPlayAgainBtn.textContent = 'Retry';
   modalLobbyBtn.textContent = 'Menu';
@@ -75,7 +90,7 @@ export function showEndGameModal(ctx) {
     modalPlayAgainBtn.parentElement.insertBefore(nextBtn, modalPlayAgainBtn);
   }
 
-  const canNext = campRes?.completed && campRes?.nextLevelId && (campaignManager ? campaignManager.isUnlocked(campRes.nextLevelId) : false);
+  const canNext = !isEndless && campRes?.completed && campRes?.nextLevelId && (campaignManager ? campaignManager.isUnlocked(campRes.nextLevelId) : false);
   if (canNext) {
     nextBtn.style.display = 'inline-block';
     nextBtn.textContent = 'Next Level';

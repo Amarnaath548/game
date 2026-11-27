@@ -1,4 +1,5 @@
 import { activeZoneSystem } from '../systems/ZoneSystem.js';
+import { formatEndlessTime } from '../config/endless.js';
 import { iconSkull, iconSpeaker } from './icons.js';
 
 export class TopRightHUD {
@@ -37,7 +38,7 @@ export class TopRightHUD {
     this.lastCountdownText = '';
   }
 
-  update(player, isSafe, zoneSysParam = null) {
+  update(player, isSafe, zoneSysParam = null, endlessMgr = null) {
     if (player) {
       const gems = player.gemsCollected || 0;
       if (this.lastGems !== gems) {
@@ -59,7 +60,9 @@ export class TopRightHUD {
     const zSys = zoneSysParam || activeZoneSystem || (typeof window !== 'undefined' ? window.__zoneSys : null);
     if (this.zoneCountdownEl && zSys) {
       let text = '';
-      if (zSys.isShrinking()) {
+      if (zSys.isEndless && endlessMgr) {
+        text = `TIER ${endlessMgr.currentTier} \u2022 ${formatEndlessTime(endlessMgr.elapsed)}`;
+      } else if (zSys.isShrinking()) {
         text = 'Shrinking...';
       } else {
         const t = Math.max(0, Math.ceil(zSys.getTimeUntilNextShrink()));

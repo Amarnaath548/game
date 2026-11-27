@@ -19,7 +19,9 @@ export class LobbyShell {
     this.heroName = get('lobby-hero-name'); this.heroSchool = get('lobby-hero-school');
     this.sheetOverlay = get('lobby-sheet-overlay'); this.sheetTitle = get('lobby-sheet-title');
     this.nextLevelNameEl = get('lobby-next-level-name'); this.nextMapThumb = get('lobby-next-map-thumb');
+    this.nextPrefixEl = get('lobby-next-prefix');
     this.settingsPopover = get('settings-popover'); this.toastEl = get('lobby-toast');
+    this.selectedMode = localStorage.getItem('divyastra_play_mode') || 'campaign';
 
     this.displayedHeroId = this.getSelectedHeroId();
     this.lastUnlockedHeroId = this.displayedHeroId;
@@ -90,6 +92,21 @@ export class LobbyShell {
     }
     document.querySelectorAll('.bottom-tab-btn').forEach((tab) => {
       tab.addEventListener('click', () => this.showToast('Coming soon'));
+    });
+    document.querySelectorAll('.mode-toggle-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        this.selectedMode = btn.dataset.mode === 'endless' ? 'endless' : 'campaign';
+        localStorage.setItem('divyastra_play_mode', this.selectedMode);
+        this.updateModeToggleUI();
+        this.updateNextLevelDisplay();
+      });
+    });
+    this.updateModeToggleUI();
+  }
+
+  updateModeToggleUI() {
+    document.querySelectorAll('.mode-toggle-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.mode === this.selectedMode);
     });
   }
 
@@ -207,6 +224,15 @@ export class LobbyShell {
 
   updateNextLevelDisplay() {
     if (!this.nextLevelNameEl) return;
+    if (this.selectedMode === 'endless') {
+      const best = this.ui?.endlessManager?.stats?.bestScore || 0;
+      if (this.nextPrefixEl) this.nextPrefixEl.textContent = 'BEST:';
+      this.nextLevelNameEl.textContent = `${best.toLocaleString()} PTS`;
+      if (this.nextMapThumb) this.nextMapThumb.style.display = 'none';
+      return;
+    }
+    if (this.nextPrefixEl) this.nextPrefixEl.textContent = 'NEXT:';
+    if (this.nextMapThumb) this.nextMapThumb.style.display = 'block';
     let nextLvl = LEVELS[0];
     if (this.campaign) {
       const found = LEVELS.find((l) => this.campaign.isUnlocked(l.id) && this.campaign.getStars(l.id) < 3);

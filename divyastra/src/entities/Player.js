@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Actor } from './Actor.js';
-import { PLAYER_BASE, LEVEL_TABLE, COLORS, ARENA, HEROES } from '../config/constants.js';
+import { PLAYER_BASE, getLevelConfig, COLORS, ARENA, HEROES } from '../config/constants.js';
 import { SpellSlotController } from './SpellSlotController.js';
 import { getSpell, FIST_SPELL } from '../config/spellRegistry.js';
 import { TapasComponent } from './TapasComponent.js';
@@ -22,6 +22,7 @@ export class Player extends Actor {
     this.xp = 0;
     this.kills = 0;
     this.dmgBonus = 0;
+    this.allowInfiniteLevels = false;
     this.perks = [];
     this.staffElement = null;
     this.spellDamageMult = 1.0;
@@ -127,19 +128,33 @@ export class Player extends Actor {
   addXP(amount, onLevelUp) {
     const mult = (getDifficulty()?.playerXpMult ?? 1.0) * (this.xpMult ?? 1.0);
     this.xp += Math.round(amount * mult);
-    const nextConfig = LEVEL_TABLE.find((lvl) => lvl.level === this.level + 1);
+    const nextConfig = getLevelConfig(this.level + 1, this.allowInfiniteLevels);
     if (nextConfig && this.xp >= nextConfig.xpReq) {
       this.level += 1;
       this.maxHp += nextConfig.hpBonus;
       this.hp = Math.min(this.maxHp, this.hp + nextConfig.hpBonus);
       this.dmgBonus += nextConfig.dmgBonus;
       if (onLevelUp) onLevelUp(this.level, nextConfig.rewardType);
-      const afterConfig = LEVEL_TABLE.find((lvl) => lvl.level === this.level + 1);
+      const afterConfig = getLevelConfig(this.level + 1, this.allowInfiniteLevels);
       if (afterConfig && this.xp >= afterConfig.xpReq) this.xp = afterConfig.xpReq - 1;
     }
   }
 
   applyPerk(perk) {
+    if (perk.stackable) {
+      if (perk.id === 'ENDLESS_POWER') this.spellDamageMult = +((this.spellDamageMult ?? 1.0) + 0.10).toFixed(2);
+      if (perk.id === 'ENDLESS_VITALITY') {
+        this.maxHp += 60;
+        this.hp = Math.min(this.maxHp, this.hp + 80);
+      }
+      if (perk.id === 'ENDLESS_HASTE') this.cooldownMult = Math.max(0.35, +((this.cooldownMult ?? 1.0) * 0.92).toFixed(3));
+      if (perk.id === 'ENDLESS_SWIFT') {
+        this.baseSpeed *= 1.08;
+        this.speed = this.baseSpeed;
+      }
+      if (perk.id === 'ENDLESS_WISDOM') this.xpMult = +((this.xpMult ?? 1.0) + 0.15).toFixed(2);
+      return;
+    }
     this.perks.push(perk.id);
     if (perk.id === 'WINDWALKER') this.baseSpeed *= 1.2;
     if (perk.id === 'ARCANE_SHIELD') {

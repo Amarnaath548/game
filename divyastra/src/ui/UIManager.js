@@ -1,4 +1,4 @@
-import { LEVEL_TABLE, GAME_TITLE, VALID_HERO_IDS } from '../config/constants.js';
+import { getLevelConfig, GAME_TITLE, VALID_HERO_IDS } from '../config/constants.js';
 import { HeroSelectView } from './HeroSelectView.js';
 import { StavesView } from './StavesView.js';
 import { UpgradesView } from './UpgradesView.js';
@@ -19,7 +19,7 @@ import { assetLoader } from '../core/AssetLoader.js';
 export class UIManager {
   constructor(metaProgression, callbacks = {}) {
     this.meta = metaProgression;
-    this.questManager = callbacks.questManager; this.spellbookManager = callbacks.spellbookManager; this.sceneManager = callbacks.sceneManager; this.banners = callbacks.banners; this.campaignManager = callbacks.campaignManager;
+    this.questManager = callbacks.questManager; this.spellbookManager = callbacks.spellbookManager; this.sceneManager = callbacks.sceneManager; this.banners = callbacks.banners; this.campaignManager = callbacks.campaignManager; this.endlessManager = callbacks.endlessManager;
     this.onHeroChange = callbacks.onHeroChange; this.onPerkSelected = callbacks.onPerkSelected; this.onStartMatch = callbacks.onStartMatch; this.onReturnToLobby = callbacks.onReturnToLobby;
     this.onCastRequested = callbacks.onCastRequested; this.onElementPicked = callbacks.onElementPicked;
 
@@ -74,12 +74,19 @@ export class UIManager {
       this.onStartMatch?.();
     };
     this.playMatchBtn.addEventListener('click', () => {
-      if (this.levelSelectView) this.levelSelectView.show();
-      else startMatchUI();
+      if (this.lobbyShell?.selectedMode === 'endless' && this.endlessManager) {
+        document.body.classList.add('in-match'); this.lobbyScreen.style.display = 'none'; this.hud.style.display = 'block';
+        this.endlessManager.startRun();
+      } else if (this.levelSelectView) {
+        this.levelSelectView.show();
+      } else {
+        startMatchUI();
+      }
     });
     this.modalPlayAgainBtn.addEventListener('click', () => {
       this.endModal.style.display = 'none';
-      if (this.campaignManager?.currentLevelId) this.campaignManager.startLevel(this.campaignManager.currentLevelId);
+      if (this.lastEndWasEndless && this.endlessManager) this.endlessManager.startRun();
+      else if (this.campaignManager?.currentLevelId) this.campaignManager.startLevel(this.campaignManager.currentLevelId);
       else startMatchUI();
     });
     this.modalLobbyBtn.addEventListener('click', () => {
@@ -178,7 +185,7 @@ export class UIManager {
     const aliveCount = isList ? aliveCountOrActors.length : aliveCountOrActors;
     if (this.aliveCountEl) this.aliveCountEl.textContent = aliveCount;
     if (this.leaderboard && isList) this.leaderboard.update(aliveCountOrActors, player, dt);
-    if (this.topRightHUD) this.topRightHUD.update(player, isSafe);
+    if (this.topRightHUD) this.topRightHUD.update(player, isSafe, null, this.endlessManager);
     else if (this.zoneStatusEl) {
       this.zoneStatusEl.textContent = isSafe ? 'Safe' : 'STORM';
       this.zoneStatusEl.style.color = isSafe ? '#E3B04B' : '#C8431E';
@@ -187,9 +194,9 @@ export class UIManager {
     this.hpFillEl.style.width = `${hpPct}%`;
     this.hpTextEl.textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
 
-    const currentLvlConfig = LEVEL_TABLE.find((lvl) => lvl.level === player.level) || { xpReq: 0 };
-    const nextLvlConfig = LEVEL_TABLE.find((lvl) => lvl.level === player.level + 1) || { xpReq: 999 };
-    const range = nextLvlConfig.xpReq - currentLvlConfig.xpReq;
+    const currentLvlConfig = getLevelConfig(player.level, player.allowInfiniteLevels) || { xpReq: 0 };
+    const nextLvlConfig = getLevelConfig(player.level + 1, player.allowInfiniteLevels) || { xpReq: 999999 };
+    const range = Math.max(1, nextLvlConfig.xpReq - currentLvlConfig.xpReq);
     const progress = Math.max(0, player.xp - currentLvlConfig.xpReq);
     this.xpFillEl.style.width = `${Math.min(100, (progress / range) * 100)}%`;
     this.lvlTextEl.textContent = `Lv ${player.level} ${player.hero?.name || ''}`;
@@ -222,8 +229,9 @@ export class UIManager {
   reset() { this.pickFlow?.reset(); }
   showPerkCards(level, player = null) { renderPerkSelection(this.perkOverlay, this.onPerkSelected, player); }
 
-  showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null, devCheated = false, campRes = null) {
+  showEndGame(isVictory, place, player = null, finishedQuests = [], spellbookSummary = null, devCheated = false, campRes = null, endlessRes = null) {
     this.pickFlow.reset();
+    this.lastEndWasEndless = Boolean(endlessRes);
     showEndGameModal({
       meta: this.meta,
       endModal: this.endModal,
@@ -234,7 +242,7 @@ export class UIManager {
       modalPlayAgainBtn: this.modalPlayAgainBtn,
       modalLobbyBtn: this.modalLobbyBtn,
       campaignManager: this.campaignManager,
-      isVictory, place, player, finishedQuests, spellbookSummary, devCheated, campRes
+      isVictory, place, player, finishedQuests, spellbookSummary, devCheated, campRes, endlessRes
     });
   }
 }
