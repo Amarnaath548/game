@@ -2,14 +2,15 @@ import * as THREE from 'three';
 
 const _v = new THREE.Vector3();
 const _best = new THREE.Vector3();
+const _handObj = new THREE.Vector3();
 const _m = new THREE.Matrix4();
-const _axis = new THREE.Vector3();
 const _defaultOut = new THREE.Vector3();
 const MAX_TIP_DIST_SQ = 2.5 * 2.5;
+const _loggedHeroes = new Set();
 
 /**
  * Finds the staff-side hand bone on a rigged model and attaches a "staffTip"
- * Object3D at the furthest weighted (>0.9) vertex in bone space.
+ * Object3D at the weighted (>0.9) vertex with the highest Y in rest-pose object space.
  */
 export function attachStaffTip(actor, rawModel) {
   actor.staffTip = null;
@@ -50,9 +51,9 @@ export function attachStaffTip(actor, rawModel) {
   }
   if (!bestBone) return null;
 
-  let maxDistSq = -1;
+  let maxY = -Infinity;
+  let bestBoneInv = null;
   _best.set(0, 0, 0);
-  _axis.set(0, 0, 0);
 
   for (const mesh of skinnedMeshes) {
     const bones = mesh.skeleton.bones;
@@ -62,7 +63,6 @@ export function attachStaffTip(actor, rawModel) {
     const si = mesh.geometry.attributes.skinIndex;
     const sw = mesh.geometry.attributes.skinWeight;
     const boneInv = mesh.skeleton.boneInverses[boneIdx];
-    _m.multiplyMatrices(boneInv, mesh.bindMatrix);
 
     for (let v = 0; v < pos.count; v++) {
       let matched = false;
@@ -72,49 +72,33 @@ export function attachStaffTip(actor, rawModel) {
         if (bi === boneIdx && w > 0.9) { matched = true; break; }
       }
       if (!matched) continue;
-      _v.fromBufferAttribute(pos, v).applyMatrix4(_m);
-      const dSq = _v.lengthSq();
-      if (dSq > maxDistSq) {
-        maxDistSq = dSq;
-        _best.copy(_v);
+      _v.fromBufferAttribute(pos, v).applyMatrix4(mesh.bindMatrix);
+      if (_v.y > maxY) {
+        maxY = _v.y;
+        bestBoneInv = boneInv;
+        _best.copy(_v).applyMatrix4(boneInv);
       }
     }
   }
 
-  if (maxDistSq <= 0) return null;
-
-  // Project along the dominant staff axis (furthest vertex direction) to confirm tip
-  _axis.copy(_best).normalize();
-  let maxProj = _best.dot(_axis);
-  for (const mesh of skinnedMeshes) {
-    const boneIdx = mesh.skeleton.bones.indexOf(bestBone);
-    if (boneIdx < 0) continue;
-    const pos = mesh.geometry.attributes.position;
-    const si = mesh.geometry.attributes.skinIndex;
-    const sw = mesh.geometry.attributes.skinWeight;
-    _m.multiplyMatrices(mesh.skeleton.boneInverses[boneIdx], mesh.bindMatrix);
-    for (let v = 0; v < pos.count; v++) {
-      let matched = false;
-      for (let k = 0; k < 4; k++) {
-        const bi = k === 0 ? si.getX(v) : k === 1 ? si.getY(v) : k === 2 ? si.getZ(v) : si.getW(v);
-        const w = k === 0 ? sw.getX(v) : k === 1 ? sw.getY(v) : k === 2 ? sw.getZ(v) : sw.getW(v);
-        if (bi === boneIdx && w > 0.9) { matched = true; break; }
-      }
-      if (!matched) continue;
-      _v.fromBufferAttribute(pos, v).applyMatrix4(_m);
-      const proj = _v.dot(_axis);
-      if (proj > maxProj) {
-        maxProj = proj;
-        _best.copy(_v);
-      }
-    }
-  }
+  if (!bestBoneInv) return null;
 
   const tip = new THREE.Object3D();
   tip.name = 'staffTip';
   tip.position.copy(_best);
   bestBone.add(tip);
   actor.staffTip = tip;
+
+  _m.copy(bestBoneInv).invert();
+  _handObj.set(0, 0, 0).applyMatrix4(_m);
+  const heightAboveHand = maxY - _handObj.y;
+  const heroKey = actor?.hero?.id || actor?.heroDef?.id || actor?.heroId || actor?.name || rawModel?.name || 'hero';
+  if (!_loggedHeroes.has(heroKey)) {
+    _loggedHeroes.add(heroKey);
+    console.info(
+      `[StaffTip] ${heroKey} (${bestBone.name}) offset=(${_best.x.toFixed(3)}, ${_best.y.toFixed(3)}, ${_best.z.toFixed(3)}) heightAboveHand=${heightAboveHand.toFixed(3)}`
+    );
+  }
   return tip;
 }
 
