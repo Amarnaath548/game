@@ -32,10 +32,10 @@ export class GlbRiggedHero {
     this.actor = actor;
     this.mixer = new THREE.AnimationMixer(modelRoot);
     this.actions = {};
-    for (const name of ['idle', 'run', 'attack', 'hit', 'death']) {
+    for (const name of ['idle', 'run', 'attack', 'cast', 'hit', 'death']) {
       const clip = findClip(animations, name);
       const act = clip ? this.mixer.clipAction(clip) : null;
-      if (act && (name === 'attack' || name === 'hit' || name === 'death')) {
+      if (act && (name === 'attack' || name === 'cast' || name === 'hit' || name === 'death')) {
         act.setLoop(THREE.LoopOnce, 1);
         act.clampWhenFinished = name !== 'hit';
       }
@@ -48,6 +48,7 @@ export class GlbRiggedHero {
 
     this.isCasting = false;
     this.castTier3 = false;
+    this.castAction = null;
     this.castElapsed = 0;
     this.strikeFired = false;
     this.deathStarted = false;
@@ -55,9 +56,10 @@ export class GlbRiggedHero {
     this._skipFrame = false;
 
     this.mixer.addEventListener('finished', (e) => {
-      if (e.action === this.actions.attack && this.isCasting) {
+      if (e.action === this.castAction && this.isCasting) {
         this.isCasting = false;
         this.castTier3 = false;
+        this.castAction = null;
         this.strikeFired = false;
         if (!this.actor.isDead) this._crossfadeTo(this._lastMoving ? 'run' : 'idle');
       }
@@ -96,6 +98,7 @@ export class GlbRiggedHero {
 
   reset() {
     this.isCasting = this.castTier3 = this.strikeFired = this.deathStarted = this._lastMoving = this._skipFrame = false;
+    this.castAction = null;
     this.castElapsed = 0;
     this.mixer.stopAllAction();
     this.currentState = 'idle';
@@ -107,12 +110,15 @@ export class GlbRiggedHero {
   }
 
   _startAttackClip(isTier3, fromWindup) {
-    if (!this.actions.attack) return;
+    const clipName = (!isTier3 && this.actions.cast) ? 'cast' : 'attack';
+    const act = this.actions[clipName];
+    if (!act) return;
     this.isCasting = true;
     this.castTier3 = fromWindup && isTier3;
+    this.castAction = act;
     this.castElapsed = 0;
     this.strikeFired = !fromWindup;
-    this._crossfadeTo('attack');
+    this._crossfadeTo(clipName);
   }
 
   startWindup(isTier3 = false) { this._startAttackClip(isTier3, true); }
@@ -120,15 +126,20 @@ export class GlbRiggedHero {
 
   triggerSnap() {
     this.strikeFired = true;
-    const atk = this.actions.attack;
-    if (atk) { atk.paused = false; if (atk.time < 0.25) atk.time = 0.25; }
+    const act = this.castAction;
+    if (act) {
+      act.paused = false;
+      const strikeTime = act === this.actions.cast ? 0.20 : 0.25;
+      if (act.time < strikeTime) act.time = strikeTime;
+    }
   }
 
   cancelCast() {
     if (!this.isCasting) return;
     this.isCasting = this.castTier3 = this.strikeFired = false;
     this.castElapsed = 0;
-    if (this.actions.attack) this.actions.attack.paused = false;
+    if (this.castAction) this.castAction.paused = false;
+    this.castAction = null;
     if (!this.actor.isDead) this._crossfadeTo(this._lastMoving ? 'run' : 'idle');
   }
 
@@ -148,6 +159,7 @@ export class GlbRiggedHero {
     this.deathStarted = true;
     this.isCasting = false;
     this.castTier3 = false;
+    this.castAction = null;
     if (this.actions.hit) this.actions.hit.stop();
     this._crossfadeTo('death');
   }

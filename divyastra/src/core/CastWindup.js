@@ -92,7 +92,8 @@ export class CastWindup {
     if (this.active || this.player.isDead) return;
     const isRigged = !!this.player.glbHero?.isRigged;
     this.isTier3 = (payloads[0]?.tier === 3) || (spell?.tier === 3);
-    this.duration = isRigged ? (this.isTier3 ? 0.65 : 0.25) : (this.isTier3 ? 0.25 : 0.10);
+    const useCastClip = isRigged && !this.isTier3 && !!this.player.glbHero.actions?.cast;
+    this.duration = isRigged ? (this.isTier3 ? 0.65 : (useCastClip ? 0.20 : 0.25)) : (this.isTier3 ? 0.25 : 0.10);
     this.timer = this.duration;
     this.payloads = payloads;
     this.input = input;
