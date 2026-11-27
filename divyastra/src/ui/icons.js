@@ -13,10 +13,13 @@ export const iconSkull = (size = 15, cls = '') =>
 
 export const iconSpeaker = (size = 14, cls = '', muted = false) => {
   if (muted) {
-    return svg('<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/>', size, cls);
+    return svg('<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="2" y1="2" x2="22" y2="22"/>', size, cls);
   }
   return svg('<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>', size, cls);
 };
+
+export const iconClose = (size = 16, cls = '') =>
+  svg('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>', size, cls);
 
 export const iconFist = (size = 18, cls = '') =>
   svg('<path d="M7 11V7a2 2 0 0 1 4 0v4"/><path d="M11 10V5a2 2 0 0 1 4 0v5"/><path d="M15 10V6a2 2 0 0 1 4 0v6a6 6 0 0 1-6 6H9a5 5 0 0 1-5-5v-2a2 2 0 0 1 4 0"/><line x1="4" y1="13" x2="8" y2="13"/>', size, cls);

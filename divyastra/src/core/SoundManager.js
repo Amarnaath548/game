@@ -1,6 +1,7 @@
 import { SoundSynth } from './SoundSynth.js';
 import { SoundDrone } from './SoundDrone.js';
 import { assetLoader } from './AssetLoader.js';
+import { iconSpeaker } from '../ui/icons.js';
 
 const MUTE_KEY = 'magica_sound_muted';
 const SFX_VOL_KEY = 'divyastra_sfx_vol';
@@ -120,8 +121,10 @@ export class SoundManager {
   }
 
   updateMuteButtons() {
-    const btns = [document.getElementById('mute-btn'), document.getElementById('hud-mute-btn')].filter(Boolean);
-    btns.forEach((b) => { b.textContent = this.muted ? '🔇' : '🔊'; });
+    [document.getElementById('mute-btn'), document.getElementById('hud-mute-btn')].filter(Boolean).forEach((b) => {
+      b.innerHTML = iconSpeaker(b.id === 'hud-mute-btn' ? 14 : 18, '', this.muted);
+      b.classList.toggle('muted', this.muted);
+    });
   }
 
   initMuteUI() {

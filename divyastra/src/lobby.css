@@ -75,17 +75,6 @@
 }
 .gear-img { width: 28px; height: 28px; object-fit: contain; }
 .gear-sub { font-size: 7px; font-weight: 800; letter-spacing: 0.2px; color: #cbd5e1; white-space: nowrap; line-height: 1; margin-top: 3px; text-align: center; }
-.settings-popover {
-  position: absolute; right: 0; top: 56px; background: #0d1630; border: 2px solid #c8963e;
-  border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.9); padding: 8px 12px; z-index: 100;
-  display: flex; flex-direction: column; gap: 8px; min-width: 180px;
-}
-.popover-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; gap: 10px; white-space: nowrap; }
-.vol-slider { width: 85px; height: 6px; accent-color: #ffd166; cursor: pointer; outline: none; }
-.quality-select { background: #14213d; color: #ffd166; border: 1.5px solid #c8963e; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 2px 6px; cursor: pointer; outline: none; }
-.quality-select:focus { border-color: #ffd166; }
-.popover-restart-notice { font-size: 10px; font-weight: 800; color: #f59e0b; text-align: right; cursor: pointer; text-decoration: underline; }
-.popover-restart-notice:hover { color: #fbbf24; }
 
 /* LEFT COLUMN (x: 28-200) */
 .lobby-left-col { position: absolute; left: 28px; width: 172px; top: 0; bottom: 0; pointer-events: none; z-index: 20; }

@@ -68,6 +68,10 @@ export class LobbyShell {
         const isHidden = this.settingsPopover.style.display === 'none';
         this.settingsPopover.style.display = isHidden ? 'flex' : 'none';
       });
+      document.getElementById('settings-close-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.settingsPopover.style.display = 'none';
+      });
       document.addEventListener('click', (e) => {
         if (!this.settingsPopover.contains(e.target) && e.target !== gearBtn) this.settingsPopover.style.display = 'none';
       });

@@ -60,13 +60,17 @@
             <img src="./lobby/icon_settings.png" class="gear-img" alt="Settings" />
             <span class="gear-sub">SETTINGS</span>
           </button>
-          <div id="settings-popover" class="settings-popover" style="display:none;">
-            <div class="popover-row"><span>Audio</span><button id="mute-btn" class="fs-btn" title="Toggle Sound"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></button></div>
+          <div id="settings-popover" class="settings-popover dv-panel" style="display:none;">
+            <div class="settings-title-row">
+              <span class="settings-title">SETTINGS</span>
+              <button id="settings-close-btn" class="settings-close-btn" type="button" aria-label="Close settings"></button>
+            </div>
+            <div class="popover-row"><span>Audio</span><button id="mute-btn" class="settings-icon-btn" type="button" title="Toggle Sound"></button></div>
             <div class="popover-row"><span>Sound Vol</span><input type="range" id="sfx-vol-slider" min="0" max="1" step="0.05" value="0.8" class="vol-slider" /></div>
             <div class="popover-row"><span>Music Vol</span><input type="range" id="music-vol-slider" min="0" max="1" step="0.05" value="0.5" class="vol-slider" /></div>
-            <div class="popover-row"><span>Display</span><button id="fullscreen-btn" class="fs-btn" title="Toggle Fullscreen"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button></div>
-            <div class="popover-row"><span>Quality</span><select id="quality-select" class="quality-select"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option></select></div>
-            <div class="popover-row"><span>Camera distance</span><select id="camera-select" class="quality-select"><option value="NEAR">Near</option><option value="NORMAL">Normal</option><option value="FAR">Far</option></select></div>
+            <div class="popover-row"><span>Display</span><button id="fullscreen-btn" class="settings-icon-btn" type="button" title="Toggle Fullscreen"></button></div>
+            <div class="popover-row"><span>Quality</span><div id="quality-select" class="seg-pills" role="radiogroup" aria-label="Quality"><button type="button" class="seg-pill" data-value="LOW">Low</button><button type="button" class="seg-pill" data-value="MEDIUM">Med</button><button type="button" class="seg-pill" data-value="HIGH">High</button></div></div>
+            <div class="popover-row"><span>Camera distance</span><div id="camera-select" class="seg-pills" role="radiogroup" aria-label="Camera distance"><button type="button" class="seg-pill" data-value="NEAR">Near</button><button type="button" class="seg-pill" data-value="NORMAL">Normal</button><button type="button" class="seg-pill" data-value="FAR">Far</button></div></div>
             <div id="quality-restart-notice" class="popover-restart-notice" style="display:none;" title="Click to reload page">Restart needed &#8635;</div>
           </div>
         </div>
@@ -153,7 +157,6 @@
   </div>
 
   <div id="vignette-overlay" class="vignette-overlay"></div>
-
   <!-- IN-GAME HUD -->
   <div id="hud">
     <!-- TOP-LEFT LEADERBOARD -->
@@ -185,7 +188,6 @@
 
     <div id="top-bar" style="display:none;"></div>
     <div id="kill-feed"></div>
-
     <!-- BOTTOM-CENTER PLAYER STATUS (SINGLE-LINE PANEL) -->
     <div id="player-status" class="dv-panel">
       <span id="player-lvl-text">Lv 1 Pyromancer</span>
@@ -199,7 +201,6 @@
 
     <!-- BOTTOM-CENTER SPELL STATUS PANEL -->
     <div id="spell-bar"></div>
-
     <!-- BOTTOM-RIGHT ROUND SPELL INDICATOR (64px) -->
     <div id="spell-indicator">
       <div id="spell-ind-cd" class="spell-ind-cd">

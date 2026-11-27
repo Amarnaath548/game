@@ -1,5 +1,7 @@
+import '../settings.css';
 import { QUALITY_PRESETS, saveQuality } from '../config/quality.js';
 import { getSavedCamDistance, saveCamDistance } from '../core/CameraZoom.js';
+import { iconFullscreen, iconClose } from './icons.js';
 
 export class SettingsView {
   constructor(sceneManager, sound = null) {
@@ -14,65 +16,82 @@ export class SettingsView {
   }
 
   init() {
+    const fsBtn = document.getElementById('fullscreen-btn');
+    if (fsBtn) fsBtn.innerHTML = iconFullscreen(18);
+    const closeBtn = document.getElementById('settings-close-btn');
+    if (closeBtn) closeBtn.innerHTML = iconClose(16);
+
     if (this.selectEl) {
       this.syncValue();
-      this.selectEl.addEventListener('change', () => this.onChange());
+      this.selectEl.querySelectorAll('.seg-pill').forEach((btn) => {
+        btn.addEventListener('click', () => this.onQualitySelect(btn.dataset.value));
+      });
     }
     if (this.camSelectEl) {
       this.syncCamValue();
-      this.camSelectEl.addEventListener('change', () => this.onCamChange());
+      this.camSelectEl.querySelectorAll('.seg-pill').forEach((btn) => {
+        btn.addEventListener('click', () => this.onCamSelect(btn.dataset.value));
+      });
     }
-    if (this.sfxSlider) {
-      this.sfxSlider.value = this.sound ? this.sound.sfxVol : 0.8;
-      const onSfx = () => {
-        const val = parseFloat(this.sfxSlider.value);
-        this.sound?.setSfxVolume(val);
-      };
-      this.sfxSlider.addEventListener('input', onSfx);
-      this.sfxSlider.addEventListener('change', onSfx);
-    }
-    if (this.musicSlider) {
-      this.musicSlider.value = this.sound ? this.sound.musicVol : 0.5;
-      const onMusic = () => {
-        const val = parseFloat(this.musicSlider.value);
-        this.sound?.setMusicVolume(val);
-      };
-      this.musicSlider.addEventListener('input', onMusic);
-      this.musicSlider.addEventListener('change', onMusic);
-    }
+    this.bindSlider(this.sfxSlider, this.sound ? this.sound.sfxVol : 0.8, (v) => this.sound?.setSfxVolume(v));
+    this.bindSlider(this.musicSlider, this.sound ? this.sound.musicVol : 0.5, (v) => this.sound?.setMusicVolume(v));
+
     if (this.restartNoticeEl) {
       this.restartNoticeEl.addEventListener('click', () => window.location.reload());
     }
     if (this.sceneManager) {
       this.sceneManager.onQualityChange = (newTier) => {
-        if (this.selectEl) this.selectEl.value = newTier;
+        this.setActivePill(this.selectEl, newTier);
         this.updateNotice(newTier);
       };
     }
   }
 
+  bindSlider(slider, initialVal, onUpdate) {
+    if (!slider) return;
+    const updateFill = (val) => {
+      slider.style.setProperty('--pct', `${Math.round(val * 100)}%`);
+    };
+    slider.value = initialVal;
+    updateFill(initialVal);
+    const handle = () => {
+      const val = parseFloat(slider.value);
+      updateFill(val);
+      onUpdate(val);
+    };
+    slider.addEventListener('input', handle);
+    slider.addEventListener('change', handle);
+  }
+
+  setActivePill(groupEl, value) {
+    if (!groupEl) return;
+    groupEl.querySelectorAll('.seg-pill').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.value === value);
+    });
+  }
+
   syncValue() {
     if (!this.selectEl || !this.sceneManager) return;
-    this.selectEl.value = this.sceneManager.qualityTier || 'HIGH';
-    this.updateNotice(this.sceneManager.qualityTier);
+    const tier = this.sceneManager.qualityTier || 'HIGH';
+    this.setActivePill(this.selectEl, tier);
+    this.updateNotice(tier);
   }
 
   syncCamValue() {
     if (!this.camSelectEl) return;
-    this.camSelectEl.value = getSavedCamDistance();
+    this.setActivePill(this.camSelectEl, getSavedCamDistance());
   }
 
-  onCamChange() {
-    if (!this.camSelectEl) return;
-    const distance = this.camSelectEl.value;
+  onCamSelect(distance) {
+    this.setActivePill(this.camSelectEl, distance);
     saveCamDistance(distance);
     if (this.sceneManager?.zoom) {
       this.sceneManager.zoom.setDistance(distance);
     }
   }
 
-  onChange() {
-    const tier = this.selectEl.value;
+  onQualitySelect(tier) {
+    this.setActivePill(this.selectEl, tier);
     if (!this.sceneManager) return;
     this.sceneManager.applyQuality(tier);
     saveQuality(tier);
