@@ -1,13 +1,21 @@
 import { HEROES, VALID_HERO_IDS, DEFAULT_UNLOCKED_HEROES } from '../config/constants.js';
-import { iconGold } from './icons.js';
+import { iconGold, iconLock, iconCheck } from './icons.js';
+import { loadAndTrimHero, getHeroSrc } from './HeroImageTrim.js';
 
-export function getSilhouetteClass(hero) {
-  const arch = (hero.archetype || hero.hatType || '').toLowerCase();
-  if (arch.includes('tapasvi') || arch.includes('jata')) return 'sil-tapasvi';
-  if (arch.includes('agni') || arch.includes('flame') || arch.includes('wizard')) return 'sil-agni';
-  if (arch.includes('jala') || arch.includes('turban') || arch.includes('hood')) return 'sil-jala';
-  if (arch.includes('prithvi') || arch.includes('circlet') || arch.includes('helmet') || arch.includes('horn')) return 'sil-prithvi';
-  return 'sil-tapasvi';
+const HERO_PORTRAITS = {
+  tapasvi: { file: 'hero_tapasvi.webp', hex: '#E3B04B', rgb: '227, 176, 75' },
+  agni: { file: 'hero_agni.png', hex: '#E4572E', rgb: '228, 87, 46', trim: true },
+  jala: { file: 'hero_jala.webp', hex: '#2FB5C9', rgb: '47, 181, 201' },
+  prithvi: { file: 'hero_prithvi.webp', hex: '#7FA650', rgb: '127, 166, 80' }
+};
+
+const HERO_UNLOCK_COST = 150;
+
+function formatPerk(extra) {
+  return (extra || '')
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export class HeroSelectView {
@@ -31,36 +39,44 @@ export class HeroSelectView {
     HEROES.forEach((hero) => {
       const isSelected = hero.id === safeSelected;
       const isUnlocked = unlockedHeroes.includes(hero.id);
+      const canAfford = this.meta.data.gold >= HERO_UNLOCK_COST;
+      const styleInfo = HERO_PORTRAITS[hero.id] || HERO_PORTRAITS.tapasvi;
+      const imgSrc = styleInfo.trim
+        ? getHeroSrc(hero.id, styleInfo.file)
+        : `./lobby/${styleInfo.file}`;
 
       const card = document.createElement('div');
       card.className = `hero-card dv-panel ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`;
+      card.style.setProperty('--hero-color', styleInfo.hex);
+      card.style.setProperty('--hero-rgb', styleInfo.rgb);
 
-      const bodyHex = '#' + hero.bodyColor.toString(16).padStart(6, '0');
-      const accentHex = '#' + hero.accentColor.toString(16).padStart(6, '0');
-      const silClass = getSilhouetteClass(hero);
+      const actionHtml = isSelected
+        ? `<button type="button" class="hero-btn hero-btn-selected" disabled>${iconCheck(14)}<span>SELECTED</span></button>`
+        : isUnlocked
+          ? `<button type="button" class="hero-btn hero-btn-select">SELECT</button>`
+          : `<button type="button" class="hero-btn hero-btn-unlock ${canAfford ? '' : 'unaffordable'}" ${canAfford ? '' : 'disabled'}>${iconLock(13)}<span>${HERO_UNLOCK_COST}</span>${iconGold(13)}</button>`;
 
       card.innerHTML = `
-        <div class="hero-preview-box">
-          <div class="hero-avatar ${silClass}" style="--accent: ${accentHex}; --body: ${bodyHex};">
-            <div class="avatar-headgear"></div>
-            <div class="hero-head">
-              <div class="hero-nose"></div>
-            </div>
-            <div class="hero-body" style="background: ${bodyHex}; border-color: ${accentHex};"></div>
-            <div class="avatar-orb" style="background: ${accentHex};"></div>
-          </div>
+        <div class="hero-portrait-bg">
+          <img class="hero-portrait-img" src="${imgSrc}" alt="${hero.name}" draggable="false" />
         </div>
-        <div class="hero-card-content">
+        ${!isUnlocked ? `<div class="hero-lock-pill">${iconLock(13)}<span>${HERO_UNLOCK_COST}</span>${iconGold(12)}</div>` : ''}
+        <div class="hero-card-fade">
           <div class="hero-name">${hero.name}</div>
-          <div class="hero-traits">${hero.archetype || 'SEEKER'} &bull; ${hero.extra.replace('_', ' ')}</div>
-          ${isSelected
-            ? '<div class="hero-badge badge-active">SELECTED</div>'
-            : isUnlocked
-              ? '<button class="hero-btn-select">SELECT</button>'
-              : `<button class="hero-btn-unlock" ${this.meta.data.gold >= 150 ? '' : 'disabled'}>UNLOCK (150 ${iconGold(13)})</button>`
-          }
+          <div class="hero-perk-row">
+            <span class="hero-elem-dot"></span>
+            <span class="hero-perk-text">${formatPerk(hero.extra)}</span>
+          </div>
+          ${actionHtml}
         </div>
       `;
+
+      if (styleInfo.trim) {
+        const imgEl = card.querySelector('.hero-portrait-img');
+        loadAndTrimHero(hero.id, styleInfo.file).then((trimmedUrl) => {
+          if (imgEl && imgEl.isConnected && trimmedUrl) imgEl.src = trimmedUrl;
+        });
+      }
 
       card.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -69,8 +85,8 @@ export class HeroSelectView {
           localStorage.setItem('magica_selected_hero', hero.id);
           this.render(hero.id);
           if (this.onHeroChange) this.onHeroChange(hero);
-        } else if (this.meta.data.gold >= 150) {
-          this.meta.data.gold -= 150;
+        } else if (this.meta.data.gold >= HERO_UNLOCK_COST) {
+          this.meta.data.gold -= HERO_UNLOCK_COST;
           this.meta.save();
           unlockedHeroes.push(hero.id);
           localStorage.setItem('magica_unlocked_heroes', JSON.stringify(unlockedHeroes));
