@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CAST_MOVE_SLOW } from '../config/constants.js';
 
 const _tipPos = new THREE.Vector3();
 const _orbColor = new THREE.Color();
@@ -32,9 +33,13 @@ export class CastWindup {
     this.isTier3 = false;
     this.payloads = [];
     this.input = null;
+    this.lockedAimDir = null;
     this.onFire = null;
     this.snapTimer = 0;
     this.orbFadeTimer = 0;
+    this.restoreTimer = 0;
+    this.restoreFromMult = 1.0;
+    this.slowMult = 1.0;
     this.orbElemColor = 0xf97316;
 
     const ringGeo = new THREE.RingGeometry(1.2, 1.5, 32);
@@ -83,8 +88,8 @@ export class CastWindup {
   }
 
   _snapYaw() {
-    if (this.input?.aimDir) {
-      const yaw = Math.atan2(this.input.aimDir.x, this.input.aimDir.z);
+    if (this.lockedAimDir) {
+      const yaw = Math.atan2(this.lockedAimDir.x, this.lockedAimDir.z);
       this.player.faceYaw = yaw;
       this.player.visualMesh.rotation.y = yaw;
     }
@@ -93,15 +98,21 @@ export class CastWindup {
   start(payloads, input, spell, onFire) {
     if (this.active || this.player.isDead) return;
     const isRigged = !!this.player.glbHero?.isRigged;
-    this.isTier3 = (payloads[0]?.tier === 3) || (spell?.tier === 3);
+    const tier = payloads[0]?.tier ?? spell?.tier ?? 1;
+    this.isTier3 = tier === 3;
     const useCastClip = isRigged && !this.isTier3 && !!this.player.glbHero.actions?.cast;
     this.duration = isRigged ? (this.isTier3 ? 0.65 : (useCastClip ? 0.20 : 0.25)) : (this.isTier3 ? 0.25 : 0.10);
     this.timer = this.duration;
     this.payloads = payloads;
     this.input = input;
+    const aim = input?.aimDir || input;
+    this.lockedAimDir = aim ? { x: aim.x ?? 0, z: aim.z ?? 1 } : null;
     this.onFire = onFire;
     this.active = true;
     this.orbFadeTimer = 0;
+    this.restoreTimer = 0;
+    this.slowMult = tier === 3 ? CAST_MOVE_SLOW.t3 : (tier === 2 ? CAST_MOVE_SLOW.t2 : CAST_MOVE_SLOW.t1);
+    this.player.castMoveMult = this.slowMult;
     this._snapYaw();
     this.player.glbHero?.startWindup(this.isTier3);
 
@@ -153,6 +164,17 @@ export class CastWindup {
       }
     }
 
+    if (this.restoreTimer > 0) {
+      if (this.player.isDead) {
+        this.restoreTimer = 0;
+        this.player.castMoveMult = 1.0;
+      } else {
+        this.restoreTimer = Math.max(0, this.restoreTimer - dt);
+        const p = 1.0 - (this.restoreTimer / 0.15);
+        this.player.castMoveMult = this.restoreFromMult + (1.0 - this.restoreFromMult) * p;
+      }
+    }
+
     if (!this.active) return;
     if (this.player.isDead) { this.cancel(); return; }
 
@@ -193,6 +215,8 @@ export class CastWindup {
         this.player.visualMesh.rotation.x = 0.35;
       }
       if (!isRigged && this.player.rightArm) this.player.rightArm.rotation.x = -1.1;
+      this.restoreFromMult = this.slowMult;
+      this.restoreTimer = 0.15;
       this.onFire?.(this.payloads, this.input);
     }
   }
@@ -202,6 +226,8 @@ export class CastWindup {
     this.glowRing.visible = false;
     this.snapTimer = 0;
     this.orbFadeTimer = 0;
+    this.restoreTimer = 0;
+    this.player.castMoveMult = 1.0;
     this.player.glbHero?.cancelCast();
     if (this.player.staffOrbMat) this.player.staffOrbMat.emissive?.setHex(0x000000);
     if (this.player.staffOrb) this.player.staffOrb.scale.setScalar(this.player.tierBaseScale || 1.25);

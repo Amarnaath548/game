@@ -183,6 +183,7 @@ export const LEVEL_TABLE = [
 export const TAPAS_DELAY = 1.2;
 export const TAPAS_BONUS = 0.4;
 export const TAPAS_HEAL_PCT_PER_SEC = 0.04;
+export const CAST_MOVE_SLOW = { t1: 0.7, t2: 0.7, t3: 0.35 };
 export const AOE_SPLASH_DAMAGE_MULT = 0.7;
 export const HAZARD_TICK_RATE = 0.25;
 export const SEPARATION_FACTOR = 1.25;

@@ -112,32 +112,40 @@ export class CombatResolver {
     this.player.spellSlot.startCooldown();
     if (this.player.cooldownMult) this.player.spellSlot.cooldownTimer *= this.player.cooldownMult;
     this.player.shootCooldown = this.player.spellSlot.cooldownTimer;
+    const lockedAimDir = { x: input?.aimDir?.x ?? 0, z: input?.aimDir?.z ?? 1 };
+    const lockedDragRatio = input?.dragRatio || 1.0;
     const tapasBonus = this.player.consumeTapasBonus ? this.player.consumeTapasBonus() : 0;
-    const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, input.aimDir, input.dragRatio || 1.0, 1.0 + tapasBonus);
+    const lockedMultiplier = 1.0 + tapasBonus;
+    const lockedSpell = this.player.currentSpell;
+    const payloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, lockedAimDir, lockedDragRatio, lockedMultiplier, lockedSpell);
     if (tapasBonus > 0) this.particleSys?.spawnBurst(this.player.x, 0.8, this.player.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
 
     // 0.1s wind-up (0.25s for Tier 3 Astra) anticipation, leans back & staff glows, then snaps forward
-    this.castWindup.start(payloads, input, this.player.currentSpell, (castPayloads) => {
-      if (input?.aimDir) { this.player.faceYaw = Math.atan2(input.aimDir.x, input.aimDir.z); this.player.visualMesh.rotation.y = this.player.faceYaw; }
+    this.castWindup.start(payloads, lockedAimDir, lockedSpell, () => {
+      this.player.faceYaw = Math.atan2(lockedAimDir.x, lockedAimDir.z);
+      this.player.visualMesh.rotation.y = this.player.faceYaw;
       this.player.postCastTimer = 0.4;
-      if (this.questManager && this.player.currentSpell?.id !== 'fist') this.questManager.record('cast', 1);
-      this.sound.playCast(this.player.currentSpell?.id || this.player.currentSpell);
-      if (this.astraVisuals && castPayloads[0]?.tier === 3) this.astraVisuals.spawnAstraRing(this.player.x, this.player.z);
-      prepareTipPayloads(this.player, castPayloads, input?.aimDir, this.castWindup, this.particleSys);
-      castPayloads.forEach((payload) => this.executeCastPayload(payload, this.player));
+      if (this.questManager && lockedSpell?.id !== 'fist') this.questManager.record('cast', 1);
+      this.sound.playCast(lockedSpell?.id || lockedSpell);
+      const freshPayloads = this.player.spellSlot.buildCastPayloads(this.player.x, this.player.z, lockedAimDir, lockedDragRatio, lockedMultiplier, lockedSpell);
+      if (this.astraVisuals && freshPayloads[0]?.tier === 3) this.astraVisuals.spawnAstraRing(this.player.x, this.player.z);
+      prepareTipPayloads(this.player, freshPayloads, lockedAimDir, this.castWindup, this.particleSys);
+      freshPayloads.forEach((payload) => this.executeCastPayload(payload, this.player));
     });
   }
 
   botShoot(bot, aimX, aimZ) {
     if (bot.isDead || !bot.spellSlot || bot.status?.stunTimer > 0) return;
     bot.spellSlot.startCooldown(); bot.shootCooldown = bot.spellSlot.cooldownTimer;
+    const lockedAimDir = { x: aimX, z: aimZ };
+    const lockedSpell = bot.currentSpell;
     const tapasBonus = bot.consumeTapasBonus ? bot.consumeTapasBonus() : 0;
-    const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, { x: aimX, z: aimZ }, 1.0, 1.0 + tapasBonus);
-    bot.faceYaw = Math.atan2(aimX, aimZ); bot.visualMesh.rotation.y = bot.faceYaw; bot.postCastTimer = 0.4;
+    const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, lockedAimDir, 1.0, 1.0 + tapasBonus, lockedSpell);
+    bot.faceYaw = Math.atan2(lockedAimDir.x, lockedAimDir.z); bot.visualMesh.rotation.y = bot.faceYaw; bot.postCastTimer = 0.4;
     bot.triggerCastAnim?.(payloads[0]?.tier === 3);
     if (tapasBonus > 0) this.particleSys?.spawnBurst(bot.x, 0.8, bot.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
     if (this.astraVisuals && payloads[0]?.tier === 3 && Math.hypot(bot.x - this.player.x, bot.z - this.player.z) <= 30) this.astraVisuals.spawnAstraRing(bot.x, bot.z);
-    prepareTipPayloads(bot, payloads, { x: aimX, z: aimZ }, this.castWindup, this.particleSys);
+    prepareTipPayloads(bot, payloads, lockedAimDir, this.castWindup, this.particleSys);
     payloads.forEach((payload) => this.executeCastPayload(payload, bot));
   }
 

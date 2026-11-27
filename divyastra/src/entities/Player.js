@@ -32,6 +32,7 @@ export class Player extends Actor {
     this.dashCooldownTimer = 0;
     this.dashVec = { x: 0, z: 0 };
     this.shootCooldown = 0;
+    this.castMoveMult = 1.0;
 
     this.tapas = new TapasComponent(this);
 
@@ -145,6 +146,7 @@ export class Player extends Actor {
 
   update(dt, bushes = []) {
     if (this.isDead) {
+      this.castMoveMult = 1.0;
       if (this.isDying) {
         super.update(dt);
       }
@@ -187,14 +189,15 @@ export class Player extends Actor {
       }
     }
 
+    const moveSpeed = this.speed * this.castMoveMult;
     if (this.dashTimer > 0) {
       this.dashTimer -= dt;
       this.x += this.dashVec.x * PLAYER_BASE.DASH_SPEED * dt;
       this.z += this.dashVec.z * PLAYER_BASE.DASH_SPEED * dt;
       if (this.dashTimer <= 0) this.isInvulnerable = false;
     } else {
-      this.x += this.input.moveDir.x * this.speed * dt;
-      this.z += this.input.moveDir.z * this.speed * dt;
+      this.x += this.input.moveDir.x * moveSpeed * dt;
+      this.z += this.input.moveDir.z * moveSpeed * dt;
     }
 
     const distFromCenter = Math.hypot(this.x, this.z), maxAllowed = ARENA.RADIUS - this.radius;
@@ -206,7 +209,7 @@ export class Player extends Actor {
     const aimAngle = Math.atan2(this.input.aimDir.x, this.input.aimDir.z);
     if (this.glbHero?.isRigged) {
       const moveLen = Math.hypot(this.input.moveDir.x, this.input.moveDir.z);
-      const realSpeed = this.dashTimer > 0 ? PLAYER_BASE.DASH_SPEED : Math.min(1, moveLen) * this.speed;
+      const realSpeed = this.dashTimer > 0 ? PLAYER_BASE.DASH_SPEED : Math.min(1, moveLen) * moveSpeed;
       updateActorFacing(this, dt, this.input.moveDir.x, this.input.moveDir.z, this.input.aimDir.x, this.input.aimDir.z, this.input.isAiming, realSpeed);
     } else {
       this.visualMesh.rotation.y = aimAngle;

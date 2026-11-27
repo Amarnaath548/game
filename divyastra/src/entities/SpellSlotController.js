@@ -65,8 +65,8 @@ export class SpellSlotController {
     }
   }
 
-  buildCastPayloads(originX, originZ, aimDir, dragRatio = 1.0, damageMultiplier = 1.0) {
-    const spell = this.activeSpell;
+  buildCastPayloads(originX, originZ, aimDir, dragRatio = 1.0, damageMultiplier = 1.0, spellOverride = null) {
+    const spell = spellOverride || this.activeSpell;
     if (!spell) return [];
 
     const clampedDrag = Math.max(0.2, Math.min(1.0, dragRatio));
