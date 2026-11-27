@@ -76,7 +76,7 @@ export const iconBoot = (size = 20, cls = '') =>
   svg('<path d="M7 3h6v9l4 2a3 3 0 0 1 2 2.8V19H5v-3l2-2V3z"/><line x1="5" y1="21" x2="19" y2="21"/>', size, cls);
 
 export const iconMagnet = (size = 20, cls = '') =>
-  svg('<path d="M6 15v-5a6 6 0 0 1 12 0v5"/><path d="M6 15h3v4H6z"/><path d="M15 15h3v4h-3z"/><line x1="6" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="18" y2="12"/>', size, cls);
+  svg('<path d="M6 5v8a6 6 0 0 0 12 0V5"/><path d="M10 5v8a2 2 0 0 0 4 0V5"/><line x1="6" y1="5" x2="10" y2="5"/><line x1="14" y1="5" x2="18" y2="5"/><line x1="6" y1="9" x2="10" y2="9"/><line x1="14" y1="9" x2="18" y2="9"/>', size, cls);
 
 export const iconClock = (size = 20, cls = '') =>
   svg('<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>', size, cls);

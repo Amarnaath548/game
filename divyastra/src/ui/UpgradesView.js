@@ -24,23 +24,24 @@ const UPGRADE_ICONS = {
   WISDOM: (s) => iconBook(s)
 };
 
-const EFFECT_FORMATTERS = {
-  VITALITY: (lvl) => `+${lvl * 25} HP`,
-  SWIFTNESS: (lvl) => `+${lvl * 4}% Speed`,
-  MAGNETISM: (lvl) => `+${lvl}.0u Pickup`,
-  POWER: (lvl) => `+${lvl * 3}% Dmg`,
-  HASTE: (lvl) => `-${lvl * 2}% CD`,
-  WARD: (lvl) => `-${lvl * 2}% Taken`,
-  DASHMASTERY: (lvl) => `-${lvl * 4}% Dash CD`,
-  FORTUNE: (lvl) => `+${lvl * 5}% Gold`,
-  WISDOM: (lvl) => `+${lvl * 4}% XP`
+const EFFECT_SPECS = {
+  VITALITY: { val: (l) => `+${l * 25}`, unit: 'HP' },
+  SWIFTNESS: { val: (l) => `+${l * 4}%`, unit: 'speed' },
+  MAGNETISM: { val: (l) => `+${l}.0u`, unit: 'pickup radius' },
+  POWER: { val: (l) => `+${l * 3}%`, unit: 'damage' },
+  HASTE: { val: (l) => `-${l * 2}%`, unit: 'cooldown' },
+  WARD: { val: (l) => `-${l * 2}%`, unit: 'damage taken' },
+  DASHMASTERY: { val: (l) => `-${l * 4}%`, unit: 'dash cooldown' },
+  FORTUNE: { val: (l) => `+${l * 5}%`, unit: 'gold' },
+  WISDOM: { val: (l) => `+${l * 4}%`, unit: 'XP' }
 };
 
 function formatEffectRange(upg, lvl) {
-  const fmt = EFFECT_FORMATTERS[upg.id];
-  if (!fmt) return '';
-  if (lvl >= upg.maxLevel) return fmt(lvl);
-  return `${fmt(lvl)} to ${fmt(lvl + 1)}`;
+  const spec = EFFECT_SPECS[upg.id];
+  if (!spec) return '';
+  if (lvl <= 0) return `Next: ${spec.val(1)} ${spec.unit}`;
+  if (lvl >= upg.maxLevel) return `Max: ${spec.val(lvl)} ${spec.unit}`;
+  return `${spec.val(lvl)} \u2192 ${spec.val(lvl + 1)} ${spec.unit}`;
 }
 
 function renderPips(lvl, maxLevel, flash) {

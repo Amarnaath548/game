@@ -7,6 +7,8 @@
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #c8963e rgba(13, 22, 48, 0.7);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent 100%);
 }
 
 #tab-upgrades::-webkit-scrollbar {
@@ -31,7 +33,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  padding-bottom: 6px;
+  padding-bottom: 24px;
 }
 
 @media (max-width: 620px) {
