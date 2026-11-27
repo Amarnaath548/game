@@ -24,7 +24,11 @@ export class Player extends Actor {
     this.dmgBonus = 0;
     this.perks = [];
     this.staffElement = null;
+    this.spellDamageMult = 1.0;
     this.cooldownMult = 1.0;
+    this.metaDamageTakenMult = 1.0;
+    this.dashCooldownMult = 1.0;
+    this.xpMult = 1.0;
     this.arcaneShieldTimer = 0;
 
     // Dash state
@@ -103,7 +107,8 @@ export class Player extends Actor {
   takeDamage(amount, sourceSpell = null) {
     if (this.tapas) this.tapas.breakTapas();
     const hadShield = this.shieldActive;
-    const dealt = super.takeDamage(amount, sourceSpell);
+    const reduced = amount * (this.metaDamageTakenMult ?? 1.0);
+    const dealt = super.takeDamage(reduced, sourceSpell);
     if (hadShield && !this.shieldActive && this.perks.includes('ARCANE_SHIELD')) {
       this.arcaneShieldTimer = 20.0;
     }
@@ -120,7 +125,7 @@ export class Player extends Actor {
   }
 
   addXP(amount, onLevelUp) {
-    const mult = getDifficulty()?.playerXpMult ?? 1.0;
+    const mult = (getDifficulty()?.playerXpMult ?? 1.0) * (this.xpMult ?? 1.0);
     this.xp += Math.round(amount * mult);
     const nextConfig = LEVEL_TABLE.find((lvl) => lvl.level === this.level + 1);
     if (nextConfig && this.xp >= nextConfig.xpReq) {
@@ -178,7 +183,8 @@ export class Player extends Actor {
 
     if (this.input.dashRequested) {
       this.input.dashRequested = false;
-      const cooldown = this.perks.includes('WINDWALKER') ? Math.max(1.5, PLAYER_BASE.DASH_COOLDOWN - 1.0) : PLAYER_BASE.DASH_COOLDOWN;
+      const baseCd = this.perks.includes('WINDWALKER') ? Math.max(1.5, PLAYER_BASE.DASH_COOLDOWN - 1.0) : PLAYER_BASE.DASH_COOLDOWN;
+      const cooldown = Math.max(1.2, baseCd * (this.dashCooldownMult ?? 1.0));
       if (this.dashCooldownTimer <= 0 && this.dashTimer <= 0 && !(this.status?.stunTimer > 0)) {
         this.dashTimer = PLAYER_BASE.DASH_DURATION;
         this.dashCooldownTimer = cooldown;

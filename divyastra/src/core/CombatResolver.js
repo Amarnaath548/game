@@ -44,6 +44,7 @@ export class CombatResolver {
     const isP = owner === this.player, cfg = { ...payload };
     if (owner?.dmgBonus) cfg.damage += owner.dmgBonus;
     if (!isP && owner && !owner.isPlayer) cfg.damage = Math.round(cfg.damage * BOT_DAMAGE_MULT * (getDifficulty()?.botDamageMult ?? 1.0));
+    if (isP && this.player.spellDamageMult && this.player.spellDamageMult !== 1.0) cfg.damage = Math.round(cfg.damage * this.player.spellDamageMult);
     if (isP && this.player.staffElement && cfg.elements?.includes(this.player.staffElement)) cfg.damage = Math.round(cfg.damage * 1.12);
     if (isP && this.spellbookManager) {
       const sm = this.spellbookManager.getDamageMultiplier(cfg.id);

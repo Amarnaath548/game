@@ -69,6 +69,27 @@ export const iconPhoneRotate = (size = 40, cls = '') =>
 export const iconDash = (size = 20, cls = '') =>
   svg('<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>', size, cls);
 
+export const iconHeart = (size = 20, cls = '') =>
+  svg('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>', size, cls);
+
+export const iconBoot = (size = 20, cls = '') =>
+  svg('<path d="M7 3h6v9l4 2a3 3 0 0 1 2 2.8V19H5v-3l2-2V3z"/><line x1="5" y1="21" x2="19" y2="21"/>', size, cls);
+
+export const iconMagnet = (size = 20, cls = '') =>
+  svg('<path d="M6 15v-5a6 6 0 0 1 12 0v5"/><path d="M6 15h3v4H6z"/><path d="M15 15h3v4h-3z"/><line x1="6" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="18" y2="12"/>', size, cls);
+
+export const iconClock = (size = 20, cls = '') =>
+  svg('<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>', size, cls);
+
+export const iconShield = (size = 20, cls = '') =>
+  svg('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>', size, cls);
+
+export const iconDashArrows = (size = 20, cls = '') =>
+  svg('<polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/>', size, cls);
+
+export const iconCoin = (size = 20, cls = '') =>
+  svg('<circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2.5 0 0 0-5 0c0 1.5 2 2 2.5 2.5s2.5 1 2.5 2.5a2.5 2.5 0 0 1-5 0"/><line x1="12" y1="6" x2="12" y2="7.5"/><line x1="12" y1="16.5" x2="12" y2="18"/>', size, cls);
+
 export const iconGold = (size = 15, cls = '') =>
   `<img src="./lobby/icon_gold.png" class="currency-coin ${cls}" style="width:${size}px;height:${size}px;vertical-align:middle;object-fit:contain;display:inline-block;" alt="Gold" />`;
 

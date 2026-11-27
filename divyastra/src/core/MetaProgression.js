@@ -89,7 +89,13 @@ export const STAVES = [
 export const UPGRADES = [
   { id: 'VITALITY', name: 'Soul Vitality', desc: '+25 Max Base HP per level', maxLevel: 5, baseCost: 80, costMult: 1.5 },
   { id: 'SWIFTNESS', name: 'Arcane Swiftness', desc: '+4% Base Movement Speed per level', maxLevel: 5, baseCost: 100, costMult: 1.6 },
-  { id: 'MAGNETISM', name: 'Mana Magnet', desc: '+1.0 unit Loot Pickup Radius per level', maxLevel: 5, baseCost: 75, costMult: 1.4 }
+  { id: 'MAGNETISM', name: 'Mana Magnet', desc: '+1.0 unit Loot Pickup Radius per level', maxLevel: 5, baseCost: 75, costMult: 1.4 },
+  { id: 'POWER', name: 'Spell Power', desc: '+3% spell damage per level', maxLevel: 5, baseCost: 120, costMult: 1.6 },
+  { id: 'HASTE', name: 'Swift Casting', desc: '-2% spell cooldown per level', maxLevel: 5, baseCost: 140, costMult: 1.7 },
+  { id: 'WARD', name: 'Iron Skin', desc: '-2% damage taken per level', maxLevel: 5, baseCost: 150, costMult: 1.7 },
+  { id: 'DASHMASTERY', name: 'Dash Mastery', desc: '-4% dash cooldown per level', maxLevel: 5, baseCost: 110, costMult: 1.5 },
+  { id: 'FORTUNE', name: "Fortune's Favour", desc: '+5% gold earned per match per level', maxLevel: 5, baseCost: 90, costMult: 1.5 },
+  { id: 'WISDOM', name: "Scholar's Insight", desc: '+4% XP gained per level', maxLevel: 5, baseCost: 100, costMult: 1.5 }
 ];
 
 export class MetaProgression {
@@ -106,7 +112,17 @@ export class MetaProgression {
       wins: 0,
       selectedStaffId: 'PYRO_STAFF',
       unlockedStaves: ['PYRO_STAFF'],
-      upgradeLevels: { VITALITY: 0, SWIFTNESS: 0, MAGNETISM: 0 }
+      upgradeLevels: {
+        VITALITY: 0,
+        SWIFTNESS: 0,
+        MAGNETISM: 0,
+        POWER: 0,
+        HASTE: 0,
+        WARD: 0,
+        DASHMASTERY: 0,
+        FORTUNE: 0,
+        WISDOM: 0
+      }
     };
   }
 
@@ -114,13 +130,21 @@ export class MetaProgression {
   set gems(val) { this.data.gems = val; }
 
   load() {
+    const defaults = this.getDefaultData();
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return { ...this.getDefaultData(), ...JSON.parse(raw) };
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          ...defaults,
+          ...parsed,
+          upgradeLevels: { ...defaults.upgradeLevels, ...(parsed.upgradeLevels || {}) }
+        };
+      }
     } catch (e) {
       console.warn('Could not load progression:', e);
     }
-    return this.getDefaultData();
+    return defaults;
   }
 
   save() {
@@ -196,6 +220,9 @@ export class MetaProgression {
     else if (placement <= 3) { trophyChange = 15; goldEarned = 80; }
     else if (placement <= 6) { trophyChange = 5; goldEarned = 45; }
 
+    const bonuses = this.getMetaBonuses();
+    goldEarned = Math.round(goldEarned * (bonuses.goldMultiplier ?? 1.0));
+
     this.data.trophies = Math.max(0, this.data.trophies + trophyChange);
     this.data.gold += goldEarned;
     this.save();
@@ -217,9 +244,16 @@ export class MetaProgression {
   }
 
   getMetaBonuses() {
-    const hpLevel = this.data.upgradeLevels.VITALITY || 0;
-    const speedLevel = this.data.upgradeLevels.SWIFTNESS || 0;
-    const magLevel = this.data.upgradeLevels.MAGNETISM || 0;
+    const lvls = this.data.upgradeLevels || {};
+    const hpLevel = lvls.VITALITY || 0;
+    const speedLevel = lvls.SWIFTNESS || 0;
+    const magLevel = lvls.MAGNETISM || 0;
+    const powerLevel = lvls.POWER || 0;
+    const hasteLevel = lvls.HASTE || 0;
+    const wardLevel = lvls.WARD || 0;
+    const dashLevel = lvls.DASHMASTERY || 0;
+    const fortuneLevel = lvls.FORTUNE || 0;
+    const wisdomLevel = lvls.WISDOM || 0;
     const staff = this.getSelectedStaff();
 
     const staffHp = staff.hpBonus || 0;
@@ -229,9 +263,14 @@ export class MetaProgression {
 
     return {
       bonusHp: hpLevel * 25 + staffHp,
-      speedMultiplier: (1.0 + speedLevel * 0.04) * (1.0 + staffSpeed),
+      speedMultiplier: Math.min(1.6, (1.0 + speedLevel * 0.04) * (1.0 + staffSpeed)),
       pickupRadiusBonus: magLevel * 1.0 + staffPickup,
-      cooldownMultiplier: Math.max(0.6, 1.0 - staffCd),
+      damageMultiplier: Math.min(1.5, 1.0 + powerLevel * 0.03),
+      cooldownMultiplier: Math.max(0.55, (1.0 - staffCd) * (1.0 - hasteLevel * 0.02)),
+      damageTakenMultiplier: Math.max(0.7, 1.0 - wardLevel * 0.02),
+      dashCooldownMultiplier: Math.max(0.6, 1.0 - dashLevel * 0.04),
+      goldMultiplier: Math.min(1.5, 1.0 + fortuneLevel * 0.05),
+      xpMultiplier: Math.min(1.5, 1.0 + wisdomLevel * 0.04),
       staffElementBonus: staff.elementBonus || null
     };
   }

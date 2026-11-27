@@ -1,7 +1,7 @@
 import { LEVEL_TABLE, GAME_TITLE, VALID_HERO_IDS } from '../config/constants.js';
-import { UPGRADES } from '../core/MetaProgression.js';
 import { HeroSelectView } from './HeroSelectView.js';
 import { StavesView } from './StavesView.js';
+import { UpgradesView } from './UpgradesView.js';
 import { QuestView } from './QuestView.js';
 import { renderPerkSelection } from '../core/SpellAccess.js';
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
@@ -42,6 +42,7 @@ export class UIManager {
       this.onHeroChange?.(h);
     });
     this.stavesView = new StavesView(this.stavesContainer, this.meta, () => this.renderLobby());
+    this.upgradesView = new UpgradesView(this.upgradesContainer, this.meta, (boughtId) => this.renderLobby(boughtId));
     if (this.questManager) this.questView = new QuestView(this.questsContainer, this.questsBadgeEl, this.questManager, this.meta, () => { this.lobbyGold.textContent = this.meta.data.gold; });
     if (this.spellbookContainer && this.spellbookManager) this.spellbookView = new SpellbookView(this.spellbookContainer, this.spellbookManager);
     if (this.campaignManager) this.levelSelectView = new LevelSelectView(this.campaignManager, {
@@ -116,7 +117,7 @@ export class UIManager {
     });
   }
 
-  renderLobby() {
+  renderLobby(flashedUpgradeId = null) {
     const rank = this.meta.getRank();
     this.lobbyTrophies.textContent = this.meta.data.trophies; this.lobbyGold.textContent = this.meta.data.gold;
     this.lobbyRankTitle.textContent = rank.title; this.lobbyRankTitle.style.color = rank.color;
@@ -130,15 +131,7 @@ export class UIManager {
     if (this.lobbyArenaLabel && this.sceneManager) this.lobbyArenaLabel.textContent = `ARENA: ${this.sceneManager.getNextBiomeName()}`;
     this.lobbyShell?.render();
     this.stavesView?.render();
-
-    this.upgradesContainer.innerHTML = '';
-    UPGRADES.forEach((upg) => {
-      const currentLevel = this.meta.data.upgradeLevels[upg.id] || 0, cost = this.meta.getUpgradeCost(upg.id), isMax = currentLevel >= upg.maxLevel;
-      const row = document.createElement('div'); row.className = 'upgrade-row dv-panel';
-      row.innerHTML = `<div class="upg-info"><div class="upg-name">${upg.name} (Lv ${currentLevel}/${upg.maxLevel})</div><div class="upg-desc">${upg.desc}</div></div><button class="upg-btn" ${(!isMax && this.meta.data.gold >= cost) ? '' : 'disabled'}>${isMax ? 'MAX' : `${cost} ${iconGold(13)}`}</button>`;
-      if (!isMax) row.querySelector('.upg-btn').addEventListener('click', () => { if (this.meta.buyUpgrade(upg.id)) this.renderLobby(); });
-      this.upgradesContainer.appendChild(row);
-    });
+    this.upgradesView?.render(flashedUpgradeId);
   }
 
   updateSpellPanel(player) {

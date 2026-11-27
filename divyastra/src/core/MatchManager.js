@@ -68,7 +68,11 @@ export class MatchManager {
     this.player.baseSpeed = PLAYER_BASE.MOVE_SPEED * bonuses.speedMultiplier;
     this.player.speed = this.player.baseSpeed;
     this.player.staffElement = bonuses.staffElementBonus;
+    this.player.spellDamageMult = bonuses.damageMultiplier ?? 1.0;
     this.player.cooldownMult = bonuses.cooldownMultiplier;
+    this.player.metaDamageTakenMult = bonuses.damageTakenMultiplier ?? 1.0;
+    this.player.dashCooldownMult = bonuses.dashCooldownMultiplier ?? 1.0;
+    this.player.xpMult = bonuses.xpMultiplier ?? 1.0;
     this.player.pickupRadiusBonus = bonuses.pickupRadiusBonus;
     this.player.level = 1;
     this.player.xp = 0;
