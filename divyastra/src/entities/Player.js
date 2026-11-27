@@ -5,6 +5,7 @@ import { SpellSlotController } from './SpellSlotController.js';
 import { getSpell, FIST_SPELL } from '../config/spellRegistry.js';
 import { TapasComponent } from './TapasComponent.js';
 import { getDifficulty } from '../config/difficulty.js';
+import { updateActorFacing } from './Locomotion.js';
 
 export class Player extends Actor {
   constructor(scene, inputManager, hero = null) {
@@ -203,7 +204,13 @@ export class Player extends Actor {
     }
 
     const aimAngle = Math.atan2(this.input.aimDir.x, this.input.aimDir.z);
-    this.visualMesh.rotation.y = aimAngle;
+    if (this.glbHero?.isRigged) {
+      const moveLen = Math.hypot(this.input.moveDir.x, this.input.moveDir.z);
+      const realSpeed = this.dashTimer > 0 ? PLAYER_BASE.DASH_SPEED : Math.min(1, moveLen) * this.speed;
+      updateActorFacing(this, dt, this.input.moveDir.x, this.input.moveDir.z, this.input.aimDir.x, this.input.aimDir.z, this.input.isAiming, realSpeed);
+    } else {
+      this.visualMesh.rotation.y = aimAngle;
+    }
     this.aimLine.rotation.y = aimAngle;
     const isRadial = this.currentSpell?.trajectory === 'RADIAL', isGiant = this.perks?.includes('GIANT_ARCANA');
     const showAim = this.input.isAiming || !this.input.usingTouch;

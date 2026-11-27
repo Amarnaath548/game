@@ -118,7 +118,8 @@ export class CombatResolver {
 
     // 0.1s wind-up (0.25s for Tier 3 Astra) anticipation, leans back & staff glows, then snaps forward
     this.castWindup.start(payloads, input, this.player.currentSpell, (castPayloads) => {
-      if (input?.aimDir) this.player.visualMesh.rotation.y = Math.atan2(input.aimDir.x, input.aimDir.z);
+      if (input?.aimDir) { this.player.faceYaw = Math.atan2(input.aimDir.x, input.aimDir.z); this.player.visualMesh.rotation.y = this.player.faceYaw; }
+      this.player.postCastTimer = 0.4;
       if (this.questManager && this.player.currentSpell?.id !== 'fist') this.questManager.record('cast', 1);
       this.sound.playCast(this.player.currentSpell?.id || this.player.currentSpell);
       if (this.astraVisuals && castPayloads[0]?.tier === 3) this.astraVisuals.spawnAstraRing(this.player.x, this.player.z);
@@ -132,7 +133,7 @@ export class CombatResolver {
     bot.spellSlot.startCooldown(); bot.shootCooldown = bot.spellSlot.cooldownTimer;
     const tapasBonus = bot.consumeTapasBonus ? bot.consumeTapasBonus() : 0;
     const payloads = bot.spellSlot.buildCastPayloads(bot.x, bot.z, { x: aimX, z: aimZ }, 1.0, 1.0 + tapasBonus);
-    bot.visualMesh.rotation.y = Math.atan2(aimX, aimZ);
+    bot.faceYaw = Math.atan2(aimX, aimZ); bot.visualMesh.rotation.y = bot.faceYaw; bot.postCastTimer = 0.4;
     bot.triggerCastAnim?.(payloads[0]?.tier === 3);
     if (tapasBonus > 0) this.particleSys?.spawnBurst(bot.x, 0.8, bot.z, 0xfacc15, 16, 6, 1.2, 'EMBER');
     if (this.astraVisuals && payloads[0]?.tier === 3 && Math.hypot(bot.x - this.player.x, bot.z - this.player.z) <= 30) this.astraVisuals.spawnAstraRing(bot.x, bot.z);

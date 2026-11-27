@@ -84,7 +84,9 @@ export class CastWindup {
 
   _snapYaw() {
     if (this.input?.aimDir) {
-      this.player.visualMesh.rotation.y = Math.atan2(this.input.aimDir.x, this.input.aimDir.z);
+      const yaw = Math.atan2(this.input.aimDir.x, this.input.aimDir.z);
+      this.player.faceYaw = yaw;
+      this.player.visualMesh.rotation.y = yaw;
     }
   }
 

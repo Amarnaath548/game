@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import { HERO_VISUAL_SCALE, PLAYER_BASE } from '../config/constants.js';
+import { HERO_VISUAL_SCALE } from '../config/constants.js';
 import { HERO_FACING_OFFSET } from '../config/assets.js';
 import { GEO_CACHE, MAT_OUTLINE_PLAYER, MAT_OUTLINE_ENEMY, MAT_SHIELD } from './HeroMaterials.js';
 import { cloneActorMaterials } from './GlbHero.js';
 import { attachStaffTip } from './StaffTip.js';
+import { initLocomotionState, resetLocomotionOffsets, resetLocomotionState, updateRiggedLocomotion } from './Locomotion.js';
 
 const CROSSFADE_DUR = 0.12;
 const DIST_CULL_SQ = 60 * 60;
@@ -46,21 +47,13 @@ export class GlbRiggedHero {
     this.activeAction = this.actions.idle || null;
     if (this.activeAction) this.activeAction.reset().setEffectiveWeight(1).play();
 
-    this.isCasting = false;
-    this.castTier3 = false;
-    this.castAction = null;
-    this.castElapsed = 0;
-    this.strikeFired = false;
-    this.deathStarted = false;
-    this._lastMoving = false;
-    this._skipFrame = false;
+    this.isCasting = this.castTier3 = this.strikeFired = this.deathStarted = this._lastMoving = this._skipFrame = false;
+    this.castAction = null; this.castElapsed = 0;
+    initLocomotionState(this);
 
     this.mixer.addEventListener('finished', (e) => {
       if (e.action === this.castAction && this.isCasting) {
-        this.isCasting = false;
-        this.castTier3 = false;
-        this.castAction = null;
-        this.strikeFired = false;
+        this.isCasting = this.castTier3 = this.strikeFired = false; this.castAction = null;
         if (!this.actor.isDead) this._crossfadeTo(this._lastMoving ? 'run' : 'idle');
       }
     });
@@ -105,7 +98,7 @@ export class GlbRiggedHero {
     this.activeAction = this.actions.idle || null;
     if (this.activeAction) this.activeAction.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).play();
     this.wrapper.position.set(0, 0, 0);
-    this.wrapper.rotation.set(0, 0, 0);
+    resetLocomotionState(this);
     this.wrapper.scale.set(1, 1, 1);
   }
 
@@ -114,6 +107,7 @@ export class GlbRiggedHero {
     const act = this.actions[clipName];
     if (!act) return;
     this.isCasting = true;
+    this.actor.postCastTimer = 0.4;
     this.castTier3 = fromWindup && isTier3;
     this.castAction = act;
     this.castElapsed = 0;
@@ -126,6 +120,7 @@ export class GlbRiggedHero {
 
   triggerSnap() {
     this.strikeFired = true;
+    resetLocomotionOffsets(this);
     const act = this.castAction;
     if (act) {
       act.paused = false;
@@ -170,7 +165,7 @@ export class GlbRiggedHero {
     if (stepDt > 0) this.mixer.update(stepDt);
   }
 
-  update(dt, isMoving = false, _moveX = 0, _moveZ = 0, isDashing = false) {
+  update(dt, isMoving = false, moveX = 0, moveZ = 0, isDashing = false) {
     if (this.actor.isDead) { this.updateDeath(dt); return; }
     const stepDt = this._getSteppedDt(dt);
     if (stepDt <= 0) return;
@@ -180,13 +175,9 @@ export class GlbRiggedHero {
 
     if (!this.isCasting) {
       const nextState = moving ? 'run' : 'idle';
-      if (nextState === 'run' && this.actions.run) {
-        const base = this.actor.baseSpeed || PLAYER_BASE.MOVE_SPEED;
-        const ratio = (this.actor.speed || base) / base;
-        this.actions.run.setEffectiveTimeScale(isDashing ? 1.6 : (ratio < 0.6 ? 0.6 : ratio > 1.6 ? 1.6 : ratio));
-      }
       if (this.currentState !== nextState) this._crossfadeTo(nextState);
     }
+    updateRiggedLocomotion(this, stepDt, moving, moveX, moveZ, isDashing);
 
     const atk = this.actions.attack;
     if (this.isCasting && this.castTier3 && !this.strikeFired && atk) {

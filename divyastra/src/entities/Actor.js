@@ -36,6 +36,7 @@ export class Actor {
     this.robeMat = this.bodyMat; this.hatMat = this.accentMat;
 
     this.hitTimer = 0; this.walkTime = 0; this.wobbleZ = 0; this.leanX = 0; this.leanZ = 0;
+    this.faceYaw = 0; this.postCastTimer = 0;
     this.punchTimer = 0; this.castTimer = 0; this.orbTimer = 0; this.isDying = false; this.deathTimer = 0;
     this.rightArm = this.rightArm || this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.38) < 0.1);
     this.staffShaft = this.staffShaft || this.visualMesh.children.find((c) => c.position && Math.abs(c.position.x - 0.68) < 0.1);

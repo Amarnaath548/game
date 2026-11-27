@@ -6,6 +6,7 @@ import { SpellSlotController } from './SpellSlotController.js';
 import { TapasComponent } from './TapasComponent.js';
 import { UPGRADES } from '../config/spellSchools.js';
 import { getDifficulty } from '../config/difficulty.js';
+import { updateActorFacing } from './Locomotion.js';
 
 export class Bot extends Actor {
   constructor(scene, x, z, id = 1, hero = null) {
@@ -191,12 +192,14 @@ export class Bot extends Actor {
 
     const isVisible = this.visible && this.group.visible;
     const aimLen = Math.hypot(aimX, aimZ);
-    if (aimLen > 0.01) {
+    if (this.glbHero?.isRigged) {
+      const moveLen = Math.hypot(moveX, moveZ);
+      const realSpeed = this.dashTimer > 0 ? PLAYER_BASE.DASH_SPEED : Math.min(1, moveLen) * this.speed;
+      updateActorFacing(this, dt, moveX, moveZ, aimX, aimZ, false, realSpeed);
+    } else if (aimLen > 0.01 && isVisible) {
       const aimAngle = Math.atan2(aimX, aimZ);
-      if (isVisible) {
-        const isCasting = this.castTimer > 0 || this.glbHero?.isCasting;
-        this.visualMesh.rotation.y = isCasting ? aimAngle : THREE.MathUtils.lerp(this.visualMesh.rotation.y, aimAngle, 0.2);
-      }
+      const isCasting = this.castTimer > 0 || this.glbHero?.isCasting;
+      this.visualMesh.rotation.y = isCasting ? aimAngle : THREE.MathUtils.lerp(this.visualMesh.rotation.y, aimAngle, 0.2);
     }
 
     const isMoving = Math.hypot(moveX, moveZ) > 0.05 || this.dashTimer > 0;
