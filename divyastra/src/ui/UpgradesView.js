@@ -76,7 +76,7 @@ export class UpgradesView {
 
       const actionHtml = isMax
         ? `<div class="upg-max-badge">MAX</div>`
-        : `<button class="upg-buy-btn gm-btn ${canAfford ? 'gm-btn-gold' : 'gm-btn-stone unaffordable'}" ${canAfford ? '' : 'disabled'}>${iconGold(14)} <span>${cost}</span></button>`;
+        : `<button class="upg-buy-btn gm-btn ${canAfford ? 'gm-btn--gold' : 'gm-btn--stone unaffordable'}" ${canAfford ? '' : 'disabled'}>${iconGold(14)} <span>${cost}</span></button>`;
 
       card.innerHTML = `
         <div class="upg-icon-box gm-medallion">${iconFn(38)}</div>

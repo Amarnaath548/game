@@ -26,23 +26,23 @@ export function showEndGameModal(ctx) {
 
   if (isEndless) {
     endTitle.innerHTML = endlessRes.isNewBest
-      ? `<span class="title-win">NEW HIGH SCORE!</span>`
-      : `<span class="title-loss">ENDLESS RUN OVER</span>`;
+      ? `<span class="title-win">NEW RECORD!</span>`
+      : `<span class="title-loss">RUN OVER</span>`;
     endSubtitle.textContent = `${heroName} survived ${formatEndlessTime(endlessRes.survivalTime)} (Tier ${endlessRes.tier}).`;
   } else if (campRes) {
     endTitle.innerHTML = campRes.completed
-      ? `<span class="title-win">Level complete!</span>`
-      : `<span class="title-loss">DEFEAT - #${place}</span>`;
+      ? `<span class="title-win">VICTORY</span>`
+      : `<span class="title-loss">DEFEAT</span>`;
     endSubtitle.textContent = campRes.completed
       ? (campRes.won ? 'Sanctum Champion! All rivals fallen.' : `Mission complete! Achieved rank #${place}.`)
       : `${heroName} eliminated at rank #${place}. Required: top ${campRes.completeRank}.`;
   } else {
     endTitle.innerHTML = isVictory
-      ? `<span class="title-win">#1 VICTORY ROYALE!</span>`
-      : `<span class="title-loss">DEFEAT - #${place} of 12</span>`;
+      ? `<span class="title-win">VICTORY</span>`
+      : `<span class="title-loss">DEFEAT</span>`;
     endSubtitle.textContent = isVictory
       ? `Glory to ${heroName}! Sanctum Champion.`
-      : `${heroName} eliminated at rank #${place}.`;
+      : `${heroName} eliminated at rank #${place} of 12.`;
   }
 
   const cardEl = endModal.querySelector('.end-modal-card');
@@ -117,7 +117,7 @@ export function showEndGameModal(ctx) {
   if (!nextBtn) {
     nextBtn = document.createElement('button');
     nextBtn.id = 'modal-next-level-btn';
-    nextBtn.className = 'modal-btn gm-btn gm-btn-green';
+    nextBtn.className = 'modal-btn gm-btn gm-btn--green';
     modalPlayAgainBtn.parentElement.insertBefore(nextBtn, modalPlayAgainBtn);
   }
 

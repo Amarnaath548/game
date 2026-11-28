@@ -51,13 +51,14 @@ export class HeroSelectView {
       card.style.setProperty('--hero-rgb', styleInfo.rgb);
 
       const actionHtml = isSelected
-        ? `<button type="button" class="hero-btn gm-btn gm-btn-green hero-btn-selected" disabled>${iconCheck(14)}<span>SELECTED</span></button>`
+        ? `<button type="button" class="hero-btn gm-btn gm-btn--gold hero-btn-selected" disabled>${iconCheck(14)}<span>SELECTED</span></button>`
         : isUnlocked
-          ? `<button type="button" class="hero-btn gm-btn gm-btn-green hero-btn-select">SELECT</button>`
-          : `<button type="button" class="hero-btn gm-btn ${canAfford ? 'gm-btn-gold' : 'gm-btn-stone unaffordable'} hero-btn-unlock" ${canAfford ? '' : 'disabled'}>${iconLock(13)}<span>${HERO_UNLOCK_COST}</span>${iconGold(13)}</button>`;
+          ? `<button type="button" class="hero-btn gm-btn gm-btn--green hero-btn-select">SELECT</button>`
+          : `<button type="button" class="hero-btn gm-btn gm-btn--stone hero-btn-unlock ${canAfford ? '' : 'unaffordable'}" ${canAfford ? '' : 'disabled'}>${iconLock(13)}<span>${HERO_UNLOCK_COST}</span>${iconGold(13)}</button>`;
 
       card.innerHTML = `
         <div class="hero-portrait-bg">
+          <div class="hero-portrait-glow"></div>
           <img class="hero-portrait-img" src="${imgSrc}" alt="${hero.name}" draggable="false" />
         </div>
         ${!isUnlocked ? `<div class="hero-lock-pill">${iconLock(13)}<span>${HERO_UNLOCK_COST}</span>${iconGold(12)}</div>` : ''}

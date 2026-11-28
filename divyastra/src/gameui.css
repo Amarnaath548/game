@@ -67,6 +67,19 @@
   pointer-events: none;
 }
 
+.gm-ribbon--sm {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  min-height: 36px;
+  border-width: 0 38px;
+  border-image-width: 0 38px 0 38px;
+  font-size: 16px;
+  -webkit-text-stroke: 2px #15172B;
+  margin-bottom: 8px;
+}
+
 .gm-close-btn {
   position: absolute;
   top: -14px;

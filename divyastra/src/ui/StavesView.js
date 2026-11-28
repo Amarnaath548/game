@@ -52,19 +52,21 @@ export class StavesView {
 
       let btnHtml;
       if (isSelected) {
-        btnHtml = `<button class="staff-action-btn gm-btn gm-btn-green btn-equipped" disabled>EQUIPPED</button>`;
+        btnHtml = `<button class="staff-action-btn gm-btn gm-btn--green btn-equipped" disabled>EQUIPPED</button>`;
       } else if (isUnlocked) {
-        btnHtml = `<button class="staff-action-btn gm-btn gm-btn-green btn-equip btn-select">EQUIP</button>`;
+        btnHtml = `<button class="staff-action-btn gm-btn gm-btn--green btn-equip btn-select">EQUIP</button>`;
       } else if (canAfford) {
-        btnHtml = `<button class="staff-action-btn gm-btn gm-btn-gold btn-unlock">UNLOCK <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" /> ${staff.cost}</button>`;
+        btnHtml = `<button class="staff-action-btn gm-btn gm-btn--gold btn-unlock">UNLOCK <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" /> ${staff.cost}</button>`;
       } else {
-        btnHtml = `<button class="staff-action-btn gm-btn gm-btn-stone btn-unlock btn-unaffordable" disabled>UNLOCK <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" /> <span class="price-unaffordable">${staff.cost}</span></button>`;
+        btnHtml = `<button class="staff-action-btn gm-btn gm-btn--stone btn-unlock btn-unaffordable" disabled>UNLOCK <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" /> <span class="price-unaffordable">${staff.cost}</span></button>`;
       }
 
       card.innerHTML = `
         <div class="staff-icon-wrap">
           <div class="staff-icon-glow" style="background: radial-gradient(circle, ${accentHex}80 0%, ${accentHex}00 70%);"></div>
-          <img src="${iconSrc}" alt="${staff.name}" class="staff-icon-img" onerror="this.onerror=null;this.src='./lobby/icon_staves.png';" />
+          <div class="gm-medallion staff-medallion">
+            <img src="${iconSrc}" alt="${staff.name}" class="staff-icon-img" onerror="this.onerror=null;this.src='./lobby/icon_staves.png';" />
+          </div>
         </div>
         <div class="staff-name" style="color: ${accentHex};">${staff.name}</div>
         <div class="staff-desc">${staff.perkDesc}</div>

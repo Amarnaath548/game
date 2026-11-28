@@ -1,7 +1,7 @@
 import { LEVELS } from '../config/levels.js';
 import { DIFFICULTIES } from '../config/difficulty.js';
 import { BIOMES } from '../config/constants.js';
-import { iconLock, iconMap, iconSwords, iconChevronLeft, iconChevronRight, renderStars } from './icons.js';
+import { iconLock, iconMap, iconSwords, iconChevronLeft, iconChevronRight, iconStar } from './icons.js';
 
 const BIOME_THUMB = {
   GRASS: './lobby/map_grass.png',
@@ -130,24 +130,25 @@ export class LevelSelectView {
         };
       }
 
+      const starsHtml = [1, 2, 3].map((i) =>
+        `<span class="level-star${i <= stars ? ' earned' : ''}">${iconStar(16, i <= stars)}</span>`
+      ).join('');
+
       card.innerHTML = `
         <div class="level-card-inner">
-          <div>
-            <div class="level-card-banner">
-              <img src="${thumbSrc}" alt="${mapName}" />
-              ${!unlocked ? `<div class="level-lock-badge">${iconLock(24)}</div>` : ''}
-            </div>
-            <div class="level-card-body">
-              <div style="font-size:10px; font-weight:700; color:#E3B04B; text-transform:uppercase; letter-spacing:1px;">Level ${level.id}</div>
-              <div style="font-family:'Yatra One',cursive,sans-serif; font-size:17px; color:#EFE6D2; margin:2px 0 5px;">${level.name}</div>
-              <div style="display:inline-block; background:${diff.badgeColor}; color:#15172B; font-weight:700; font-size:10px; padding:2px 8px; border-radius:999px; margin-bottom:7px; text-transform:uppercase;">${diff.name}</div>
-              <div style="font-size:11px; font-weight:700; color:#EFE6D2; margin-bottom:3px; display:flex; align-items:center; justify-content:center; gap:4px;">${iconMap(13)} ${mapName}</div>
-              <div style="font-size:11px; font-weight:700; color:#B9AE98; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:4px;">${iconSwords(13)} ${level.botCount} Bots</div>
-              <div class="level-card-desc">${level.description}</div>
-            </div>
+          <div class="level-card-banner">
+            <img src="${thumbSrc}" alt="${mapName}" />
+            <div class="gm-ribbon gm-ribbon--sm level-num-ribbon">LVL ${level.id}</div>
+            ${!unlocked ? `<div class="level-lock-badge"><div class="gm-medallion level-lock-medallion">${iconLock(28)}</div></div>` : ''}
+          </div>
+          <div class="level-card-body">
+            <div style="font-family:'Yatra One',cursive,sans-serif; font-size:16px; color:#EFE6D2; margin:0 0 4px;">${level.name}</div>
+            <div class="level-diff-chip" style="background:${diff.badgeColor};">${diff.name}</div>
+            <div style="font-size:10.5px; font-weight:700; color:#EFE6D2; margin-bottom:2px; display:flex; align-items:center; justify-content:center; gap:4px;">${iconMap(12)} ${mapName} &bull; ${iconSwords(12)} ${level.botCount}</div>
+            <div class="level-card-desc">${level.description}</div>
           </div>
           <div class="level-card-footer">
-            <div style="margin-bottom:4px; color:#E3B04B; display:flex; justify-content:center; gap:3px;">${renderStars(stars, 3, 15)}</div>
+            <div class="level-stars-row">${starsHtml}</div>
             <div style="font-size:9.5px; font-weight:700; color:#E08A2E; text-transform:uppercase;">Goal: Top ${level.completeRank}</div>
           </div>
         </div>

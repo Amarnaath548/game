@@ -45,11 +45,13 @@
   filter: brightness(0.92);
 }
 
-.gm-btn-gold {
+.gm-btn-gold,
+.gm-btn--gold {
   border-image-source: url('./ui/btn_gold.png');
 }
 
-.gm-btn-gold:not(:disabled):not(.gm-btn-locked)::after {
+.gm-btn-gold:not(:disabled):not(.gm-btn-locked)::after,
+.gm-btn--gold:not(:disabled):not(.gm-btn-locked)::after {
   content: '';
   position: absolute;
   inset: -22px;
@@ -69,15 +71,18 @@
   animation: gmGoldShine 3.5s ease-in-out infinite;
 }
 
-.gm-btn-green {
+.gm-btn-green,
+.gm-btn--green {
   border-image-source: url('./ui/btn_green.png');
 }
 
-.gm-btn-red {
+.gm-btn-red,
+.gm-btn--red {
   border-image-source: url('./ui/btn_red.png');
 }
 
 .gm-btn-stone,
+.gm-btn--stone,
 .gm-btn:disabled,
 .gm-btn.gm-btn-locked {
   border-image-source: url('./ui/btn_stone.png');
@@ -87,4 +92,21 @@
 .gm-btn.gm-btn-locked {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.gm-btn--green.btn-equipped:disabled,
+.gm-btn--gold.hero-btn-selected:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.gm-btn--green.btn-equipped:disabled { border-image-source: url('./ui/btn_green.png'); }
+.gm-btn--gold.hero-btn-selected:disabled { border-image-source: url('./ui/btn_gold.png'); }
+
+@keyframes gmClaimPulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.04); filter: brightness(1.14); }
+}
+
+.gm-pulse {
+  animation: gmClaimPulse 1.8s ease-in-out infinite;
 }

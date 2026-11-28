@@ -1,5 +1,5 @@
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
-import { elementIcon, renderStars } from './icons.js';
+import { elementIcon, renderStars, iconLock } from './icons.js';
 import { assetLoader } from '../core/AssetLoader.js';
 
 export class SpellbookView {
@@ -21,8 +21,8 @@ export class SpellbookView {
       section.style.cssText = 'margin-bottom:16px;';
 
       const heading = document.createElement('div');
-      heading.style.cssText = "font-family:'Yatra One',cursive,sans-serif;font-size:14px;color:#E3B04B;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px;";
-      heading.innerHTML = `<span>${tierLabels[tierNum]} (TIER ${tierNum})</span> <span style="font-family:'Rubik',sans-serif;font-size:11px;color:#94a3b8;font-weight:700;">(${tierSpells.length} Spells)</span>`;
+      heading.className = 'gm-ribbon gm-ribbon--sm spellbook-tier-ribbon';
+      heading.innerHTML = `<span>${tierLabels[tierNum]}</span><span style="font-family:'Rubik',sans-serif;font-size:10px;color:#cbd5e1;font-weight:700;margin-left:6px;-webkit-text-stroke:0;">(${tierSpells.length})</span>`;
       section.appendChild(heading);
 
       const grid = document.createElement('div');
@@ -33,12 +33,18 @@ export class SpellbookView {
         const isReached = entry && entry.reached;
         const card = document.createElement('div');
         card.className = `spellbook-card gm-card ${isReached ? 'unlocked' : 'locked'}`;
-        card.style.cssText = 'padding:8px 10px;display:flex;flex-direction:column;gap:4px;';
-
         const primaryEl = (spell.elements && spell.elements[0]) || 'F';
+        const tintHex = spell.color || ELEMENT_COLORS[primaryEl] || 0xE3B04B;
+        const r = (tintHex >> 16) & 255;
+        const g = (tintHex >> 8) & 255;
+        const b = tintHex & 255;
+        if (isReached) card.style.setProperty('--spell-tint', `rgba(${r}, ${g}, ${b}, 0.22)`);
+
         const iconUrl = assetLoader.getSpellIconUrl(primaryEl);
-        const medallionIcon = iconUrl ? `<img src="${iconUrl}" alt="${spell.name}" />` : elementIcon(primaryEl, 36);
-        const medallionHtml = `<div class="gm-medallion" style="opacity:${isReached ? 1 : 0.45};">${medallionIcon}</div>`;
+        const medallionIcon = isReached
+          ? (iconUrl ? `<img src="${iconUrl}" alt="${spell.name}" />` : elementIcon(primaryEl, 36))
+          : iconLock(30);
+        const medallionHtml = `<div class="gm-medallion">${medallionIcon}</div>`;
 
         const chipsHtml = (spell.elements || []).map((e) => {
           const col = isReached && ELEMENT_COLORS[e] ? `#${ELEMENT_COLORS[e].toString(16).padStart(6, '0')}` : '#64748b';

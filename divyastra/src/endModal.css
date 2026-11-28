@@ -66,11 +66,14 @@
   flex: 0 0 auto;
   width: 112px;
   height: 140px;
+  margin-left: -34px;
+  margin-top: -10px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   background: radial-gradient(circle at 50% 62%, rgba(227, 176, 75, 0.18) 0%, rgba(21, 23, 43, 0) 72%);
   border-radius: 10px;
+  overflow: visible;
 }
 
 .end-hero-portrait {
@@ -79,6 +82,8 @@
   max-width: 112px;
   object-fit: contain;
   object-position: bottom center;
+  transform: scale(1.12);
+  transform-origin: bottom center;
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.75));
   transition: filter 0.25s ease;
 }
@@ -115,9 +120,9 @@
   filter: drop-shadow(0 0 8px rgba(227, 176, 75, 0.65));
 }
 
-.end-star:nth-child(1) { animation-delay: 0.08s; }
-.end-star:nth-child(2) { animation-delay: 0.2s; }
-.end-star:nth-child(3) { animation-delay: 0.32s; }
+.end-star:nth-child(1) { animation-delay: 0.15s; }
+.end-star:nth-child(2) { animation-delay: 0.30s; }
+.end-star:nth-child(3) { animation-delay: 0.45s; }
 
 @keyframes endStarPop {
   0% { opacity: 0; transform: scale(0.35); }

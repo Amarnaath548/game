@@ -26,10 +26,10 @@ export class QuestView {
       card.className = `quest-card gm-card ${q.claimed ? 'claimed' : isComplete ? 'claimable' : ''}`;
 
       const btnHtml = q.claimed
-        ? `<button class="quest-btn gm-btn gm-btn-stone quest-btn-claimed" disabled>CLAIMED</button>`
+        ? `<button class="quest-btn gm-btn gm-btn--stone quest-btn-claimed" disabled>CLAIMED</button>`
         : isComplete
-          ? `<button class="quest-btn gm-btn gm-btn-green quest-btn-claim">CLAIM (+${q.goldReward} ${iconGold(13)})</button>`
-          : `<button class="quest-btn gm-btn gm-btn-stone quest-btn-progress" disabled>+${q.goldReward} ${iconGold(13)}</button>`;
+          ? `<button class="quest-btn gm-btn gm-btn--green quest-btn-claim gm-pulse">CLAIM</button>`
+          : `<button class="quest-btn gm-btn gm-btn--stone quest-btn-progress" disabled>${pct}%</button>`;
 
       card.innerHTML = `
         <div class="gm-medallion quest-medallion">${iconSwords(36)}</div>
@@ -40,6 +40,7 @@ export class QuestView {
             <span class="gm-bar-text quest-bar-text">${q.progress} / ${q.target}</span>
           </div>
         </div>
+        <div class="quest-reward-badge">+${q.goldReward} ${iconGold(14)}</div>
         ${btnHtml}
       `;
 
