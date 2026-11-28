@@ -1,0 +1,90 @@
+/* DIVYASTRA PAINTED UI KIT: 9-SLICE BUTTONS */
+
+@keyframes gmGoldShine {
+  0%, 55% { background-position: -160% 0; }
+  85%, 100% { background-position: 260% 0; }
+}
+
+.gm-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-style: solid !important;
+  border-width: 22px !important;
+  border-image-slice: 46 fill !important;
+  border-image-width: 22px !important;
+  border-image-repeat: stretch !important;
+  border-image-source: url('./ui/btn_gold.png');
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-family: 'Rubik', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  color: #EFE6D2 !important;
+  -webkit-text-stroke: 2px #15172B;
+  paint-order: stroke fill;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.9);
+  cursor: pointer;
+  box-sizing: border-box;
+  white-space: nowrap;
+  transition: transform 0.08s ease, filter 0.12s ease;
+}
+
+.gm-btn:hover:not(:disabled):not(.gm-btn-locked) {
+  filter: brightness(1.06);
+}
+
+.gm-btn:active:not(:disabled):not(.gm-btn-locked) {
+  transform: translateY(3px);
+  filter: brightness(0.92);
+}
+
+.gm-btn-gold {
+  border-image-source: url('./ui/btn_gold.png');
+}
+
+.gm-btn-gold:not(:disabled):not(.gm-btn-locked)::after {
+  content: '';
+  position: absolute;
+  inset: -22px;
+  pointer-events: none;
+  -webkit-mask-image: url('./ui/btn_gold.png');
+  mask-image: url('./ui/btn_gold.png');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  background-image: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 250, 220, 0.45) 50%,
+    transparent 65%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: gmGoldShine 3.5s ease-in-out infinite;
+}
+
+.gm-btn-green {
+  border-image-source: url('./ui/btn_green.png');
+}
+
+.gm-btn-red {
+  border-image-source: url('./ui/btn_red.png');
+}
+
+.gm-btn-stone,
+.gm-btn:disabled,
+.gm-btn.gm-btn-locked {
+  border-image-source: url('./ui/btn_stone.png');
+}
+
+.gm-btn:disabled,
+.gm-btn.gm-btn-locked {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

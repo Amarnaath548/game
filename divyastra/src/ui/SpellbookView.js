@@ -1,5 +1,6 @@
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
 import { elementIcon, renderStars } from './icons.js';
+import { assetLoader } from '../core/AssetLoader.js';
 
 export class SpellbookView {
   constructor(container, spellbookManager) {
@@ -31,10 +32,13 @@ export class SpellbookView {
         const entry = this.spellbook.getEntry(spell.id);
         const isReached = entry && entry.reached;
         const card = document.createElement('div');
-        card.className = `spellbook-card dv-panel ${isReached ? 'unlocked' : 'locked'}`;
+        card.className = `spellbook-card gm-card ${isReached ? 'unlocked' : 'locked'}`;
+        card.style.cssText = 'padding:8px 10px;display:flex;flex-direction:column;gap:4px;';
 
-        const borderCol = isReached ? `#${(spell.color || 0xE3B04B).toString(16).padStart(6, '0')}` : '#3B4262';
-        card.style.cssText = `background:rgba(27,31,59,0.92);border:1.5px solid ${borderCol};border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,0.5);`;
+        const primaryEl = (spell.elements && spell.elements[0]) || 'F';
+        const iconUrl = assetLoader.getSpellIconUrl(primaryEl);
+        const medallionIcon = iconUrl ? `<img src="${iconUrl}" alt="${spell.name}" />` : elementIcon(primaryEl, 36);
+        const medallionHtml = `<div class="gm-medallion" style="opacity:${isReached ? 1 : 0.45};">${medallionIcon}</div>`;
 
         const chipsHtml = (spell.elements || []).map((e) => {
           const col = isReached && ELEMENT_COLORS[e] ? `#${ELEMENT_COLORS[e].toString(16).padStart(6, '0')}` : '#64748b';
@@ -43,12 +47,17 @@ export class SpellbookView {
 
         if (!isReached) {
           card.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:12px;font-weight:700;color:#64748b;">???</span>
-              <span style="font-size:10px;color:#475569;">Locked</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              ${medallionHtml}
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:12px;font-weight:700;color:#64748b;">???</span>
+                  <span style="font-size:10px;color:#475569;">Locked</span>
+                </div>
+                <div style="display:flex;gap:3px;margin:2px 0;">${chipsHtml}</div>
+                <div style="font-size:10px;color:#64748b;">Reach in match to unlock</div>
+              </div>
             </div>
-            <div style="display:flex;gap:3px;margin:2px 0;">${chipsHtml}</div>
-            <div style="font-size:10px;color:#64748b;">Reach in match to unlock</div>
           `;
         } else {
           const starCount = entry.stars || 0;
@@ -58,15 +67,20 @@ export class SpellbookView {
           const loreHtml = spell.lore ? `<div style="font-size:9px;color:#94a3b8;font-style:italic;line-height:1.2;margin:1px 0;">${spell.lore}</div>` : '';
 
           card.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:12px;font-weight:700;color:#fff;">${spell.name}</span>
-              <span style="display:inline-flex;gap:1px;color:#E3B04B;" title="${starCount} Siddhi">${renderStars(starCount, 5, 12)}</span>
-            </div>
-            ${loreHtml}
-            <div style="display:flex;gap:3px;margin:1px 0;">${chipsHtml}</div>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:#cbd5e1;font-weight:700;">
-              <span style="color:#7FA650;">+${dmgBonus}% DMG</span>
-              <span style="color:#94a3b8;">${progressText}</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              ${medallionHtml}
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:12px;font-weight:700;color:#fff;">${spell.name}</span>
+                  <span style="display:inline-flex;gap:1px;color:#E3B04B;" title="${starCount} Siddhi">${renderStars(starCount, 5, 12)}</span>
+                </div>
+                ${loreHtml}
+                <div style="display:flex;gap:3px;margin:1px 0;">${chipsHtml}</div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:#cbd5e1;font-weight:700;">
+                  <span style="color:#7FA650;">+${dmgBonus}% DMG</span>
+                  <span style="color:#94a3b8;">${progressText}</span>
+                </div>
+              </div>
             </div>
           `;
         }

@@ -21,12 +21,21 @@ export class LevelSelectView {
   _initDOM() {
     this.overlay = document.createElement('div');
     this.overlay.id = 'level-select-overlay';
+    this.overlay.className = 'gm-backdrop';
+
+    const frame = document.createElement('div');
+    frame.className = 'level-select-frame gm-frame';
+
+    const ribbon = document.createElement('div');
+    ribbon.className = 'level-select-title gm-ribbon';
+    ribbon.textContent = 'CAMPAIGN MISSIONS';
+    frame.appendChild(ribbon);
 
     const header = document.createElement('div');
     header.className = 'level-select-header';
 
     const backBtn = document.createElement('button');
-    backBtn.className = 'level-back-btn';
+    backBtn.className = 'level-back-btn gm-btn gm-btn-stone';
     backBtn.innerHTML = `${iconChevronLeft(15)}<span>BACK</span>`;
     backBtn.onclick = () => {
       this.hide();
@@ -36,7 +45,6 @@ export class LevelSelectView {
     const titleBox = document.createElement('div');
     titleBox.style.cssText = 'text-align: center;';
     titleBox.innerHTML = `
-      <div class="level-select-title">CAMPAIGN MISSIONS</div>
       <div class="level-select-sub">Select a trial to prove your mastery</div>
     `;
 
@@ -46,7 +54,7 @@ export class LevelSelectView {
     header.appendChild(backBtn);
     header.appendChild(titleBox);
     header.appendChild(dummyRight);
-    this.overlay.appendChild(header);
+    frame.appendChild(header);
 
     const rowWrap = document.createElement('div');
     rowWrap.className = 'level-row-wrap';
@@ -70,7 +78,8 @@ export class LevelSelectView {
     rowWrap.appendChild(this.leftBtn);
     rowWrap.appendChild(this.cardsContainer);
     rowWrap.appendChild(this.rightBtn);
-    this.overlay.appendChild(rowWrap);
+    frame.appendChild(rowWrap);
+    this.overlay.appendChild(frame);
     document.body.appendChild(this.overlay);
   }
 
@@ -110,7 +119,7 @@ export class LevelSelectView {
       const thumbSrc = BIOME_THUMB[level.biome] || BIOME_THUMB.GRASS;
 
       const card = document.createElement('div');
-      card.className = `level-card dv-panel ${unlocked ? 'unlocked' : 'locked'}`;
+      card.className = `level-card gm-card ${unlocked ? 'unlocked' : 'locked'}`;
       card.dataset.levelId = String(level.id);
 
       if (unlocked) {

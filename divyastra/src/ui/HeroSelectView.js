@@ -46,15 +46,15 @@ export class HeroSelectView {
         : `./lobby/${styleInfo.file}`;
 
       const card = document.createElement('div');
-      card.className = `hero-card dv-panel ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`;
+      card.className = `hero-card gm-card ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`;
       card.style.setProperty('--hero-color', styleInfo.hex);
       card.style.setProperty('--hero-rgb', styleInfo.rgb);
 
       const actionHtml = isSelected
-        ? `<button type="button" class="hero-btn hero-btn-selected" disabled>${iconCheck(14)}<span>SELECTED</span></button>`
+        ? `<button type="button" class="hero-btn gm-btn gm-btn-green hero-btn-selected" disabled>${iconCheck(14)}<span>SELECTED</span></button>`
         : isUnlocked
-          ? `<button type="button" class="hero-btn hero-btn-select">SELECT</button>`
-          : `<button type="button" class="hero-btn hero-btn-unlock ${canAfford ? '' : 'unaffordable'}" ${canAfford ? '' : 'disabled'}>${iconLock(13)}<span>${HERO_UNLOCK_COST}</span>${iconGold(13)}</button>`;
+          ? `<button type="button" class="hero-btn gm-btn gm-btn-green hero-btn-select">SELECT</button>`
+          : `<button type="button" class="hero-btn gm-btn ${canAfford ? 'gm-btn-gold' : 'gm-btn-stone unaffordable'} hero-btn-unlock" ${canAfford ? '' : 'disabled'}>${iconLock(13)}<span>${HERO_UNLOCK_COST}</span>${iconGold(13)}</button>`;
 
       card.innerHTML = `
         <div class="hero-portrait-bg">

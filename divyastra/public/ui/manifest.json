@@ -1,0 +1,54 @@
+{
+ "bar_empty.png": [
+  757,
+  71
+ ],
+ "bar_full.png": [
+  757,
+  71
+ ],
+ "btn_close.png": [
+  147,
+  146
+ ],
+ "btn_gold.png": [
+  191,
+  110
+ ],
+ "btn_green.png": [
+  188,
+  110
+ ],
+ "btn_red.png": [
+  188,
+  110
+ ],
+ "btn_stone.png": [
+  180,
+  110
+ ],
+ "card_frame.png": [
+  201,
+  288
+ ],
+ "gems_empty.png": [
+  389,
+  91
+ ],
+ "gems_full.png": [
+  390,
+  92
+ ],
+ "medallion.png": [
+  227,
+  229
+ ],
+ "panel_frame.png": [
+  497,
+  304
+ ],
+ "ribbon.png": [
+  447,
+  133
+ ]
+}

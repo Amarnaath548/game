@@ -16,20 +16,18 @@
 }
 
 .end-modal-card {
-  width: min(420px, 94vw);
-  max-width: 420px;
-  padding: 18px 20px;
+  width: min(460px, 94vw);
+  max-width: 460px;
+  padding: 36px 26px 26px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  background: rgba(21, 23, 43, 0.95);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.8), 0 0 24px rgba(227, 176, 75, 0.14);
 }
 
 #end-title {
   font-family: 'Yatra One', cursive, sans-serif;
-  font-size: 34px;
+  font-size: 24px;
   line-height: 1.08;
   letter-spacing: 1px;
   text-align: center;
@@ -196,35 +194,6 @@
 .modal-actions { display: flex; gap: 10px; margin-top: 2px; width: 100%; justify-content: center; }
 
 .modal-btn {
-  min-height: 40px;
-  padding: 8px 20px;
-  border-radius: 999px;
-  font-family: 'Rubik', sans-serif;
+  padding: 0 18px;
   font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.12s, filter 0.15s, box-shadow 0.15s;
 }
-.modal-btn:active { transform: scale(0.96); }
-
-#modal-play-again-btn {
-  background: linear-gradient(180deg, #E3B04B 0%, #c8963e 100%);
-  color: #15172B;
-  border: 2px solid #E3B04B;
-  box-shadow: inset 0 0 0 2px #15172B, 0 0 14px rgba(227, 176, 75, 0.4);
-}
-#modal-play-again-btn:hover { filter: brightness(1.08); }
-
-#modal-lobby-btn {
-  background: #15172B;
-  color: #EFE6D2;
-  border: 1.5px solid rgba(227, 176, 75, 0.65);
-}
-#modal-lobby-btn:hover { border-color: #E3B04B; filter: brightness(1.12); }
-
-#modal-next-level-btn {
-  background: #7FA650;
-  color: #15172B;
-  border: 1.5px solid #EFE6D2;
-}
-#modal-next-level-btn:hover { filter: brightness(1.08); }

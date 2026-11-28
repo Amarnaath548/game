@@ -1,36 +1,26 @@
-/* SETTINGS POPOVER (.dv-panel restyle) */
-.settings-popover.dv-panel {
+/* SETTINGS POPOVER (.gm-frame) */
+.settings-popover.gm-frame {
   position: absolute;
   right: 0;
   top: 56px;
-  width: 280px;
-  background: rgba(27, 31, 59, 0.9);
-  border: 1.5px solid rgba(227, 176, 75, 0.6);
-  border-radius: 12px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.85);
-  padding: 12px 14px;
+  width: 320px;
+  padding: 32px 26px 24px;
   z-index: 100;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   box-sizing: border-box;
 }
-.settings-popover.dv-panel::before { top: 4px; left: 4px; }
-.settings-popover.dv-panel::after { bottom: 4px; right: 4px; }
 
 .settings-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(227, 176, 75, 0.25);
+  height: 6px;
+  padding: 0;
+  border-bottom: none;
 }
-.settings-title {
-  font-family: 'Yatra One', cursive, sans-serif;
-  font-size: 16px;
-  color: #E3B04B;
-  letter-spacing: 1px;
-  line-height: 1;
+.settings-title.gm-ribbon {
+  font-size: 22px;
+  min-height: 44px;
+  top: -20px;
 }
 .settings-close-btn {
   width: 28px;

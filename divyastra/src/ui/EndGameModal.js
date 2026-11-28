@@ -117,7 +117,7 @@ export function showEndGameModal(ctx) {
   if (!nextBtn) {
     nextBtn = document.createElement('button');
     nextBtn.id = 'modal-next-level-btn';
-    nextBtn.className = 'modal-btn';
+    nextBtn.className = 'modal-btn gm-btn gm-btn-green';
     modalPlayAgainBtn.parentElement.insertBefore(nextBtn, modalPlayAgainBtn);
   }
 

@@ -44,14 +44,13 @@ function formatEffectRange(upg, lvl) {
   return `${spec.val(lvl)} \u2192 ${spec.val(lvl + 1)} ${spec.unit}`;
 }
 
-function renderPips(lvl, maxLevel, flash) {
-  let html = '';
-  for (let i = 1; i <= maxLevel; i++) {
-    const owned = i <= lvl;
-    const cls = owned ? (flash ? 'upg-pip owned flash' : 'upg-pip owned') : 'upg-pip';
-    html += `<span class="${cls}"></span>`;
-  }
-  return html;
+function renderPips(lvl, maxLevel) {
+  return `
+    <div class="gm-gems" style="--gm-lvl: ${lvl}; --gm-max: ${maxLevel};" aria-label="Level ${lvl} of ${maxLevel}">
+      <img src="./ui/gems_empty.png" class="gm-gems-base" alt="" />
+      <img src="./ui/gems_full.png" class="gm-gems-fill" alt="" />
+    </div>
+  `;
 }
 
 export class UpgradesView {
@@ -61,7 +60,7 @@ export class UpgradesView {
     this.onUpdate = onUpdate;
   }
 
-  render(flashedId = null) {
+  render() {
     if (!this.container) return;
     this.container.innerHTML = '';
 
@@ -71,23 +70,22 @@ export class UpgradesView {
       const isMax = lvl >= upg.maxLevel;
       const canAfford = !isMax && this.meta.data.gold >= cost;
       const iconFn = UPGRADE_ICONS[upg.id] || iconFlame;
-      const flash = flashedId === upg.id;
 
       const card = document.createElement('div');
-      card.className = `upgrade-card${isMax ? ' maxed' : ''}`;
+      card.className = `upgrade-card gm-card${isMax ? ' maxed' : ''}`;
 
       const actionHtml = isMax
         ? `<div class="upg-max-badge">MAX</div>`
-        : `<button class="upg-buy-btn${canAfford ? '' : ' unaffordable'}" ${canAfford ? '' : 'disabled'}>${iconGold(14)} <span>${cost}</span></button>`;
+        : `<button class="upg-buy-btn gm-btn ${canAfford ? 'gm-btn-gold' : 'gm-btn-stone unaffordable'}" ${canAfford ? '' : 'disabled'}>${iconGold(14)} <span>${cost}</span></button>`;
 
       card.innerHTML = `
-        <div class="upg-icon-box">${iconFn(22)}</div>
+        <div class="upg-icon-box gm-medallion">${iconFn(38)}</div>
         <div class="upg-body">
           <div class="upg-title-row">
             <span class="upg-card-name">${upg.name}</span>
           </div>
           <div class="upg-card-desc">${upg.desc}</div>
-          <div class="upg-pips" aria-label="Level ${lvl} of ${upg.maxLevel}">${renderPips(lvl, upg.maxLevel, flash)}</div>
+          <div class="upg-pips" aria-label="Level ${lvl} of ${upg.maxLevel}">${renderPips(lvl, upg.maxLevel)}</div>
           <div class="upg-effect">${formatEffectRange(upg, lvl)}</div>
         </div>
         <div class="upg-action">${actionHtml}</div>

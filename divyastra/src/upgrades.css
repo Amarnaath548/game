@@ -145,42 +145,11 @@
   justify-content: center;
 }
 
-/* Gold-ring style BUY button */
+/* Gold-ring style BUY button overridden by gm-btn */
 .upg-buy-btn {
-  min-width: 72px;
-  height: 36px;
+  min-width: 84px;
   padding: 0 10px;
-  border-radius: 999px;
-  background: rgba(21, 23, 43, 0.92);
-  border: 2px solid #ffd166;
-  color: #ffd166;
-  font-family: inherit;
   font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  box-shadow: 0 0 10px rgba(255, 209, 102, 0.22), inset 0 0 6px rgba(255, 209, 102, 0.15);
-  transition: transform 0.08s, filter 0.12s;
-}
-
-.upg-buy-btn:hover:not(:disabled) {
-  filter: brightness(1.15);
-}
-
-.upg-buy-btn:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-.upg-buy-btn:disabled,
-.upg-buy-btn.unaffordable {
-  opacity: 0.45;
-  border-color: #64748b;
-  color: #94a3b8;
-  box-shadow: none;
-  cursor: not-allowed;
 }
 
 .upg-max-badge {

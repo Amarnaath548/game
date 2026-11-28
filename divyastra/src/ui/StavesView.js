@@ -48,18 +48,17 @@ export class StavesView {
       const iconSrc = getStaffIconSrc(staff.id);
 
       const card = document.createElement('div');
-      card.className = `staff-card dv-panel ${isSelected ? 'selected equipped' : isUnlocked ? 'owned' : 'locked'}`;
-      card.style.background = `radial-gradient(circle at 50% 36px, ${accentHex}2a 0%, transparent 68%), linear-gradient(180deg, #131d36 0%, #0a1020 100%)`;
+      card.className = `staff-card gm-card ${isSelected ? 'selected equipped' : isUnlocked ? 'owned' : 'locked'}`;
 
       let btnHtml;
       if (isSelected) {
-        btnHtml = `<button class="staff-action-btn btn-equipped" disabled>EQUIPPED</button>`;
+        btnHtml = `<button class="staff-action-btn gm-btn gm-btn-green btn-equipped" disabled>EQUIPPED</button>`;
       } else if (isUnlocked) {
-        btnHtml = `<button class="staff-action-btn btn-equip btn-select">EQUIP</button>`;
+        btnHtml = `<button class="staff-action-btn gm-btn gm-btn-green btn-equip btn-select">EQUIP</button>`;
       } else if (canAfford) {
-        btnHtml = `<button class="staff-action-btn btn-unlock">UNLOCK <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" /> ${staff.cost}</button>`;
+        btnHtml = `<button class="staff-action-btn gm-btn gm-btn-gold btn-unlock">UNLOCK <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" /> ${staff.cost}</button>`;
       } else {
-        btnHtml = `<button class="staff-action-btn btn-unlock btn-unaffordable" disabled>UNLOCK <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" /> <span class="price-unaffordable">${staff.cost}</span></button>`;
+        btnHtml = `<button class="staff-action-btn gm-btn gm-btn-stone btn-unlock btn-unaffordable" disabled>UNLOCK <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" /> <span class="price-unaffordable">${staff.cost}</span></button>`;
       }
 
       card.innerHTML = `

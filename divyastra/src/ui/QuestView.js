@@ -1,4 +1,4 @@
-import { iconGold } from './icons.js';
+import { iconGold, iconSwords } from './icons.js';
 
 export class QuestView {
   constructor(container, tabBadgeEl, questManager, metaProgression, onClaim) {
@@ -23,20 +23,21 @@ export class QuestView {
       const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
 
       const card = document.createElement('div');
-      card.className = `quest-card dv-panel ${q.claimed ? 'claimed' : isComplete ? 'claimable' : ''}`;
+      card.className = `quest-card gm-card ${q.claimed ? 'claimed' : isComplete ? 'claimable' : ''}`;
 
       const btnHtml = q.claimed
-        ? `<button class="quest-btn quest-btn-claimed" disabled>CLAIMED</button>`
+        ? `<button class="quest-btn gm-btn gm-btn-stone quest-btn-claimed" disabled>CLAIMED</button>`
         : isComplete
-          ? `<button class="quest-btn quest-btn-claim">CLAIM (+${q.goldReward} ${iconGold(13)})</button>`
-          : `<button class="quest-btn quest-btn-progress" disabled>+${q.goldReward} ${iconGold(13)}</button>`;
+          ? `<button class="quest-btn gm-btn gm-btn-green quest-btn-claim">CLAIM (+${q.goldReward} ${iconGold(13)})</button>`
+          : `<button class="quest-btn gm-btn gm-btn-stone quest-btn-progress" disabled>+${q.goldReward} ${iconGold(13)}</button>`;
 
       card.innerHTML = `
+        <div class="gm-medallion quest-medallion">${iconSwords(36)}</div>
         <div class="quest-info">
           <div class="quest-title">${q.text}</div>
-          <div class="quest-bar-wrap">
-            <div class="quest-bar-fill" style="width: ${pct}%"></div>
-            <span class="quest-bar-text">${q.progress} / ${q.target}</span>
+          <div class="quest-bar-wrap gm-bar">
+            <div class="gm-bar-track"><div class="gm-bar-fill" style="width: ${pct}%"></div></div>
+            <span class="gm-bar-text quest-bar-text">${q.progress} / ${q.target}</span>
           </div>
         </div>
         ${btnHtml}
