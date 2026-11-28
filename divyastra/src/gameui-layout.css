@@ -1,0 +1,35 @@
+/* LAYOUT FIXES FOR PAINTED-FRAME MODALS (landscape phones first, then larger screens) */
+.lobby-sheet-overlay { padding: 22px 10px 8px; align-items: center; }
+.lobby-sheet-card.gm-frame { width: 100%; max-width: 940px; height: auto; max-height: calc(100dvh - 30px); min-height: 0; padding: 24px 16px 14px; }
+.lobby-sheet-header { position: absolute; top: -12px; right: 40px; padding: 0; z-index: 11; }
+.lobby-sheet-content { flex: 1 1 auto; min-height: 0; padding: 8px 6px 20px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%); mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%); }
+#heroes-container.heroes-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 18px 2px 20px; }
+#staves-container.staves-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding-bottom: 20px; }
+#upgrades-container.upgrade-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 2px 2px 20px; }
+.spellbook-tier-section > div:not(.gm-ribbon) { grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)) !important; }
+.hero-card, .staff-card, .upgrade-card, .quest-card, .spellbook-card { min-width: 0; max-width: 100%; }
+.staff-card.gm-card { padding: 8px 8px 10px; gap: 4px; }
+.staff-card .gm-btn { width: 100%; min-width: 0; padding: 0 6px; font-size: 12px; min-height: 40px; }
+.staff-card .staff-desc, .staff-card p { font-size: 11px; line-height: 1.25; }
+.upgrade-card.gm-card { padding: 8px 10px; gap: 8px; min-height: 84px; }
+.upgrade-card .upg-body { min-width: 0; flex: 1 1 auto; }
+.upgrade-card .upg-desc { font-size: 11px; line-height: 1.25; overflow-wrap: anywhere; }
+.upgrade-card .gm-btn { flex: 0 0 auto; min-width: 0; width: 74px; padding: 0 4px; font-size: 13px; }
+.upgrade-card .gm-medallion { width: 52px; height: 52px; min-width: 52px; min-height: 52px; }
+.quest-card.gm-card { padding: 8px 12px; gap: 10px; }
+.quest-card .gm-btn { min-width: 0; width: 72px; padding: 0 4px; font-size: 12px; }
+.quest-info { min-width: 0; }
+.spellbook-card.gm-card { overflow-wrap: anywhere; }
+@media (max-height: 400px) {
+  .lobby-sheet-overlay { padding: 20px 8px 4px; }
+  .lobby-sheet-card.gm-frame { padding: 22px 14px 10px; max-height: calc(100dvh - 24px); }
+  .gm-ribbon { font-size: 22px; min-height: 44px; }
+  .gm-close-btn { width: 38px; height: 38px; min-width: 38px; min-height: 38px; top: -12px; right: -10px; }
+  .lobby-sheet-header { right: 34px; }
+}
+@media (max-width: 719px) {
+  #heroes-container.heroes-grid, #staves-container.staves-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #upgrades-container.upgrade-list { grid-template-columns: minmax(0, 1fr); }
+}
+.staff-card .staff-desc { white-space: normal; overflow: visible; text-overflow: clip; display: block; -webkit-line-clamp: unset; }
+.hero-portrait-bg { clip-path: inset(-40px -6px 0 -6px); }
