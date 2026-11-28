@@ -20,6 +20,8 @@
   <link rel="stylesheet" href="./src/panels.css" />
   <link rel="stylesheet" href="./src/upgrades.css" />
   <link rel="stylesheet" href="./src/heroPanel.css" />
+  <link rel="stylesheet" href="./src/endModal.css" />
+  <link rel="stylesheet" href="./src/levelSelect.css" />
 </head>
 <body>
   <!-- LOBBY SCREEN -->
@@ -232,16 +234,16 @@
 
   <!-- MATCH END MODAL -->
   <div id="end-modal">
-    <div class="end-modal-card dv-panel" style="padding:24px 32px;display:flex;flex-direction:column;align-items:center;gap:12px;max-width:440px;width:90%;">
+    <div class="end-modal-card dv-panel">
       <div id="end-title">#1 VICTORY ROYALE</div>
       <div id="end-subtitle">You are the last Archmage standing!</div>
-      <div class="match-rewards-box dv-panel" style="padding:10px 16px;">
+      <div class="match-rewards-box dv-panel">
         <div id="reward-trophy" class="reward-pill trophy-val">+30 Trophies</div>
         <div id="reward-gold" class="reward-pill gold-val">+150 Gold</div>
       </div>
       <div class="modal-actions">
-        <button id="modal-lobby-btn" class="modal-btn">Return to Lobby</button>
-        <button id="modal-play-again-btn" class="modal-btn">Play Again</button>
+        <button id="modal-lobby-btn" class="modal-btn">Menu</button>
+        <button id="modal-play-again-btn" class="modal-btn">Retry</button>
       </div>
     </div>
   </div>

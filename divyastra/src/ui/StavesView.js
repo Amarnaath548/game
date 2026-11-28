@@ -57,9 +57,9 @@ export class StavesView {
       } else if (isUnlocked) {
         btnHtml = `<button class="staff-action-btn btn-equip btn-select">EQUIP</button>`;
       } else if (canAfford) {
-        btnHtml = `<button class="staff-action-btn btn-unlock">UNLOCK (${staff.cost} <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" />)</button>`;
+        btnHtml = `<button class="staff-action-btn btn-unlock">UNLOCK <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" /> ${staff.cost}</button>`;
       } else {
-        btnHtml = `<button class="staff-action-btn btn-unlock btn-unaffordable" disabled>UNLOCK (<span class="price-unaffordable">${staff.cost}</span> <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" />)</button>`;
+        btnHtml = `<button class="staff-action-btn btn-unlock btn-unaffordable" disabled>UNLOCK <img src="./lobby/icon_gold.png" class="btn-coin" alt="Gold" /> <span class="price-unaffordable">${staff.cost}</span></button>`;
       }
 
       card.innerHTML = `

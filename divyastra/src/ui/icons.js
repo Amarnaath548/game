@@ -21,6 +21,12 @@ export const iconSpeaker = (size = 14, cls = '', muted = false) => {
 export const iconClose = (size = 16, cls = '') =>
   svg('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>', size, cls);
 
+export const iconChevronLeft = (size = 16, cls = '') =>
+  svg('<polyline points="15 18 9 12 15 6"/>', size, cls);
+
+export const iconChevronRight = (size = 16, cls = '') =>
+  svg('<polyline points="9 18 15 12 9 6"/>', size, cls);
+
 export const iconFist = (size = 18, cls = '') =>
   svg('<path d="M7 11V7a2 2 0 0 1 4 0v4"/><path d="M11 10V5a2 2 0 0 1 4 0v5"/><path d="M15 10V6a2 2 0 0 1 4 0v6a6 6 0 0 1-6 6H9a5 5 0 0 1-5-5v-2a2 2 0 0 1 4 0"/><line x1="4" y1="13" x2="8" y2="13"/>', size, cls);
 

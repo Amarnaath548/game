@@ -1,0 +1,184 @@
+/* CAMPAIGN LEVEL SELECT */
+
+#level-select-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: radial-gradient(circle at center, rgba(27, 31, 59, 0.94) 0%, rgba(12, 14, 28, 0.98) 100%);
+  backdrop-filter: blur(10px);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  user-select: none;
+}
+
+.level-select-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 980px;
+  margin-bottom: 12px;
+}
+
+.level-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #15172B;
+  color: #EFE6D2;
+  border: 1.5px solid #E3B04B;
+  padding: 6px 13px;
+  border-radius: 8px;
+  font-family: 'Rubik', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.level-back-btn:hover { box-shadow: 0 0 10px rgba(227, 176, 75, 0.35); }
+
+.level-select-title {
+  font-family: 'Yatra One', cursive, sans-serif;
+  font-size: 24px;
+  color: #E3B04B;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 16px rgba(227, 176, 75, 0.45);
+}
+
+.level-select-sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: #EFE6D2;
+  opacity: 0.8;
+  letter-spacing: 0.4px;
+}
+
+.level-row-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  align-items: center;
+}
+
+.level-cards-row {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  align-items: stretch;
+  width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  padding: 10px 34px 12px;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #c8963e transparent;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+}
+
+.level-scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #15172B;
+  color: #E3B04B;
+  border: 1.5px solid #E3B04B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+  transition: opacity 0.15s, transform 0.12s;
+}
+.level-scroll-btn.left { left: 2px; }
+.level-scroll-btn.right { right: 2px; }
+.level-scroll-btn:hover:not(:disabled) { transform: translateY(-50%) scale(1.08); }
+.level-scroll-btn:disabled { opacity: 0.25; cursor: default; }
+
+.level-card {
+  flex: 0 0 216px;
+  width: 216px;
+  min-width: 216px;
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+  box-sizing: border-box;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.level-card.unlocked { cursor: pointer; }
+.level-card.unlocked:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: #E3B04B;
+  box-shadow: 0 12px 28px rgba(227, 176, 75, 0.28);
+}
+.level-card.locked { opacity: 0.7; cursor: not-allowed; border-color: rgba(185, 174, 152, 0.35); }
+
+.level-card-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 9px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.level-card-banner {
+  position: relative;
+  width: 100%;
+  height: 74px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.level-card-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.level-card.locked .level-card-banner img { filter: grayscale(0.9) brightness(0.45); }
+.level-card-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(21, 23, 43, 0.08) 0%, rgba(21, 23, 43, 0.45) 55%, rgba(27, 31, 59, 0.98) 100%);
+}
+.level-lock-badge {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #EFE6D2;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
+}
+
+.level-card-body { padding: 8px 12px 10px; width: 100%; box-sizing: border-box; min-width: 0; }
+.level-card-desc {
+  font-size: 10.5px;
+  color: #EFE6D2;
+  opacity: 0.82;
+  line-height: 1.35;
+  margin-bottom: 6px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.level-card-footer {
+  width: 100%;
+  border-top: 1px solid rgba(227, 176, 75, 0.2);
+  padding: 8px 12px 10px;
+  box-sizing: border-box;
+}

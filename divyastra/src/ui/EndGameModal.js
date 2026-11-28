@@ -1,5 +1,8 @@
-import { iconSparkle, iconBook, iconStar, iconUnlock, iconSwords, iconTrophy, iconGold, renderStars } from './icons.js';
+import { iconSparkle, iconBook, iconStar, iconUnlock, iconSwords, iconCrown } from './icons.js';
 import { formatEndlessTime } from '../config/endless.js';
+import { loadAndTrimHero, getHeroSrc } from './HeroImageTrim.js';
+
+const HERO_IMG = { tapasvi: 'hero_tapasvi.webp', jala: 'hero_jala.webp', prithvi: 'hero_prithvi.webp', agni: 'hero_agni.png' };
 
 export function showEndGameModal(ctx) {
   const {
@@ -15,8 +18,11 @@ export function showEndGameModal(ctx) {
     : meta.applyMatchResults(place);
 
   endModal.style.display = 'flex';
+  const heroId = player?.hero?.id || 'tapasvi';
   const heroName = player?.hero?.name || 'Archmage';
+  const heroFile = HERO_IMG[heroId] || HERO_IMG.tapasvi;
   const kills = player?.kills || 0;
+  const isDefeat = isEndless ? !endlessRes.isNewBest : campRes ? !campRes.completed : !isVictory;
 
   if (isEndless) {
     endTitle.innerHTML = endlessRes.isNewBest
@@ -39,43 +45,69 @@ export function showEndGameModal(ctx) {
       : `${heroName} eliminated at rank #${place}.`;
   }
 
-  let statsEl = document.getElementById('match-hero-stats');
-  if (!statsEl) {
-    statsEl = document.createElement('div');
-    statsEl.id = 'match-hero-stats';
-    endModal.querySelector('.end-modal-card')?.insertBefore(statsEl, document.querySelector('.match-rewards-box')) ||
-      endModal.insertBefore(statsEl, document.querySelector('.match-rewards-box'));
+  const cardEl = endModal.querySelector('.end-modal-card');
+  const rewardsBox = cardEl?.querySelector('.match-rewards-box');
+  let bodyRow = document.getElementById('end-body-row');
+  if (!bodyRow && cardEl && rewardsBox) {
+    bodyRow = document.createElement('div');
+    bodyRow.id = 'end-body-row';
+    bodyRow.className = 'end-body-row';
+    bodyRow.innerHTML = `<div class="end-portrait-wrap"><img id="end-hero-portrait" class="end-hero-portrait" alt="" /></div><div class="end-right-col"><div id="end-camp-stars" class="end-camp-stars"></div><div id="match-hero-stats"></div></div>`;
+    cardEl.insertBefore(bodyRow, rewardsBox);
   }
 
-  const questHtml = finishedQuests?.length ? `<div class="quest-done-pill">${iconSparkle(12)} Quest completed!</div>` : '';
-  const newSpellHtml = spellbookSummary?.newSpells?.length
-    ? `<div class="quest-done-pill new-astra-pill" style="background:#1B1F3B;border-color:#E3B04B;">${iconBook(12)} New astra unlocked! (${spellbookSummary.newSpells.join(', ')})</div>`
-    : '';
-  const starHtml = spellbookSummary?.starsEarned
-    ? `<div class="quest-done-pill" style="background:#E08A2E;border-color:#E3B04B;">${iconStar(12)} Siddhi earned! (+${spellbookSummary.starsEarned})</div>`
-    : '';
-  const campStarsHtml = campRes
-    ? `<div class="quest-done-pill" style="background:#E3B04B;border-color:#EFE6D2;color:#15172B;font-weight:700;">Level Stars: ${campRes.totalStars}/3 (${renderStars(campRes.starsEarned || 0, 3, 13)})</div>`
-    : '';
-  const unlockedHtml = campRes?.unlockedNext
-    ? `<div class="quest-done-pill" style="background:#7FA650;border-color:#B9AE98;color:#15172B;font-weight:700;">${iconUnlock(12)} Next level unlocked!</div>`
-    : '';
-  const devHtml = devCheated
-    ? `<div class="quest-done-pill" style="background:#C8431E;border-color:#E08A2E;color:#fff;font-weight:700;">DEV MATCH - no rewards</div>`
-    : '';
+  const portraitEl = document.getElementById('end-hero-portrait');
+  if (portraitEl) {
+    portraitEl.src = getHeroSrc(heroId, heroFile);
+    portraitEl.alt = heroName;
+    portraitEl.classList.toggle('defeat', isDefeat);
+    loadAndTrimHero(heroId, heroFile).then((url) => {
+      if (portraitEl.isConnected && portraitEl.src !== url) portraitEl.src = url;
+    });
+  }
 
+  const starsBox = document.getElementById('end-camp-stars');
+  if (starsBox) {
+    if (campRes) {
+      const earned = campRes.starsEarned || 0;
+      starsBox.style.display = 'flex';
+      starsBox.innerHTML = [1, 2, 3].map((i) =>
+        `<span class="end-star${i <= earned ? ' earned' : ''}">${iconStar(26, i <= earned)}</span>`
+      ).join('');
+    } else {
+      starsBox.style.display = 'none';
+      starsBox.innerHTML = '';
+    }
+  }
+
+  const statsEl = document.getElementById('match-hero-stats');
+  const questHtml = finishedQuests?.length ? `<div class="quest-done-pill pill-olive">${iconSparkle(12)} Quest completed!</div>` : '';
+  const newSpellHtml = spellbookSummary?.newSpells?.length
+    ? `<div class="quest-done-pill">${iconBook(12)} New astra unlocked! (${spellbookSummary.newSpells.join(', ')})</div>` : '';
+  const starHtml = spellbookSummary?.starsEarned
+    ? `<div class="quest-done-pill pill-saffron">${iconStar(12)} Siddhi earned! (+${spellbookSummary.starsEarned})</div>` : '';
+  const unlockedHtml = campRes?.unlockedNext
+    ? `<div class="quest-done-pill pill-olive">${iconUnlock(12)} Next level unlocked!</div>` : '';
+  const devHtml = devCheated
+    ? `<div class="quest-done-pill pill-sindoor">DEV MATCH - no rewards</div>` : '';
   const endlessPill = isEndless && endlessRes.isNewBest
-    ? `<div class="quest-done-pill" style="background:#E3B04B;border-color:#EFE6D2;color:#15172B;font-weight:700;">${iconTrophy(12)} Personal Best!</div>`
-    : '';
+    ? `<div class="quest-done-pill pill-gold">${iconCrown(12)} Personal Best!</div>` : '';
+
+  if (statsEl) {
+    if (isEndless) {
+      statsEl.innerHTML = `${devHtml}${endlessPill}<div class="stat-pill">Score: <b>${endlessRes.score.toLocaleString()}</b></div><div class="stat-pill">Time: <b>${formatEndlessTime(endlessRes.survivalTime)}</b></div><div class="stat-pill">${iconSwords(13)} <b>${kills}</b></div><div class="stat-pill">Tier: <b>${endlessRes.tier}</b></div>${newSpellHtml}${starHtml}`;
+    } else {
+      statsEl.innerHTML = `${devHtml}<div class="stat-pill">${iconCrown(13)} <b>#${place}</b></div><div class="stat-pill">${iconSwords(13)} <b>${kills}</b></div>${unlockedHtml}${questHtml}${newSpellHtml}${starHtml}`;
+    }
+  }
+
   if (isEndless) {
-    statsEl.innerHTML = `${devHtml}${endlessPill}<div class="stat-pill">Score: <b>${endlessRes.score.toLocaleString()}</b></div><div class="stat-pill">Best: <b>${endlessRes.bestScore.toLocaleString()}</b></div><div class="stat-pill">Time: <b>${formatEndlessTime(endlessRes.survivalTime)}</b></div><div class="stat-pill">Kills: <b>${kills} ${iconSwords(13)}</b></div><div class="stat-pill">Tier: <b>${endlessRes.tier}</b></div>${newSpellHtml}${starHtml}`;
-    rewardTrophy.innerHTML = `Score Mode`;
-    rewardGold.innerHTML = `Best: ${endlessRes.bestScore.toLocaleString()} pts`;
+    rewardTrophy.innerHTML = `<img src="./lobby/icon_gem.png" class="counter-currency-img" alt="Score" /> Score Mode`;
+    rewardGold.innerHTML = `<img src="./lobby/icon_trophy.png" class="counter-currency-img" alt="Best" /> ${endlessRes.bestScore.toLocaleString()} pts`;
   } else {
-    statsEl.innerHTML = `${devHtml}<div class="stat-pill">Hero: <b>${heroName}</b></div><div class="stat-pill">Placement: <b>#${place}</b></div><div class="stat-pill">Kills: <b>${kills} ${iconSwords(13)}</b></div>${campStarsHtml}${unlockedHtml}${questHtml}${newSpellHtml}${starHtml}`;
     const tSign = results.trophyChange >= 0 ? `+${results.trophyChange}` : `${results.trophyChange}`;
-    rewardTrophy.innerHTML = `${tSign} ${iconTrophy(14)} (${results.newTrophies})`;
-    rewardGold.innerHTML = `+${results.goldEarned} ${iconGold(14)} (${results.newGold})`;
+    rewardTrophy.innerHTML = `<img src="./lobby/icon_trophy.png" class="counter-currency-img" alt="Trophies" /> ${tSign} (${results.newTrophies})`;
+    rewardGold.innerHTML = `<img src="./lobby/icon_gold.png" class="counter-currency-img" alt="Gold" /> +${results.goldEarned} (${results.newGold})`;
   }
 
   modalPlayAgainBtn.textContent = 'Retry';
@@ -86,7 +118,6 @@ export function showEndGameModal(ctx) {
     nextBtn = document.createElement('button');
     nextBtn.id = 'modal-next-level-btn';
     nextBtn.className = 'modal-btn';
-    nextBtn.style.cssText = 'background:#7FA650;color:#EFE6D2;border:1px solid #B9AE98;font-weight:700;';
     modalPlayAgainBtn.parentElement.insertBefore(nextBtn, modalPlayAgainBtn);
   }
 
