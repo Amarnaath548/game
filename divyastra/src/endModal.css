@@ -18,11 +18,12 @@
 .end-modal-card {
   width: min(460px, 94vw);
   max-width: 460px;
-  padding: 36px 26px 26px;
+  max-height: calc(100vh - 30px);
+  padding: 30px 22px 26px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 #end-title {

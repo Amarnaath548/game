@@ -15,15 +15,15 @@
 .gm-frame {
   position: relative;
   border-style: solid;
-  border-width: 20px;
-  border-image-source: url('./ui/panel_frame.png');
+  border-width: 14px;
+  border-image-source: url('/ui/panel_frame.png');
   border-image-slice: 100 fill;
-  border-image-width: 50px;
+  border-image-width: 36px;
   border-image-repeat: stretch;
   background: transparent !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  padding: 26px;
+  padding: 22px 22px 30px;
   box-sizing: border-box;
   overflow: visible !important;
   animation: gmPanelEnter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -37,7 +37,7 @@
 
 .gm-ribbon {
   position: absolute;
-  top: -20px;
+  top: -18px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 6;
@@ -47,7 +47,7 @@
   min-height: 52px;
   border-style: solid;
   border-width: 0 56px;
-  border-image-source: url('./ui/ribbon.png');
+  border-image-source: url('/ui/ribbon.png');
   border-image-slice: 0 130 0 130 fill;
   border-image-width: 0 56px 0 56px;
   border-image-repeat: stretch;
@@ -91,7 +91,7 @@
   padding: 0;
   border: none !important;
   border-radius: 0 !important;
-  background: transparent url('./ui/btn_close.png') center / contain no-repeat !important;
+  background: transparent url('/ui/btn_close.png') center / contain no-repeat !important;
   box-shadow: none !important;
   cursor: pointer;
   z-index: 12;
@@ -112,14 +112,15 @@
 
 .gm-card {
   border-style: solid !important;
-  border-width: 14px !important;
-  border-image-source: url('./ui/card_frame.png') !important;
+  border-width: 12px !important;
+  border-image-source: url('/ui/card_frame.png') !important;
   border-image-slice: 62 fill !important;
-  border-image-width: 30px !important;
+  border-image-width: 20px !important;
   border-image-repeat: stretch !important;
   background: transparent !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+  padding: 16px 18px;
   box-sizing: border-box;
 }
 
@@ -141,7 +142,7 @@
   min-width: 64px;
   min-height: 64px;
   flex-shrink: 0;
-  background: url('./ui/medallion.png') center / contain no-repeat !important;
+  background: url('/ui/medallion.png') center / contain no-repeat !important;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
@@ -189,7 +190,7 @@
   min-height: 28px;
   border-style: solid !important;
   border-width: 0 30px !important;
-  border-image-source: url('./ui/bar_empty.png') !important;
+  border-image-source: url('/ui/bar_empty.png') !important;
   border-image-slice: 0 70 0 70 fill !important;
   border-image-width: 0 30px !important;
   border-image-repeat: stretch !important;

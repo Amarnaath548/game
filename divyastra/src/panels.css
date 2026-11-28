@@ -1,6 +1,5 @@
 /* DIVYASTRA SHARED PANELS & STAVES RESTYLE */
 
-/* Plain 60% black backdrop (no backdrop-filter blur) */
 .lobby-sheet-overlay {
   position: fixed;
   inset: 0;
@@ -9,40 +8,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 18px 12px;
+  padding: 22px 16px 12px;
   box-sizing: border-box;
 }
 
-/* Panel Frame */
 .lobby-sheet-card {
   width: 100%;
   max-width: 900px;
   height: 100%;
-  max-height: min(440px, calc(100vh - 36px));
+  max-height: min(440px, calc(100vh - 30px));
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
-/* Header row */
 .lobby-sheet-header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 0 4px 0;
+  background: transparent;
+  border-bottom: none;
+  padding: 0 0 6px 0;
   box-sizing: border-box;
   flex-shrink: 0;
-}
-
-/* Title: gold display font */
-.sheet-title {
-  font-family: 'Yatra One', cursive, sans-serif;
-  font-size: 26px;
-  color: #ffd166;
-  font-weight: normal;
-  margin: 0;
-  letter-spacing: 1px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
 }
 
 .sheet-header-right {
@@ -51,21 +39,26 @@
   gap: 10px;
 }
 
-/* Gold coin pill (icon_gold.png + current gold, updates live) */
+/* Gold coin badge using btn_stone.png slice 46 */
 .panel-gold-pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(8, 14, 30, 0.85);
-  border: 1.5px solid #c8963e;
-  border-radius: 999px;
-  padding: 3px 10px 3px 6px;
-  box-shadow: inset 0 0 6px rgba(200, 150, 62, 0.2);
+  min-height: 30px;
+  padding: 0 4px;
+  border-style: solid;
+  border-width: 10px 14px;
+  border-image-source: url('/ui/btn_stone.png');
+  border-image-slice: 46 fill;
+  border-image-width: 12px;
+  border-image-repeat: stretch;
+  background: transparent;
+  box-sizing: border-box;
 }
 
 .panel-gold-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
 }
 
@@ -73,51 +66,27 @@
   font-size: 13px;
   font-weight: 800;
   color: #ffd166;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
 }
 
-/* Round gold-bordered close button with SVG X */
-.sheet-close-btn {
-  background: linear-gradient(180deg, #18284d 0%, #0f1a35 100%);
-  border: 2px solid #c8963e;
-  color: #ffd166;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
-  padding: 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  transition: transform 0.1s, border-color 0.15s;
-}
-
-.sheet-close-btn:hover {
-  border-color: #ffd166;
-  transform: scale(1.05);
-}
-
-.sheet-close-btn:active {
-  transform: scale(0.94);
-}
-
-/* Content area */
 .lobby-sheet-content {
   flex: 1;
   min-height: 0;
-  padding: 6px 8px;
+  padding: 6px 8px 24px;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #c8963e rgba(13, 22, 48, 0.7);
 }
 
 #tab-staves {
-  height: 100%;
+  height: auto;
+  min-height: 100%;
   padding: 0;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 
 #tab-staves.active {
@@ -125,102 +94,48 @@
   flex-direction: column;
 }
 
-/* 4x2 grid fitting 844x390 and 740x360 with NO scrolling */
 #staves-container.staves-grid,
 .staves-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 6px;
-  height: 100%;
+  grid-template-rows: auto;
+  gap: 10px;
+  height: auto;
   width: 100%;
+  padding-bottom: 24px;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 
-/* Fewer than 740px wide: 2 columns and scroll with thin gold scrollbar */
 @media (max-width: 739px) {
-  .lobby-sheet-content {
-    overflow-y: auto;
-  }
-  #tab-staves {
-    overflow-y: auto;
-  }
   #staves-container.staves-grid,
   .staves-grid {
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: auto;
-    overflow-y: auto;
-    height: auto;
     gap: 8px;
-    padding-bottom: 8px;
   }
 }
 
-/* Thin gold scrollbar */
-#staves-container::-webkit-scrollbar,
-#tab-staves::-webkit-scrollbar,
-.lobby-sheet-content::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
+.lobby-sheet-content::-webkit-scrollbar { width: 5px; height: 5px; }
+.lobby-sheet-content::-webkit-scrollbar-track { background: rgba(13, 22, 48, 0.7); border-radius: 4px; }
+.lobby-sheet-content::-webkit-scrollbar-thumb { background: #c8963e; border-radius: 4px; }
+.lobby-sheet-content::-webkit-scrollbar-thumb:hover { background: #ffd166; }
 
-#staves-container::-webkit-scrollbar-track,
-#tab-staves::-webkit-scrollbar-track,
-.lobby-sheet-content::-webkit-scrollbar-track {
-  background: rgba(13, 22, 48, 0.7);
-  border-radius: 4px;
-}
-
-#staves-container::-webkit-scrollbar-thumb,
-#tab-staves::-webkit-scrollbar-thumb,
-.lobby-sheet-content::-webkit-scrollbar-thumb {
-  background: #c8963e;
-  border-radius: 4px;
-}
-
-#staves-container::-webkit-scrollbar-thumb:hover,
-#tab-staves::-webkit-scrollbar-thumb:hover,
-.lobby-sheet-content::-webkit-scrollbar-thumb:hover {
-  background: #ffd166;
-}
-
-#staves-container,
-#tab-staves,
-.lobby-sheet-content {
-  scrollbar-width: thin;
-  scrollbar-color: #c8963e rgba(13, 22, 48, 0.7);
-}
-
-/* Staff Card: dark navy gradient, subtle radial glow, 1.5px border in muted gold, 12px radius */
 .staff-card {
   position: relative;
-  border: 1.5px solid #8c6a2d;
-  border-radius: 12px;
-  padding: 5px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
   text-align: center;
   box-sizing: border-box;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
-  overflow: hidden;
+  transition: transform 0.15s, filter 0.15s;
 }
 
-/* EQUIPPED Card state: 2px bright gold border with soft gold glow */
-.staff-card.equipped,
-.staff-card.selected {
-  border: 2px solid #ffd166;
-  box-shadow: 0 0 14px rgba(255, 209, 102, 0.45);
-}
-
-/* Icon on top: about 56px tall, object-fit contain, soft glow in accent color behind */
 .staff-icon-wrap {
   position: relative;
   width: 100%;
-  height: 58px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -230,114 +145,49 @@
 .staff-medallion {
   position: relative;
   z-index: 2;
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
-  min-height: 56px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
 }
 
 .staff-icon-glow {
   position: absolute;
-  width: 52px;
-  height: 52px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   pointer-events: none;
   filter: blur(5px);
 }
 
-.staff-icon-img {
-  height: 54px;
-  max-height: 54px;
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
-  position: relative;
-  z-index: 2;
-}
-
-/* Name in display font in accent color */
 .staff-name {
   font-family: 'Yatra One', cursive, sans-serif;
-  font-size: 11.5px;
+  font-size: 13px;
   line-height: 1.15;
-  margin: 1px 0 0 0;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  margin: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
 }
 
-/* Bonus text in small cream text (2 lines max) */
 .staff-desc {
-  font-size: 9.5px;
+  font-size: 10.5px;
   color: #fdf4dc;
-  line-height: 1.15;
+  line-height: 1.2;
   text-align: center;
+  white-space: nowrap;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  max-height: 2.3em;
-  margin: 1px 0 2px 0;
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin: 0;
 }
 
-/* Buttons: 9-slice gm-btn overrides */
 .staff-action-btn {
   width: 100%;
   font-size: 11px;
   padding: 0 8px;
-}
-
-/* Green gradient for EQUIPPED (disabled) and EQUIP */
-.btn-equipped {
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-  color: #ffffff;
-  cursor: default;
-  opacity: 0.95;
-}
-
-.btn-equipped:disabled {
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-  color: #ffffff;
-  opacity: 0.95;
-  cursor: default;
-}
-
-.btn-equip,
-.btn-select {
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-  color: #ffffff;
-}
-
-.btn-equip:hover,
-.btn-select:hover {
-  filter: brightness(1.1);
-}
-
-/* Gold gradient for UNLOCK (affordable) */
-.btn-unlock {
-  background: linear-gradient(180deg, #ffe066 0%, #f59e0b 50%, #d97706 100%);
-  color: #2b1100;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-.btn-unlock:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-/* Greyed with price in red when cannot afford */
-.btn-unlock.btn-unaffordable,
-.btn-unlock:disabled {
-  background: linear-gradient(180deg, #374151 0%, #1f2937 100%);
-  color: #94a3b8;
-  cursor: not-allowed;
-  opacity: 0.85;
-  text-shadow: none;
 }
 
 .price-unaffordable,

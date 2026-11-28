@@ -106,10 +106,11 @@
 .level-scroll-btn:disabled { opacity: 0.25; cursor: default; }
 
 .level-card {
-  flex: 0 0 220px;
-  width: 220px;
-  min-width: 220px;
-  height: 292px;
+  flex: 0 0 212px;
+  width: 212px;
+  min-width: 212px;
+  height: min(260px, calc(100vh - 138px));
+  min-height: 226px;
   padding: 0 !important;
   scroll-snap-align: center;
   display: flex;

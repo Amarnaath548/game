@@ -1,51 +1,40 @@
 /* HEROES MODAL CARDS RESTYLE */
 #tab-heroes {
-  height: 100%;
+  height: auto;
+  min-height: 100%;
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
 }
 
 #tab-heroes.active {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
 }
 
 #heroes-container.heroes-grid,
 .heroes-grid {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   width: 100%;
-  height: 100%;
-  padding: 16px 4px 2px;
+  height: auto;
+  padding: 18px 4px 24px;
   box-sizing: border-box;
   overflow: visible;
 }
 
 .hero-card {
   position: relative;
-  width: 170px;
-  height: min(250px, 100%);
-  flex: 0 1 170px;
-  border-radius: 14px;
-  border: 1.5px solid #8c6a2d;
-  background: linear-gradient(
-    180deg,
-    rgba(var(--hero-rgb, 227, 176, 75), 0.3) 0%,
-    rgba(13, 22, 48, 0.92) 56%,
-    #070b14 100%
-  );
-  box-shadow: inset 0 1px 0 rgba(255, 235, 185, 0.16), 0 6px 16px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
+  width: 100%;
+  min-height: 215px;
+  height: auto;
+  padding-top: 96px;
+  overflow: visible;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+  transition: transform 0.14s ease, filter 0.14s ease;
   box-sizing: border-box;
 }
 
@@ -177,37 +166,13 @@
 }
 
 .hero-card.gm-card {
-  padding: 4px;
+  padding: 96px 12px 12px;
   overflow: visible;
 }
 
-.hero-card.gm-card .hero-portrait-bg {
-  inset: -14px 2px 20px 2px;
-  border-radius: 4px;
-}
-
-.hero-btn {
-  width: 100%;
-  margin-top: 2px;
-  font-size: 11px;
-  padding: 0 8px;
-}
-
 @media (max-width: 739px) {
-  #tab-heroes {
-    overflow-y: auto;
-    align-items: flex-start;
-  }
   #heroes-container.heroes-grid,
   .heroes-grid {
-    flex-wrap: wrap;
-    height: auto;
-    overflow-y: auto;
-    padding-bottom: 8px;
-  }
-  .hero-card {
-    height: 240px;
-    flex: 0 1 calc(50% - 8px);
-    min-width: 145px;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
