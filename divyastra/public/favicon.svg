@@ -1,7 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <ellipse cx="32" cy="52" rx="24" ry="7" fill="#4c1d95" />
-  <path d="M14 50 C24 26, 30 10, 37 6 C38 18, 44 36, 50 50 Z" fill="#7c3aed" />
-  <path d="M17 46 C24 44, 40 44, 47 46 L46 41 C40 39, 24 39, 18 41 Z" fill="#fbbf24" />
-  <polygon points="36,22 38,27 43,27 39,31 41,36 36,33 31,36 33,31 29,27 34,27" fill="#facc15" />
-  <polygon points="48,12 49,15 52,16 49,17 48,20 47,17 44,16 47,15" fill="#38bdf8" />
+  <defs>
+    <radialGradient id="bg-a" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#18284a" />
+      <stop offset="100%" stop-color="#070b14" />
+    </radialGradient>
+    <linearGradient id="gold-a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe58f" />
+      <stop offset="55%" stop-color="#ffd166" />
+      <stop offset="100%" stop-color="#b87d24" />
+    </linearGradient>
+    <radialGradient id="core-a" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#e0f2fe" />
+      <stop offset="45%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </radialGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg-a)" stroke="url(#gold-a)" stroke-width="3" />
+  <path d="M32 32 L14 14 L24 20 Z M32 32 L50 14 L44 24 Z M32 32 L50 50 L40 44 Z M32 32 L14 50 L20 40 Z" fill="#c8963e" />
+  <path d="M32 7 L37 22 L32 25 L27 22 Z" fill="url(#gold-a)" />
+  <path d="M57 32 L42 37 L39 32 L42 27 Z" fill="url(#gold-a)" />
+  <path d="M32 57 L27 42 L32 39 L37 42 Z" fill="url(#gold-a)" />
+  <path d="M7 32 L22 27 L25 32 L22 37 Z" fill="url(#gold-a)" />
+  <circle cx="32" cy="32" r="14" fill="#0d1630" stroke="url(#gold-a)" stroke-width="3.5" />
+  <circle cx="32" cy="32" r="7.5" fill="url(#core-a)" />
+  <circle cx="29.5" cy="29.5" r="2.2" fill="#ffffff" opacity="0.9" />
 </svg>
