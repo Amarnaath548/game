@@ -66,7 +66,17 @@ const ICONS = {
     <path d="M6 20c8-3 18-2 26 4 8-6 18-7 26-4v32c-8-3-18-2-26 4-8-6-18-7-26-4Z" fill="url(#${g}c)" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>
     <path d="M10 22c7-2 15-1 22 4v26c-7-5-15-6-22-4Zm44 0c-7-2-15-1-22 4v26c7-5 15-6 22-4Z" fill="url(#${g})" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/>
     <path d="M15 30h12M15 36h12M37 30h12M37 36h12" stroke="#8A5412" stroke-width="2" stroke-linecap="round" opacity=".7"/>
-    <path d="M32 3l2.6 6.4L41 12l-6.4 2.6L32 21l-2.6-6.4L23 12l6.4-2.6Z" fill="#FFE070" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`
+    <path d="M32 3l2.6 6.4L41 12l-6.4 2.6L32 21l-2.6-6.4L23 12l6.4-2.6Z" fill="#FFE070" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`,
+
+  drop: (g) => `<defs>${grad(g, '#B8F4FF', '#1B6FC0', '#38B6E8')}</defs>
+    <path d="M32 4C28 16 10 28 10 41a22 22 0 0 0 44 0C54 28 36 16 32 4Z" fill="url(#${g})" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M18 44c4-3 7-3 10 0s7 3 10 0 6-3 8 0" fill="none" stroke="#E8FFFF" stroke-width="2.6" stroke-linecap="round" opacity=".8"/>
+    ${shine('M19 36c1-6 5-10 9-13-3 5-5 9-5 15-2 0-3-1-4-2Z')}`,
+
+  rock: (g) => `<defs>${grad(g, '#C9DD8A', '#4A6A2A', '#8DAE52')}</defs>
+    <path d="M6 40 17 16 34 6l19 9 6 22-11 19H19Z" fill="url(#${g})" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M17 16l17 12 19-13M34 28l-4 28M34 28l25 9M6 40l24-12" fill="none" stroke="#2F4519" stroke-width="2" stroke-linejoin="round" opacity=".55"/>
+    <path d="M17 16l17 12-4 0-14-5Z" fill="#fff" opacity=".35"/>`
 };
 
 export const paintIcon = (name, size = 40) => {
@@ -75,3 +85,5 @@ export const paintIcon = (name, size = 40) => {
   uid += 1;
   return wrap(size, fn(`pg${uid}`));
 };
+
+export const ELEMENT_PAINT = { F: 'flame', W: 'drop', E: 'rock' };

@@ -1,6 +1,6 @@
 import { ELEMENT_NAMES, ELEMENT_COLORS } from '../config/spellRegistry.js';
-import { elementIcon, renderStars, iconLock } from './icons.js';
-import { assetLoader } from '../core/AssetLoader.js';
+import { renderStars, iconLock } from './icons.js';
+import { paintIcon, ELEMENT_PAINT } from './gameIcons.js';
 
 export class SpellbookView {
   constructor(container, spellbookManager) {
@@ -26,7 +26,7 @@ export class SpellbookView {
       section.appendChild(heading);
 
       const grid = document.createElement('div');
-      grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));gap:8px;';
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:10px;';
 
       tierSpells.forEach((spell) => {
         const entry = this.spellbook.getEntry(spell.id);
@@ -40,55 +40,42 @@ export class SpellbookView {
         const b = tintHex & 255;
         if (isReached) card.style.setProperty('--spell-tint', `rgba(${r}, ${g}, ${b}, 0.22)`);
 
-        const iconUrl = assetLoader.getSpellIconUrl(primaryEl);
+        const elems = spell.elements || [primaryEl];
+        const main = paintIcon(ELEMENT_PAINT[primaryEl] || 'flame', 100);
+        const subs = elems.slice(1).map((e, i) => `<span class="sb-sub sb-sub-${i}">${paintIcon(ELEMENT_PAINT[e] || 'flame', 100)}</span>`).join('');
         const medallionIcon = isReached
-          ? (iconUrl ? `<img src="${iconUrl}" alt="${spell.name}" />` : elementIcon(primaryEl, 36))
+          ? `<span class="sb-ico">${main}${subs}</span>`
           : iconLock(30);
-        const medallionHtml = `<div class="gm-medallion">${medallionIcon}</div>`;
+        const medallionHtml = `<div class="gm-medallion sb-medal sb-tier-${tierNum}">${medallionIcon}</div>`;
 
-        const chipsHtml = (spell.elements || []).map((e) => {
+        const chipsHtml = elems.map((e) => {
           const col = isReached && ELEMENT_COLORS[e] ? `#${ELEMENT_COLORS[e].toString(16).padStart(6, '0')}` : '#64748b';
-          return `<span class="sb-chip" style="font-size:9px;font-weight:700;border:1px solid ${col};color:${col};padding:1px 4px;border-radius:3px;display:inline-flex;align-items:center;gap:3px;">${elementIcon(e, 11)} ${ELEMENT_NAMES[e] || e}</span>`;
-        }).join(' ');
+          return `<span class="sb-chip" style="border-color:${col};color:${col};">${ELEMENT_NAMES[e] || e}</span>`;
+        }).join('');
 
         if (!isReached) {
           card.innerHTML = `
-            <div style="display:flex;align-items:center;gap:10px;">
-              ${medallionHtml}
-              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:12px;font-weight:700;color:#64748b;">???</span>
-                  <span style="font-size:10px;color:#475569;">Locked</span>
-                </div>
-                <div style="display:flex;flex-wrap:wrap;gap:3px;margin:2px 0;">${chipsHtml}</div>
-                <div style="font-size:10px;color:#64748b;">Reach in match to unlock</div>
+            <div class="sb-row">${medallionHtml}
+              <div class="sb-text">
+                <div class="sb-name sb-name-locked">???</div>
+                <div class="sb-chips">${chipsHtml}</div>
+                <div class="sb-lore">Reach in match to unlock</div>
               </div>
-            </div>
-          `;
+            </div>`;
         } else {
           const starCount = entry.stars || 0;
           const nextMs = this.spellbook.getNextMilestone(entry.kills);
           const progressText = nextMs ? `${entry.kills} / ${nextMs} kills` : `${entry.kills} kills (MAX)`;
-          const dmgBonus = starCount * 5;
-          const loreHtml = spell.lore ? `<div style="font-size:9px;color:#94a3b8;font-style:italic;line-height:1.2;margin:1px 0;">${spell.lore}</div>` : '';
-
           card.innerHTML = `
-            <div style="display:flex;align-items:center;gap:10px;">
-              ${medallionHtml}
-              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="sb-name" style="font-size:12px;font-weight:700;color:#fff;">${spell.name}</span>
-                  <span style="display:inline-flex;gap:1px;color:#E3B04B;" title="${starCount} Siddhi">${renderStars(starCount, 5, 12)}</span>
-                </div>
-                ${loreHtml}
-                <div style="display:flex;flex-wrap:wrap;gap:3px;margin:1px 0;">${chipsHtml}</div>
-                <div style="display:flex;justify-content:space-between;font-size:10px;color:#cbd5e1;font-weight:700;">
-                  <span style="color:#7FA650;">+${dmgBonus}% DMG</span>
-                  <span style="color:#94a3b8;">${progressText}</span>
-                </div>
+            <div class="sb-row">${medallionHtml}
+              <div class="sb-text">
+                <div class="sb-name">${spell.name}</div>
+                <div class="sb-stars" title="${starCount} Siddhi">${renderStars(starCount, 5, 12)}</div>
               </div>
             </div>
-          `;
+            ${spell.lore ? `<div class="sb-lore">${spell.lore}</div>` : ''}
+            <div class="sb-chips">${chipsHtml}</div>
+            <div class="sb-stats"><span class="sb-dmg">+${starCount * 5}% DMG</span><span class="sb-kills">${progressText}</span></div>`;
         }
         grid.appendChild(card);
       });

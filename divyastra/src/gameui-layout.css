@@ -45,3 +45,24 @@
 /* Coin visibility: outlined coin + readable price on buy buttons */
 .gm-btn .currency-coin, .gm-btn .btn-coin { filter: drop-shadow(0 0 1.5px #2a1206) drop-shadow(0 1px 1px #2a1206); }
 .upg-buy-btn span { font-size: 15px; -webkit-text-stroke: 3px #15172B; }
+
+/* Granth spell cards: header row (medallion + name + stars), then lore, chips, stats */
+.spellbook-tier-section > div:not(.gm-ribbon) { grid-template-columns: repeat(auto-fill, minmax(min(100%, 222px), 1fr)) !important; }
+.spellbook-card.gm-card { gap: 4px; padding: 8px 10px 10px; }
+.sb-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sb-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.sb-name { font-family: 'Yatra One', cursive, sans-serif; font-size: 14px; line-height: 1.15; color: #ffd166; text-shadow: 0 1px 2px #000; }
+.sb-name-locked { color: #64748b; text-shadow: none; }
+.sb-stars { display: flex; gap: 1px; color: #E3B04B; }
+.sb-lore { font-size: 10px; line-height: 1.25; font-style: italic; color: #a9b3c6; }
+.sb-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.sb-chip { font-size: 9px; font-weight: 700; border: 1px solid; padding: 1px 6px; border-radius: 8px; white-space: nowrap; background: rgba(0,0,0,.25); }
+.sb-stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; font-size: 10px; font-weight: 700; }
+.sb-dmg { color: #9BCB62; white-space: nowrap; }
+.sb-kills { color: #cbd5e1; white-space: nowrap; }
+.sb-ico { position: relative; width: 66%; height: 66%; display: block; }
+.sb-ico > svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.sb-sub { position: absolute; width: 46%; height: 46%; bottom: -14%; filter: drop-shadow(0 1px 1px #000); }
+.sb-sub svg { width: 100%; height: 100%; display: block; }
+.sb-sub-0 { right: -22%; } .sb-sub-1 { left: -22%; }
+.sb-tier-3 { filter: drop-shadow(0 0 6px rgba(255, 209, 102, .75)); }
