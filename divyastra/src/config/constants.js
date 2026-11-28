@@ -155,6 +155,24 @@ export const CAMERA_PHONE = {
   AIM_LOOKAHEAD: 1.5
 };
 
+export const CAMERA_THIRD_PERSON = {
+  OFFSET_Y: 4.8,
+  OFFSET_Z: 9.5,
+  LOOK_AHEAD_Z: 6.0,
+  LOOK_Y: 1.5,
+  AIM_LOOKAHEAD: 2.5,
+  FOV: 62
+};
+
+export const CAMERA_THIRD_PERSON_PHONE = {
+  OFFSET_Y: 4.0,
+  OFFSET_Z: 8.0,
+  LOOK_AHEAD_Z: 5.0,
+  LOOK_Y: 1.4,
+  AIM_LOOKAHEAD: 1.5,
+  FOV: 62
+};
+
 export const PLAYER_BASE = {
   MAX_HP: 300,
   MOVE_SPEED: 14,

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { ARENA, CAMERA_CONFIG, CAMERA_PHONE, BIOMES } from '../config/constants.js';
+import { ARENA, CAMERA_CONFIG, BIOMES } from '../config/constants.js';
 import { QUALITY_PRESETS, getSavedQuality } from '../config/quality.js';
-import { CameraZoom, isTouchDevice } from './CameraZoom.js';
+import { CameraZoom } from './CameraZoom.js';
 import { ShadowFollower } from './ShadowFollower.js';
 import { PostProcessingManager } from './PostProcessingManager.js';
 import { SceneQuality } from './SceneQuality.js';
@@ -173,11 +173,6 @@ export class SceneManager {
   updateCamera(playerPos, aimDir, dt = 0.016) {
     if (this.shadowFollower) this.shadowFollower.update(playerPos);
 
-    const isTouch = isTouchDevice();
-    const camCfg = isTouch ? CAMERA_PHONE : CAMERA_CONFIG;
-    const aimLookahead = isTouch ? (CAMERA_PHONE.AIM_LOOKAHEAD ?? 1.5) : CAMERA_CONFIG.AIM_LOOKAHEAD;
-    const lookAheadX = aimDir.x * aimLookahead;
-    const lookAheadZ = aimDir.z * aimLookahead;
     let shakeX = 0, shakeZ = 0;
     if (this.trauma > 0) {
       const shakePower = this.trauma * this.trauma * 0.9;
@@ -192,24 +187,16 @@ export class SceneManager {
       this.hitShakeTimer = Math.max(0, this.hitShakeTimer - dt);
     }
 
-    const zoomMult = this.zoom.update();
-    const pitchBias = CAMERA_CONFIG.PITCH_BIAS || 1.0;
-    const desiredX = playerPos.x + lookAheadX + shakeX;
-    const desiredY = camCfg.OFFSET_Y * pitchBias * zoomMult;
-    const desiredZ = playerPos.z + (camCfg.OFFSET_Z * pitchBias * zoomMult) + lookAheadZ + shakeZ;
-
-    this.cameraDesiredPos.set(desiredX, desiredY, desiredZ);
-    this.camera.position.lerp(this.cameraDesiredPos, CAMERA_CONFIG.LERP_SPEED);
-    const forwardLead = camCfg.LOOK_FORWARD ?? (isTouch ? -0.4 : -1.3);
-    this.cameraLookPos.set(playerPos.x + lookAheadX * 0.5, 0, playerPos.z - forwardLead + lookAheadZ * 0.5);
-    this.cameraTarget.lerp(this.cameraLookPos, CAMERA_CONFIG.LERP_SPEED);
-
-    // Keep player at ~45% screen height and never lower than 60% of screen height (ndc.y >= -0.20)
-    const maxLead = isTouch ? 2.5 : 4.0;
-    if (playerPos.z - this.cameraTarget.z > maxLead) {
-      this.cameraTarget.z = playerPos.z - maxLead;
-    }
-    this.camera.lookAt(this.cameraTarget);
+    this.zoom.applyToCamera(
+      this.camera,
+      this.cameraDesiredPos,
+      this.cameraLookPos,
+      this.cameraTarget,
+      playerPos,
+      aimDir,
+      shakeX,
+      shakeZ
+    );
     if (this.map?.updateTreeOcclusion) this.map.updateTreeOcclusion(playerPos, this.camera.position, dt);
   }
 
