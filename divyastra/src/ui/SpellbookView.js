@@ -48,7 +48,7 @@ export class SpellbookView {
 
         const chipsHtml = (spell.elements || []).map((e) => {
           const col = isReached && ELEMENT_COLORS[e] ? `#${ELEMENT_COLORS[e].toString(16).padStart(6, '0')}` : '#64748b';
-          return `<span style="font-size:9px;font-weight:700;border:1px solid ${col};color:${col};padding:1px 4px;border-radius:3px;display:inline-flex;align-items:center;gap:3px;">${elementIcon(e, 11)} ${ELEMENT_NAMES[e] || e}</span>`;
+          return `<span class="sb-chip" style="font-size:9px;font-weight:700;border:1px solid ${col};color:${col};padding:1px 4px;border-radius:3px;display:inline-flex;align-items:center;gap:3px;">${elementIcon(e, 11)} ${ELEMENT_NAMES[e] || e}</span>`;
         }).join(' ');
 
         if (!isReached) {
@@ -60,7 +60,7 @@ export class SpellbookView {
                   <span style="font-size:12px;font-weight:700;color:#64748b;">???</span>
                   <span style="font-size:10px;color:#475569;">Locked</span>
                 </div>
-                <div style="display:flex;gap:3px;margin:2px 0;">${chipsHtml}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:3px;margin:2px 0;">${chipsHtml}</div>
                 <div style="font-size:10px;color:#64748b;">Reach in match to unlock</div>
               </div>
             </div>
@@ -77,11 +77,11 @@ export class SpellbookView {
               ${medallionHtml}
               <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:12px;font-weight:700;color:#fff;">${spell.name}</span>
+                  <span class="sb-name" style="font-size:12px;font-weight:700;color:#fff;">${spell.name}</span>
                   <span style="display:inline-flex;gap:1px;color:#E3B04B;" title="${starCount} Siddhi">${renderStars(starCount, 5, 12)}</span>
                 </div>
                 ${loreHtml}
-                <div style="display:flex;gap:3px;margin:1px 0;">${chipsHtml}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:3px;margin:1px 0;">${chipsHtml}</div>
                 <div style="display:flex;justify-content:space-between;font-size:10px;color:#cbd5e1;font-weight:700;">
                   <span style="color:#7FA650;">+${dmgBonus}% DMG</span>
                   <span style="color:#94a3b8;">${progressText}</span>

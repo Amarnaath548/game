@@ -19,7 +19,10 @@
 .quest-card.gm-card { padding: 8px 12px; gap: 10px; }
 .quest-card .gm-btn { min-width: 0; width: 72px; padding: 0 4px; font-size: 12px; }
 .quest-info { min-width: 0; }
-.spellbook-card.gm-card { overflow-wrap: anywhere; }
+.spellbook-card.gm-card { overflow-wrap: break-word; }
+.spellbook-card .gm-medallion { width: 52px; height: 52px; min-width: 52px; min-height: 52px; flex: 0 0 52px; }
+.spellbook-card .sb-chip, .spellbook-card .sb-stars { white-space: nowrap; flex: 0 0 auto; }
+.spellbook-card .sb-name { white-space: normal; overflow-wrap: normal; word-break: normal; min-width: 0; }
 @media (max-height: 400px) {
   .lobby-sheet-overlay { padding: 20px 8px 4px; }
   .lobby-sheet-card.gm-frame { padding: 22px 14px 10px; max-height: calc(100dvh - 24px); }
@@ -33,3 +36,12 @@
 }
 .staff-card .staff-desc { white-space: normal; overflow: visible; text-overflow: clip; display: block; -webkit-line-clamp: unset; }
 .hero-portrait-bg { clip-path: inset(-40px -6px 0 -6px); }
+
+/* Ribbon text sits in the band (upper ~40% of the art), not the box centre */
+.gm-ribbon { padding: 0 6px 9px; font-size: 23px; }
+.gm-ribbon--sm { padding: 0 6px 8px; }
+@media (max-height: 400px) { .gm-ribbon { padding-bottom: 7px; font-size: 20px; } }
+.upg-card-desc { white-space: normal; overflow: visible; text-overflow: clip; }
+/* Coin visibility: outlined coin + readable price on buy buttons */
+.gm-btn .currency-coin, .gm-btn .btn-coin { filter: drop-shadow(0 0 1.5px #2a1206) drop-shadow(0 1px 1px #2a1206); }
+.upg-buy-btn span { font-size: 15px; -webkit-text-stroke: 3px #15172B; }

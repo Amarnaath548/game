@@ -1,27 +1,10 @@
 import { UPGRADES } from '../core/MetaProgression.js';
-import {
-  iconHeart,
-  iconBoot,
-  iconMagnet,
-  iconFlame,
-  iconClock,
-  iconShield,
-  iconDashArrows,
-  iconCoin,
-  iconBook,
-  iconGold
-} from './icons.js';
+import { iconGold } from './icons.js';
+import { paintIcon } from './gameIcons.js';
 
 const UPGRADE_ICONS = {
-  VITALITY: (s) => iconHeart(s),
-  SWIFTNESS: (s) => iconBoot(s),
-  MAGNETISM: (s) => iconMagnet(s),
-  POWER: (s) => iconFlame(s),
-  HASTE: (s) => iconClock(s),
-  WARD: (s) => iconShield(s),
-  DASHMASTERY: (s) => iconDashArrows(s),
-  FORTUNE: (s) => iconCoin(s),
-  WISDOM: (s) => iconBook(s)
+  VITALITY: 'heart', SWIFTNESS: 'boot', MAGNETISM: 'magnet', POWER: 'flame', HASTE: 'clock',
+  WARD: 'shield', DASHMASTERY: 'dash', FORTUNE: 'coin', WISDOM: 'book'
 };
 
 const EFFECT_SPECS = {
@@ -69,17 +52,17 @@ export class UpgradesView {
       const cost = this.meta.getUpgradeCost(upg.id);
       const isMax = lvl >= upg.maxLevel;
       const canAfford = !isMax && this.meta.data.gold >= cost;
-      const iconFn = UPGRADE_ICONS[upg.id] || iconFlame;
+      const iconName = UPGRADE_ICONS[upg.id] || 'flame';
 
       const card = document.createElement('div');
       card.className = `upgrade-card gm-card${isMax ? ' maxed' : ''}`;
 
       const actionHtml = isMax
         ? `<div class="upg-max-badge">MAX</div>`
-        : `<button class="upg-buy-btn gm-btn ${canAfford ? 'gm-btn--gold' : 'gm-btn--stone unaffordable'}" ${canAfford ? '' : 'disabled'}>${iconGold(14)} <span>${cost}</span></button>`;
+        : `<button class="upg-buy-btn gm-btn ${canAfford ? 'gm-btn--green' : 'gm-btn--stone unaffordable'}" ${canAfford ? '' : 'disabled'}>${iconGold(20)}<span>${cost}</span></button>`;
 
       card.innerHTML = `
-        <div class="upg-icon-box gm-medallion">${iconFn(38)}</div>
+        <div class="upg-icon-box gm-medallion">${paintIcon(iconName, 42)}</div>
         <div class="upg-body">
           <div class="upg-title-row">
             <span class="upg-card-name">${upg.name}</span>
